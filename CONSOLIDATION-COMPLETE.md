@@ -143,7 +143,7 @@ Risultato:
 - REDIS_HOST=redis-shared ✓
 - PHP_VERSION=8.3 ✓
 - Certificato SSL generato ✓
-- Progetto accessibile http://test-cli-new.test:8080 ✓
+- Progetto accessibile http://test-cli-new.test ✓
 ```
 
 ## 📊 Metriche

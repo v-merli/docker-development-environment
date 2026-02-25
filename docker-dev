@@ -75,6 +75,12 @@ COMMANDS:
     shared mysql          MySQL CLI condiviso
     shared php <version>  Avvia PHP condiviso (7.3-8.5)
     
+  SSL Management:
+    ssl setup             Configura CA locale per HTTPS
+    ssl generate <domain> Genera certificato SSL
+    ssl verify            Verifica configurazione SSL
+    ssl install           Installa/reinstalla CA
+    
   System Setup:
     setup dns             Configura dnsmasq per domini .test
     setup proxy           Avvia nginx reverse proxy
@@ -190,6 +196,10 @@ case $COMMAND in
     shared)
         load_module "shared"
         cmd_shared "$@"
+        ;;
+    ssl)
+        load_module "ssl"
+        cmd_ssl "$@"
         ;;
     setup)
         load_module "setup"

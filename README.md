@@ -121,7 +121,7 @@ Se prevedi di usare servizi condivisi per risparmiare RAM:
 ./docker-dev create myapi --shared-db --php 8.2
 
 # Accedi al progetto
-open http://myshop.test:8080
+open http://myshop.test
 ```
 
 ## 🏗️ Architettura
@@ -165,7 +165,7 @@ Puoi scegliere tra:
 ```
 Browser → http://myproject.test
          ↓
-127.0.0.1:8080 (dnsmasq risolve *.test)
+127.0.0.1 (dnsmasq risolve *.test)
          ↓
 nginx-proxy container
          ↓
@@ -240,8 +240,8 @@ Connessione a MySQL/Redis (dedicato o condiviso)
 - ❌ **PHP condiviso**: se i progetti necessitano versioni PHP diverse
 
 Il progetto sarà accessibile a:
-- **HTTP:** `http://nome-progetto.test:8080`
-- **HTTPS:** `https://nome-progetto.test:8443` (certificato auto-firmato in locale)
+- **HTTP:** `http://nome-progetto.test`
+- **HTTPS:** `https://nome-progetto.test` (certificato auto-firmato in locale)
 
 ### Gestire i Progetti
 
@@ -557,11 +557,41 @@ Password: root
 
 ### Sviluppo Locale
 
-In locale, nginx-proxy genera certificati self-signed automaticamente. Il browser mostrerà un avviso di sicurezza (normale per certificati auto-firmati).
+I certificati SSL vengono **generati automaticamente** durante la creazione del progetto utilizzando **mkcert**.
 
-**Per evitare gli avvisi:**
-1. Esporta il certificato da `proxy/nginx/certs/[dominio].crt`
-2. Importalo nel Keychain di macOS come "Fidato"
+**Setup iniziale (solo la prima volta):**
+```bash
+./docker-dev ssl setup
+```
+
+Questo installerà la CA locale nel keychain del tuo sistema. **Dovrai riavviare il browser** dopo l'installazione.
+
+**I certificati vengono generati automaticamente** quando crei un nuovo progetto:
+```bash
+./docker-dev create myproject
+# Il certificato SSL viene generato e installato automaticamente
+```
+
+**Comandi utili:**
+```bash
+# Verifica configurazione SSL
+./docker-dev ssl verify
+
+# Genera certificato per dominio specifico
+./docker-dev ssl generate myapp.test
+
+# Reinstalla CA (se necessario)
+./docker-dev ssl install
+```
+
+**Se il browser mostra avvisi di sicurezza:**
+
+Consulta la [guida completa SSL](SSL-SETUP.md) oppure:
+
+1. **Riavvia tutti i browser** (fondamentale!)
+2. Apri **Accesso Portachiavi** > cerca "mkcert"
+3. Doppio clic > espandi "Fidati" > seleziona "Fidati sempre" per SSL
+4. Riavvia il browser
 
 ### Produzione
 
@@ -648,11 +678,11 @@ Se hai già servizi su porta 80/443:
 **Opzione 2:** Modifica le porte in `proxy/docker-compose.yml`:
 ```yaml
 ports:
-  - "8080:80"   # Invece di 80:80
-  - "8443:443"  # Invece di 443:443
+  - "80:80"     # Porte standard
+  - "443:443"   # Porte standard
 ```
 
-Poi accedi con: `http://my-shop.test:8080`
+Poi accedi con: `http://my-shop.test`
 
 ### Laravel: permessi di scrittura
 

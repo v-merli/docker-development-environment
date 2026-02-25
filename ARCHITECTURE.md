@@ -6,8 +6,8 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          HOST SYSTEM (macOS)                            │
 │                                                                         │
-│  Browser → http://shop.test:8080                                       │
-│            http://blog.test:8080                                       │
+│  Browser → http://shop.test                                            │
+│            http://blog.test                                            │
 │                         ↓                                              │
 └─────────────────────────────────────────────────────────────────────────┘
                           ↓
@@ -19,7 +19,7 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                    NGINX REVERSE PROXY                                  │
 │                Container: nginx-proxy                                   │
-│                   Porta 8080:80, 8443:443                              │
+│                   Porta 80:80, 443:443                                 │
 │                                                                         │
 │  Routing automatico basato su VIRTUAL_HOST:                            │
 │  • shop.test → shop-nginx:80                                           │
@@ -91,9 +91,9 @@ Solo per progetti con servizi dedicati:
 ```
 1. Browser
    ↓
-2. http://shop.test:8080
+2. http://shop.test
    ↓
-3. dnsmasq → 127.0.0.1:8080
+3. dnsmasq → 127.0.0.1
    ↓
 4. nginx-proxy (container)
    ↓

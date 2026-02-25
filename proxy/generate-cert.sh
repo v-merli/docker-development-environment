@@ -18,6 +18,7 @@ if ! command -v mkcert &> /dev/null; then
     echo "⚠️  mkcert non trovato. Installazione tramite Homebrew..."
     if command -v brew &> /dev/null; then
         brew install mkcert
+        echo "✅ mkcert installato"
     else
         echo "❌ Homebrew non trovato. Installa mkcert manualmente:"
         echo "   brew install mkcert"
@@ -25,9 +26,24 @@ if ! command -v mkcert &> /dev/null; then
     fi
 fi
 
-# Installa la CA nel sistema (se non già fatto)
-echo "🔐 Configurazione CA locale..."
-mkcert -install 2>/dev/null || true
+# Verifica se la CA è già installata
+CA_ROOT="$(mkcert -CAROOT)"
+if [ ! -f "$CA_ROOT/rootCA.pem" ]; then
+    echo "🔐 Installazione CA locale (richiederà la password di sistema)..."
+    mkcert -install
+    echo ""
+    echo "✅ CA locale installata"
+    echo ""
+    echo "⚠️  IMPORTANTE: Se il browser mostra ancora l'avviso di sicurezza:"
+    echo "   1. Apri 'Accesso Portachiavi' (Keychain Access)"
+    echo "   2. Cerca 'mkcert' nella sezione 'Sistema'"
+    echo "   3. Fai doppio clic sul certificato 'mkcert'"
+    echo "   4. Espandi 'Fidati' e seleziona 'Fidati sempre' per SSL"
+    echo "   5. Riavvia il browser"
+    echo ""
+else
+    echo "✅ CA locale già configurata"
+fi
 
 echo "🔐 Generazione certificato SSL per $DOMAIN..."
 

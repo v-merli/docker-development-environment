@@ -373,20 +373,45 @@ start_shared_if_needed() {
 generate_ssl_cert() {
     local domain=$1
     local certs_dir="$SCRIPT_DIR/proxy/nginx/certs"
+    local first_time=false
     
     mkdir -p "$certs_dir"
     
     if ! command -v mkcert &> /dev/null; then
-        print_warning "mkcert non trovato, installalo per SSL locale"
+        print_warning "mkcert non trovato"
+        echo ""
+        echo "Per abilitare HTTPS locale, installa mkcert:"
+        echo "  brew install mkcert"
+        echo "  $SCRIPT_DIR/proxy/setup-ssl-ca.sh"
         return
     fi
     
-    mkcert -install 2>/dev/null || true
+    # Verifica se la CA è già installata
+    local ca_root="$(mkcert -CAROOT)"
+    if [ ! -f "$ca_root/rootCA.pem" ]; then
+        first_time=true
+        print_info "Prima installazione CA locale (richiederà password)..."
+        mkcert -install
+    fi
+    
+    # Genera certificato
     mkcert -key-file "$certs_dir/$domain.key" -cert-file "$certs_dir/$domain.crt" "$domain" "*.$domain" 2>/dev/null
     
     if [ -f "$certs_dir/$domain.crt" ]; then
         cp "$certs_dir/$domain.crt" "$certs_dir/$domain.chain.pem"
         print_success "Certificato SSL generato"
+        
+        # Riavvia nginx-proxy per caricare i nuovi certificati
+        print_info "Ricaricamento configurazione SSL..."
+        cd "$SCRIPT_DIR/proxy"
+        $DOCKER_COMPOSE restart nginx-proxy > /dev/null 2>&1
+        cd "$SCRIPT_DIR"
+        
+        # Mostra istruzioni se è la prima volta
+        if [ "$first_time" = true ]; then
+            echo ""
+            print_warning "IMPORTANTE: Chiudi e riavvia tutti i browser per riconoscere i certificati SSL"
+        fi
     fi
 }
 
