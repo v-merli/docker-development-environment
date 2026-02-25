@@ -1,0 +1,179 @@
+services:
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy
+    container_name: nginx-proxy
+    restart: always
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/vhost.d:/etc/nginx/vhost.d
+      - ./nginx/html:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    environment:
+      - DEFAULT_HOST=localhost
+    labels:
+      - com.github.nginx-proxy.nginx
+    networks:
+      - proxy
+
+  acme-companion:
+    image: nginxproxy/acme-companion
+    container_name: nginx-acme-companion
+    restart: always
+    depends_on:
+      - nginx-proxy
+    volumes:
+      - ./nginx/certs:/etc/nginx/certs:rw
+      - ./nginx/vhost.d:/etc/nginx/vhost.d
+      - ./nginx/html:/usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./nginx/acme:/etc/acme.sh
+    environment:
+      - DEFAULT_EMAIL=dev@example.com
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+      - ACME_CA_URI=https://acme-staging-v02.api.letsencrypt.org/directory
+    networks:
+      - proxy
+
+  # Servizi condivisi (opzionali)
+  # I progetti possono usare questi servizi invece di averne uno dedicato
+  mysql-shared:
+    image: mysql:8.0
+    container_name: mysql-shared
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      # I progetti creeranno i loro database via migration
+    volumes:
+      - mysql_shared_data:/var/lib/mysql
+    networks:
+      - proxy
+    command: --default-authentication-plugin=mysql_native_password
+    profiles:
+      - shared-services
+
+  redis-shared:
+    image: redis:alpine
+    container_name: redis-shared
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_shared_data:/data
+    networks:
+      - proxy
+    command: redis-server --appendonly yes
+    profiles:
+      - shared-services
+
+  # PHP-FPM condivisi per ogni versione
+  # Montano tutti i progetti in /var/www/projects
+  php-7.3-shared:
+    build:
+      context: ../shared/dockerfiles
+      dockerfile: php-7.3.Dockerfile
+      args:
+        NODE_VERSION: 20
+    container_name: php-7.3-shared
+    restart: unless-stopped
+    working_dir: /var/www/projects
+    volumes:
+      - ../projects:/var/www/projects
+    networks:
+      - proxy
+    profiles:
+      - shared-services
+
+  php-7.4-shared:
+    build:
+      context: ../shared/dockerfiles
+      dockerfile: php-7.4.Dockerfile
+      args:
+        NODE_VERSION: 20
+    container_name: php-7.4-shared
+    restart: unless-stopped
+    working_dir: /var/www/projects
+    volumes:
+      - ../projects:/var/www/projects
+    networks:
+      - proxy
+    profiles:
+      - shared-services
+
+  php-8.1-shared:
+    build:
+      context: ../shared/dockerfiles
+      dockerfile: php-8.1.Dockerfile
+      args:
+        NODE_VERSION: 20
+    container_name: php-8.1-shared
+    restart: unless-stopped
+    working_dir: /var/www/projects
+    volumes:
+      - ../projects:/var/www/projects
+    networks:
+      - proxy
+    profiles:
+      - shared-services
+
+  php-8.2-shared:
+    build:
+      context: ../shared/dockerfiles
+      dockerfile: php-8.2.Dockerfile
+      args:
+        NODE_VERSION: 20
+    container_name: php-8.2-shared
+    restart: unless-stopped
+    working_dir: /var/www/projects
+    volumes:
+      - ../projects:/var/www/projects
+    networks:
+      - proxy
+    profiles:
+      - shared-services
+
+  php-8.3-shared:
+    build:
+      context: ../shared/dockerfiles
+      dockerfile: php-8.3.Dockerfile
+      args:
+        NODE_VERSION: 20
+    container_name: php-8.3-shared
+    restart: unless-stopped
+    working_dir: /var/www/projects
+    volumes:
+      - ../projects:/var/www/projects
+    networks:
+      - proxy
+    profiles:
+      - shared-services
+
+  php-8.5-shared:
+    build:
+      context: ../shared/dockerfiles
+      dockerfile: php-8.5.Dockerfile
+      args:
+        NODE_VERSION: 20
+    container_name: php-8.5-shared
+    restart: unless-stopped
+    working_dir: /var/www/projects
+    volumes:
+      - ../projects:/var/www/projects
+    networks:
+      - proxy
+    profiles:
+      - shared-services
+
+volumes:
+  mysql_shared_data:
+    name: mysql_shared_data
+  redis_shared_data:
+    name: redis_shared_data
+
+networks:
+  proxy:
+    name: proxy

@@ -1,0 +1,94 @@
+# Docker Development Environment - .gitignore
+
+# ====================================
+# Progetti Utente
+# ====================================
+# Ignora tutti i progetti nella directory projects
+# (ogni utente avrà i propri progetti)
+projects/*
+
+# Ma mantieni la directory projects stessa e il README
+!projects/.gitkeep
+!projects/README.md
+
+# ====================================
+# Certificati SSL Locali
+# ====================================
+# Certificati generati da mkcert (locali per ogni sviluppatore)
+proxy/nginx/certs/*
+!proxy/nginx/certs/.gitkeep
+
+# ACME (Let's Encrypt) - dati specifici per ambiente
+proxy/nginx/acme/*
+!proxy/nginx/acme/.gitkeep
+
+# ====================================
+# Docker
+# ====================================
+# Docker compose override files (personalizzazioni locali)
+docker-compose.override.yml
+**/docker-compose.override.yml
+
+# ====================================
+# Sistema Operativo
+# ====================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ====================================
+# IDE / Editor
+# ====================================
+# VSCode
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+
+# PHPStorm / IntelliJ
+.idea/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ====================================
+# Logs e Cache
+# ====================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ====================================
+# Backup e temporanei
+# ====================================
+*.bak
+*.tmp
+*.temp
+.backup/
+
+# ====================================
+# Environment Variables
+# ====================================
+# File .env nella root (se presente) - contiene config locali
+/.env
+/.env.local
+
+# Ma NON ignorare i .env nei template
+!shared/templates/**/.env.example
