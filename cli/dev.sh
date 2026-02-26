@@ -39,7 +39,8 @@ cmd_shell() {
     cd "$project_path"
     
     # Verifica se il progetto usa PHP condiviso
-    if [ -f "docker-compose.yml" ] && grep -q "fully-shared" "docker-compose.yml" 2>/dev/null; then
+    # Controlla se NON esiste il servizio "app" nel docker-compose.yml
+    if [ -f "docker-compose.yml" ] && ! grep -q "^  app:" "docker-compose.yml" 2>/dev/null; then
         # Progetto fully-shared: usa PHP condiviso
         if [ -f ".env" ]; then
             php_version=$(grep "^PHP_VERSION=" ".env" 2>/dev/null | cut -d'=' -f2)
@@ -85,10 +86,12 @@ cmd_artisan() {
     cd "$project_path"
     
     # Verifica se il progetto usa PHP condiviso
-    if [ -f "docker-compose.yml" ] && grep -q "fully-shared" "docker-compose.yml" 2>/dev/null; then
+    # Controlla se NON esiste il servizio "app" nel docker-compose.yml
+    if [ -f "docker-compose.yml" ] && ! grep -q "^  app:" "docker-compose.yml" 2>/dev/null; then
         if [ -f ".env" ]; then
             php_version=$(grep "^PHP_VERSION=" ".env" 2>/dev/null | cut -d'=' -f2)
             if [ -n "$php_version" ]; then
+                print_info "Usando PHP $php_version condiviso..."
                 docker exec php-$php_version-shared php /var/www/projects/$project/app/artisan "$@"
                 return
             fi
@@ -118,10 +121,13 @@ cmd_composer() {
     cd "$project_path"
     
     # Verifica se il progetto usa PHP condiviso
-    if [ -f "docker-compose.yml" ] && grep -q "fully-shared" "docker-compose.yml" 2>/dev/null; then
+    # Controlla se NON esiste il servizio "app" nel docker-compose.yml
+    if [ -f "docker-compose.yml" ] && ! grep -q "^  app:" "docker-compose.yml" 2>/dev/null; then
+        # Progetto fully-shared: usa PHP condiviso
         if [ -f ".env" ]; then
             php_version=$(grep "^PHP_VERSION=" ".env" 2>/dev/null | cut -d'=' -f2)
             if [ -n "$php_version" ]; then
+                print_info "Usando PHP $php_version condiviso..."
                 docker exec php-$php_version-shared bash -c "cd /var/www/projects/$project/app && composer $*"
                 return
             fi
@@ -150,11 +156,13 @@ cmd_npm() {
     
     cd "$project_path"
     
-    # Verifica se ilprogetto usa PHP condiviso
-    if [ -f "docker-compose.yml" ] && grep -q "fully-shared" "docker-compose.yml" 2>/dev/null; then
+    # Verifica se il progetto usa PHP condiviso
+    # Controlla se NON esiste il servizio "app" nel docker-compose.yml
+    if [ -f "docker-compose.yml" ] && ! grep -q "^  app:" "docker-compose.yml" 2>/dev/null; then
         if [ -f ".env" ]; then
             php_version=$(grep "^PHP_VERSION=" ".env" 2>/dev/null | cut -d'=' -f2)
             if [ -n "$php_version" ]; then
+                print_info "Usando PHP $php_version condiviso..."
                 docker exec php-$php_version-shared bash -c "cd /var/www/projects/$project/app && npm $*"
                 return
             fi

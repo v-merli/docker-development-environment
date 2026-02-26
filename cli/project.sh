@@ -156,7 +156,10 @@ cmd_remove() {
     
     if [ "$confirm" = "yes" ]; then
         cd "$project_path"
-        $DOCKER_COMPOSE down -v
+        
+        # Ferma e rimuovi container (nasconde il warning per progetti fully-shared)
+        $DOCKER_COMPOSE down -v 2>&1 | grep -v "No resource found to remove" || true
+        
         cd "$SCRIPT_DIR"
         rm -rf "$project_path"
         print_success "Progetto $project rimosso"

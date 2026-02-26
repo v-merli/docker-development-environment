@@ -35,17 +35,33 @@ cmd_create() {
     
     while [[ $# -gt 0 ]]; do
         case $1 in
+            --type=*)
+                PROJECT_TYPE="${1#*=}"
+                shift
+                ;;
             --type)
                 PROJECT_TYPE="$2"
                 shift 2
+                ;;
+            --php=*)
+                PHP_VERSION="${1#*=}"
+                shift
                 ;;
             --php)
                 PHP_VERSION="$2"
                 shift 2
                 ;;
+            --node=*)
+                NODE_VERSION="${1#*=}"
+                shift
+                ;;
             --node)
                 NODE_VERSION="$2"
                 shift 2
+                ;;
+            --mysql=*)
+                MYSQL_VERSION="${1#*=}"
+                shift
                 ;;
             --mysql)
                 MYSQL_VERSION="$2"
@@ -113,7 +129,7 @@ cmd_create() {
         INCLUDE_REDIS=false
     fi
     
-    if [[ -n "$PHP_VERSION" ]] && [[ ! "$PHP_VERSION" =~ ^(7.3|7.4|8.1|8.2|8.3|8.5)$ ]]; then
+    if [[ -n "$PHP_VERSION" ]] && [[ ! "$PHP_VERSION" =~ ^(7.3|7.4|8.1|8.2|8.3|8.4|8.5)$ ]]; then
         print_error "Versione PHP non supportata: $PHP_VERSION"
         exit 1
     fi
@@ -240,7 +256,7 @@ cmd_create() {
     
     # Installa framework
     if [ "$INSTALL_FRAMEWORK" = true ]; then
-        install_framework "$PROJECT_TYPE" "$PROJECT_PATH" "$PROJECT_SLUG" "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS"
+        install_framework "$PROJECT_TYPE" "$PROJECT_PATH" "$PROJECT_SLUG" "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$PHP_VERSION"
     fi
     
     # Riepilogo finale
@@ -252,7 +268,7 @@ show_create_usage() {
     echo ""
     echo "Opzioni:"
     echo "  --type <tipo>         Tipo: laravel, wordpress, php, html (default: laravel)"
-    echo "  --php <versione>      Versione PHP: 7.3, 7.4, 8.1, 8.2, 8.3, 8.5 (default: 8.3)"
+    echo "  --php <versione>      Versione PHP: 7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5 (default: 8.3)"
     echo "  --node <versione>     Versione Node.js: 18, 20, 21 (default: 20)"
     echo "  --mysql <versione>    Versione MySQL: 5.7, 8.0 (default: 8.0)"
     echo "  --no-db               Senza MySQL"
@@ -416,33 +432,71 @@ generate_ssl_cert() {
 }
 
 install_framework() {
-    local type=$1 path=$2 slug=$3 inc_db=$4 inc_redis=$5 shared_db=$6 shared_redis=$7
+    local type=$1 path=$2 slug=$3 inc_db=$4 inc_redis=$5 shared_db=$6 shared_redis=$7 shared_php=$8 php_version=$9
+    local project=$(basename "$path")
     
     cd "$path"
     
     case $type in
         laravel)
             print_info "Installazione Laravel..."
-            $DOCKER_COMPOSE exec -T app composer create-project --prefer-dist laravel/laravel . 2>/dev/null || true
-            $DOCKER_COMPOSE exec -T app chmod -R 775 storage bootstrap/cache 2>/dev/null || true
             
-            if [ ! -f "$path/app/.env" ]; then
-                $DOCKER_COMPOSE exec -T app cp .env.example .env 2>/dev/null || true
-            fi
-            
-            $DOCKER_COMPOSE exec -T app php artisan key:generate 2>/dev/null || true
-            
-            if [[ "$inc_db" == true ]]; then
-                local db_host="mysql"
-                [[ "$shared_db" == true ]] && db_host="mysql-shared"
-                $DOCKER_COMPOSE exec -T app sed -i "s/DB_HOST=.*/DB_HOST=$db_host/" .env 2>/dev/null || true
-                $DOCKER_COMPOSE exec -T app sed -i "s/DB_DATABASE=.*/DB_DATABASE=${slug//-/_}_db/" .env 2>/dev/null || true
-            fi
-            
-            if [[ "$inc_redis" == true ]]; then
-                local redis_host="redis"
-                [[ "$shared_redis" == true ]] && redis_host="redis-shared"
-                $DOCKER_COMPOSE exec -T app sed -i "s/REDIS_HOST=.*/REDIS_HOST=$redis_host/" .env 2>/dev/null || true
+            if [[ "$shared_php" == true ]]; then
+                # Fully-shared: usa container PHP condiviso
+                docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && composer create-project --prefer-dist laravel/laravel ." 2>/dev/null || true
+                docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && chmod -R 775 storage bootstrap/cache" 2>/dev/null || true
+                
+                if [ ! -f "$path/app/.env" ]; then
+                    docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && cp .env.example .env" 2>/dev/null || true
+                fi
+                
+                docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && php artisan key:generate" 2>/dev/null || true
+                
+                if [[ "$inc_db" == true ]]; then
+                    local db_host="mysql"
+                    local db_password="root"
+                    if [[ "$shared_db" == true ]]; then
+                        db_host="mysql-shared"
+                        db_password="rootpassword"
+                    fi
+                    docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && sed -i 's/DB_HOST=.*/DB_HOST=$db_host/' .env" 2>/dev/null || true
+                    docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && sed -i 's/DB_DATABASE=.*/DB_DATABASE=${slug//-/_}_db/' .env" 2>/dev/null || true
+                    docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=$db_password/' .env" 2>/dev/null || true
+                fi
+                
+                if [[ "$inc_redis" == true ]]; then
+                    local redis_host="redis"
+                    [[ "$shared_redis" == true ]] && redis_host="redis-shared"
+                    docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && sed -i 's/REDIS_HOST=.*/REDIS_HOST=$redis_host/' .env" 2>/dev/null || true
+                fi
+            else
+                # Dedicato: usa container app del progetto
+                $DOCKER_COMPOSE exec -T app composer create-project --prefer-dist laravel/laravel . 2>/dev/null || true
+                $DOCKER_COMPOSE exec -T app chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+                
+                if [ ! -f "$path/app/.env" ]; then
+                    $DOCKER_COMPOSE exec -T app cp .env.example .env 2>/dev/null || true
+                fi
+                
+                $DOCKER_COMPOSE exec -T app php artisan key:generate 2>/dev/null || true
+                
+                if [[ "$inc_db" == true ]]; then
+                    local db_host="mysql"
+                    local db_password="root"
+                    if [[ "$shared_db" == true ]]; then
+                        db_host="mysql-shared"
+                        db_password="rootpassword"
+                    fi
+                    $DOCKER_COMPOSE exec -T app sed -i "s/DB_HOST=.*/DB_HOST=$db_host/" .env 2>/dev/null || true
+                    $DOCKER_COMPOSE exec -T app sed -i "s/DB_DATABASE=.*/DB_DATABASE=${slug//-/_}_db/" .env 2>/dev/null || true
+                    $DOCKER_COMPOSE exec -T app sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$db_password/" .env 2>/dev/null || true
+                fi
+                
+                if [[ "$inc_redis" == true ]]; then
+                    local redis_host="redis"
+                    [[ "$shared_redis" == true ]] && redis_host="redis-shared"
+                    $DOCKER_COMPOSE exec -T app sed -i "s/REDIS_HOST=.*/REDIS_HOST=$redis_host/" .env 2>/dev/null || true
+                fi
             fi
             
             print_success "Laravel installato"
@@ -450,7 +504,11 @@ install_framework() {
             
         wordpress)
             print_info "Download WordPress..."
-            $DOCKER_COMPOSE exec -T app bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/html/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
+            if [[ "$shared_php" == true ]]; then
+                docker exec php-${php_version}-shared bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/projects/$project/app/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
+            else
+                $DOCKER_COMPOSE exec -T app bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/html/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
+            fi
             print_success "WordPress scaricato"
             ;;
             

@@ -5,7 +5,7 @@
 
 Ambiente di sviluppo Docker completo per gestire più progetti con:
 - 🎯 **Tipi progetto multipli** (Laravel, WordPress, PHP generico, HTML statico)
-- 🐘 **Versioni PHP selezionabili** (7.3, 7.4, 8.1, 8.2, 8.3, 8.5) - dedicato o condiviso
+- 🐘 **Versioni PHP selezionabili** (7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5) - dedicato o condiviso
 - 📦 **Versioni Node.js selezionabili** (18, 20, 21)
 - 🗄️ **MySQL** (5.7, 8.0) - dedicato o condiviso
 - 🔴 **Redis** - dedicato o condiviso
@@ -34,7 +34,11 @@ Ambiente di sviluppo Docker completo per gestire più progetti con:
 ./docker-dev composer myapp require laravel/sanctum
 ```
 
-📖 **Documentazione completa**: [CLI-README.md](CLI-README.md)
+📖 **Documentazione**:
+- **[Guida CLI Completa](CLI-README.md)** - Tutti i comandi disponibili
+- **[Gestione Workers e Scheduler](WORKERS-GUIDE.md)** - Laravel scheduler, queue workers, supervisor
+- **[Certificati SSL Locali](SSL-SETUP.md)** - Setup certificati per HTTPS locale
+- **[Architettura Sistema](ARCHITECTURE.md)** - Dettagli tecnici architettura Docker
 
 ## 📋 Indice
 
@@ -140,9 +144,12 @@ Questa soluzione implementa un'**architettura ibrida** che offre flessibilità t
 
 #### 2. **Servizi per Progetto**
 Ogni progetto può avere:
-- **PHP-FPM**: container dedicato con versione specifica (7.3, 7.4, 8.1, 8.2, 8.3, 8.5)
+- **PHP-FPM**: container dedicato con versione specifica (7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5)
 - **Nginx**: container dedicato con configurazione specifica (Laravel/WordPress/PHP/HTML)
-- **Scheduler/Queue**: container dedicati per Laravel
+- **Scheduler**: container sempre attivo per Laravel task scheduler (`php artisan schedule:run`)
+- **Queue Worker**: container opzionale per Laravel queue processing (Redis/Database)
+
+> 📖 **[Guida completa workers →](WORKERS-GUIDE.md)** - Scheduler, queue workers, supervisor
 
 #### 3. **Servizi Database: Dedicati o Condivisi**
 Puoi scegliere tra:

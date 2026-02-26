@@ -199,7 +199,7 @@ Totale RAM: ~1 GB (vs ~1.5 GB tutti dedicati)
 - Rinnovo automatico
 
 ### Container App (PHP-FPM)
-- Versioni PHP: 7.3, 7.4, 8.1, 8.2, 8.3, 8.5
+- Versioni PHP: 7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5
 - Node.js: 18, 20, 21
 - Composer, NPM preinstallati
 

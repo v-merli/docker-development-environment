@@ -152,6 +152,22 @@ services:
     profiles:
       - shared-services
 
+  php-8.4-shared:
+    build:
+      context: ../shared/dockerfiles
+      dockerfile: php-8.4.Dockerfile
+      args:
+        NODE_VERSION: 20
+    container_name: php-8.4-shared
+    restart: unless-stopped
+    working_dir: /var/www/projects
+    volumes:
+      - ../projects:/var/www/projects
+    networks:
+      - proxy
+    profiles:
+      - shared-services
+
   php-8.5-shared:
     build:
       context: ../shared/dockerfiles
