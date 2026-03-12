@@ -4,8 +4,8 @@ services:
     container_name: nginx-proxy
     restart: always
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "${HTTP_PORT:-8080}:80"
+      - "${HTTPS_PORT:-8443}:443"
     volumes:
       - ./nginx/certs:/etc/nginx/certs:ro
       - ./nginx/vhost.d:/etc/nginx/vhost.d
@@ -45,7 +45,7 @@ services:
     container_name: mysql-shared
     restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "${MYSQL_SHARED_PORT:-3306}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       # I progetti creeranno i loro database via migration
@@ -62,7 +62,7 @@ services:
     container_name: redis-shared
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_SHARED_PORT:-6379}:6379"
     volumes:
       - redis_shared_data:/data
     networks:
