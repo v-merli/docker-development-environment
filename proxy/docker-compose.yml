@@ -10,6 +10,7 @@ services:
       - ./nginx/certs:/etc/nginx/certs:ro
       - ./nginx/vhost.d:/etc/nginx/vhost.d
       - ./nginx/html:/usr/share/nginx/html
+      - ./nginx/proxy.conf:/etc/nginx/proxy.conf:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
     environment:
       - DEFAULT_HOST=localhost
