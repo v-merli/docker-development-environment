@@ -52,5 +52,8 @@ RUN mkdir -p /var/log/supervisor
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html
 
+# Create npm cache directory with proper permissions
+RUN mkdir -p /var/www/.npm && chown -R www-data:www-data /var/www/.npm
+
 USER www-data
 
