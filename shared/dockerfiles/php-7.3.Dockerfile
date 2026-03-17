@@ -55,4 +55,13 @@ RUN chown -R www-data:www-data /var/www/html
 # Create npm cache directory with proper permissions
 RUN mkdir -p /var/www/.npm && chown -R www-data:www-data /var/www/.npm
 
+# Create composer directories with proper permissions
+RUN mkdir -p /var/www/.config/composer /var/www/.cache/composer && chown -R www-data:www-data /var/www/.config /var/www/.cache
+
 USER www-data
+
+# Install Laravel installer globally
+RUN composer global require laravel/installer
+
+# Add Composer global bin to PATH
+ENV PATH="/var/www/.config/composer/vendor/bin:${PATH}"
