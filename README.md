@@ -38,6 +38,7 @@ Ambiente di sviluppo Docker completo per gestire più progetti con:
 - **[Guida CLI Completa](CLI-README.md)** - Tutti i comandi disponibili
 - **[Gestione Workers e Scheduler](WORKERS-GUIDE.md)** - Laravel scheduler, queue workers, supervisor
 - **[Certificati SSL Locali](SSL-SETUP.md)** - Setup certificati per HTTPS locale
+- **[Configurazione Vite per HMR](VITE-SETUP.md)** - Setup Vite per Hot Module Replacement in Docker
 - **[Architettura Sistema](ARCHITECTURE.md)** - Dettagli tecnici architettura Docker
 
 ## 📋 Indice
