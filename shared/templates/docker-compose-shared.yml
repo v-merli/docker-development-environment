@@ -20,6 +20,7 @@ services:
       # Connessione ai servizi condivisi
       DB_HOST: mysql-shared
       REDIS_HOST: redis-shared
+      VITE_PORT: ${VITE_PORT:-5173}
     networks:
       - proxy
 

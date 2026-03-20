@@ -12,6 +12,8 @@ services:
       - "${VITE_PORT:-5173}:5173"
     volumes:
       - ./app:/var/www/html
+    environment:
+      VITE_PORT: ${VITE_PORT:-5173}
     networks:
       - backend
 
