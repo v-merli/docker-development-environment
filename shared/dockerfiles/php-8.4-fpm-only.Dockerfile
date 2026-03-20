@@ -1,4 +1,4 @@
-FROM php:8.2-fpm
+FROM php:8.4-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -36,12 +36,6 @@ RUN echo "xdebug.mode=develop,debug,coverage" >> /usr/local/etc/php/conf.d/docke
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Install Node.js (build argument)
-ARG NODE_VERSION=20
-RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
 # Set working directory
 WORKDIR /var/www/html
 
@@ -50,9 +44,6 @@ RUN mkdir -p /var/log/supervisor
 
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html
-
-# Create npm cache directory with proper permissions
-RUN mkdir -p /var/www/.npm && chown -R www-data:www-data /var/www/.npm
 
 # Create composer directories with proper permissions
 RUN mkdir -p /var/www/.config/composer /var/www/.cache/composer && chown -R www-data:www-data /var/www/.config /var/www/.cache

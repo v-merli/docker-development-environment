@@ -76,9 +76,7 @@ services:
   php-7.3-shared:
     build:
       context: ../shared/dockerfiles
-      dockerfile: php-7.3.Dockerfile
-      args:
-        NODE_VERSION: 20
+      dockerfile: php-7.3-fpm-only.Dockerfile
     container_name: php-7.3-shared
     restart: unless-stopped
     working_dir: /var/www/projects
@@ -92,9 +90,7 @@ services:
   php-7.4-shared:
     build:
       context: ../shared/dockerfiles
-      dockerfile: php-7.4.Dockerfile
-      args:
-        NODE_VERSION: 20
+      dockerfile: php-7.4-fpm-only.Dockerfile
     container_name: php-7.4-shared
     restart: unless-stopped
     working_dir: /var/www/projects
@@ -108,9 +104,7 @@ services:
   php-8.1-shared:
     build:
       context: ../shared/dockerfiles
-      dockerfile: php-8.1.Dockerfile
-      args:
-        NODE_VERSION: 20
+      dockerfile: php-8.1-fpm-only.Dockerfile
     container_name: php-8.1-shared
     restart: unless-stopped
     working_dir: /var/www/projects
@@ -124,9 +118,7 @@ services:
   php-8.2-shared:
     build:
       context: ../shared/dockerfiles
-      dockerfile: php-8.2.Dockerfile
-      args:
-        NODE_VERSION: 20
+      dockerfile: php-8.2-fpm-only.Dockerfile
     container_name: php-8.2-shared
     restart: unless-stopped
     working_dir: /var/www/projects
@@ -140,9 +132,7 @@ services:
   php-8.3-shared:
     build:
       context: ../shared/dockerfiles
-      dockerfile: php-8.3.Dockerfile
-      args:
-        NODE_VERSION: 20
+      dockerfile: php-8.3-fpm-only.Dockerfile
     container_name: php-8.3-shared
     restart: unless-stopped
     working_dir: /var/www/projects
@@ -156,9 +146,7 @@ services:
   php-8.4-shared:
     build:
       context: ../shared/dockerfiles
-      dockerfile: php-8.4.Dockerfile
-      args:
-        NODE_VERSION: 20
+      dockerfile: php-8.4-fpm-only.Dockerfile
     container_name: php-8.4-shared
     restart: unless-stopped
     working_dir: /var/www/projects
@@ -172,9 +160,7 @@ services:
   php-8.5-shared:
     build:
       context: ../shared/dockerfiles
-      dockerfile: php-8.5.Dockerfile
-      args:
-        NODE_VERSION: 20
+      dockerfile: php-8.5-fpm-only.Dockerfile
     container_name: php-8.5-shared
     restart: unless-stopped
     working_dir: /var/www/projects

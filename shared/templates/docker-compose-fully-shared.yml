@@ -1,4 +1,22 @@
 services:
+  app:
+    build:
+      context: ../../shared/dockerfiles
+      dockerfile: php-${PHP_VERSION}.Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-20}
+    container_name: ${PROJECT_NAME}-app
+    restart: unless-stopped
+    working_dir: /var/www/projects/${PROJECT_NAME}/app
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+    volumes:
+      - ./app:/var/www/projects/${PROJECT_NAME}/app
+    environment:
+      VITE_PORT: ${VITE_PORT:-5173}
+    networks:
+      - proxy
+
   nginx:
     image: nginx:alpine
     container_name: ${PROJECT_NAME}-nginx
