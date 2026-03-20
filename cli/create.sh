@@ -350,6 +350,16 @@ REDIS_PORT=6379
 EOF
         fi
     fi
+    
+    # Vite dev server port (calculate unique port based on project name)
+    if [[ -n "$node_ver" ]]; then
+        local vite_port=$((5173 + $(echo -n "$slug" | sum | cut -d' ' -f1) % 100))
+        cat >> "$path/.env" << EOF
+
+# Vite Dev Server
+VITE_PORT=$vite_port
+EOF
+    fi
 }
 
 start_shared_if_needed() {
