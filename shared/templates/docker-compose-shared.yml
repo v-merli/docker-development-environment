@@ -41,11 +41,7 @@ services:
       - proxy
 
   scheduler:
-    build:
-      context: ../../shared/dockerfiles
-      dockerfile: php-${PHP_VERSION}.Dockerfile
-      args:
-        NODE_VERSION: ${NODE_VERSION:-20}
+    image: ${PROJECT_NAME}-app
     container_name: ${PROJECT_NAME}-scheduler
     restart: unless-stopped
     working_dir: /var/www/html
@@ -56,15 +52,13 @@ services:
       REDIS_HOST: redis-shared
     networks:
       - proxy
+    depends_on:
+      - app
     command: sh -c "while [ true ]; do php artisan schedule:run --verbose --no-interaction && sleep 60; done"
 
   # Decommentare per abilitare il queue worker
   # queue:
-  #   build:
-  #     context: ../../shared/dockerfiles
-  #     dockerfile: php-${PHP_VERSION}.Dockerfile
-  #     args:
-  #       NODE_VERSION: ${NODE_VERSION:-20}
+  #   image: ${PROJECT_NAME}-app
   #   container_name: ${PROJECT_NAME}-queue
   #   restart: unless-stopped
   #   working_dir: /var/www/html
@@ -75,6 +69,8 @@ services:
   #     REDIS_HOST: redis-shared
   #   networks:
   #     - proxy
+  #   depends_on:
+  #     - app
   #   command: php artisan queue:work --tries=3
 
 networks:

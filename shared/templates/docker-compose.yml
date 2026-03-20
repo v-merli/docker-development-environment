@@ -69,11 +69,7 @@ services:
     command: redis-server --appendonly yes
 
   scheduler:
-    build:
-      context: ../../shared/dockerfiles
-      dockerfile: php-${PHP_VERSION}.Dockerfile
-      args:
-        NODE_VERSION: ${NODE_VERSION:-20}
+    image: ${PROJECT_NAME}-app
     container_name: ${PROJECT_NAME}-scheduler
     restart: unless-stopped
     working_dir: /var/www/html
@@ -82,17 +78,14 @@ services:
     networks:
       - backend
     depends_on:
+      - app
       - mysql
       - redis
     command: sh -c "while [ true ]; do php artisan schedule:run --verbose --no-interaction && sleep 60; done"
 
   # Decommentare per abilitare il queue worker
   # queue:
-  #   build:
-  #     context: ../../shared/dockerfiles
-  #     dockerfile: php-${PHP_VERSION}.Dockerfile
-  #     args:
-  #       NODE_VERSION: ${NODE_VERSION:-20}
+  #   image: ${PROJECT_NAME}-app
   #   container_name: ${PROJECT_NAME}-queue
   #   restart: unless-stopped
   #   working_dir: /var/www/html
@@ -101,6 +94,7 @@ services:
   #   networks:
   #     - backend
   #   depends_on:
+  #     - app
   #     - mysql
   #     - redis
   #   command: php artisan queue:work --tries=3

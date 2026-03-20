@@ -15,12 +15,9 @@ services:
       - proxy
 
   # Laravel Scheduler (esegue artisan schedule:run ogni minuto)
+  # Usa l'immagine PHP condivisa - assicurati che php-shared-${PHP_VERSION} sia in esecuzione
   scheduler:
-    build:
-      context: ../../shared/dockerfiles
-      dockerfile: php-${PHP_VERSION}.Dockerfile
-      args:
-        NODE_VERSION: ${NODE_VERSION:-20}
+    image: php-shared-${PHP_VERSION}
     container_name: ${PROJECT_NAME}-scheduler
     restart: unless-stopped
     working_dir: /var/www/projects/${PROJECT_NAME}/app
@@ -31,12 +28,9 @@ services:
     command: sh -c "while [ true ]; do php artisan schedule:run --verbose --no-interaction && sleep 60; done"
 
   # Laravel Queue Worker (decommenta se usi le code)
+  # Usa l'immagine PHP condivisa - assicurati che php-shared-${PHP_VERSION} sia in esecuzione
   queue:
-    build:
-      context: ../../shared/dockerfiles
-      dockerfile: php-${PHP_VERSION}.Dockerfile
-      args:
-        NODE_VERSION: ${NODE_VERSION:-20}
+    image: php-shared-${PHP_VERSION}
     container_name: ${PROJECT_NAME}-queue
     restart: unless-stopped
     working_dir: /var/www/projects/${PROJECT_NAME}/app
