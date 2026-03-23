@@ -1,9 +1,21 @@
-# 🚀 Docker Development Environment per Laravel
+# 🚀 Docker Development Environment
 
-> **✨ NEW: CLI Unificato v2.0!** Usa `./docker-dev` per tutti i comandi. Gli script legacy sono in `legacy/`.  
-> Leggi la [Guida CLI](CLI-README.md) per iniziare.
+Ambiente di sviluppo Docker completo e flessibile per gestire più progetti con servizi dedicati o condivisi.
 
-Ambiente di sviluppo Docker completo per gestire più progetti con:
+## 📦 Installazione Rapida
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-development-environment/main/install.sh)
+```
+
+Dopo l'installazione, usa `docker-dev` da qualsiasi directory.
+
+📖 **[Guida Installazione Completa →](INSTALLATION.md)**
+
+---
+
+## ✨ Caratteristiche
+
 - 🎯 **Tipi progetto multipli** (Laravel, WordPress, PHP generico, HTML statico)
 - 🐘 **Versioni PHP selezionabili** (7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5) - dedicato o condiviso
 - 📦 **Versioni Node.js selezionabili** (18, 20, 21)
@@ -12,34 +24,62 @@ Ambiente di sviluppo Docker completo per gestire più progetti con:
 - 🌐 **Nginx reverse proxy** con routing automatico
 - 🔒 **Certificati SSL automatici** (Let's Encrypt/self-signed)
 - 🔌 **DNS locale** con dnsmasq per domini `.test`
-- 💾 **Architettura ibrida** - PHP, MySQL, Redis dedicati o condivisi
+- 💾 **Architettura flessibile** - Cherry picking di servizi da condividere
+- 🎨 **Modalità interattiva** - Menu guidato per creazione progetti
 
-## ⚡ Quick Start (CLI v2.0)
+## ⚡ Quick Start
+
+### Creazione Progetto
 
 ```bash
-# Setup iniziale
-./docker-dev setup init
+# Modalità interattiva (consigliata per iniziare)
+docker-dev create
 
-# Crea un progetto Laravel con massimo risparmio risorse
-./docker-dev create myapp --fully-shared --php 8.3
+# CLI diretta
+docker-dev create myapp --type laravel --php 8.3 --node 22
 
-# Gestisci progetti
-./docker-dev list
-./docker-dev start myapp
-./docker-dev logs myapp
-./docker-dev shell myapp
-
-# Sviluppo Laravel
-./docker-dev artisan myapp migrate
-./docker-dev composer myapp require laravel/sanctum
+# Con servizi condivisi (risparmio risorse)
+docker-dev create myapp --type laravel --fully-shared
 ```
 
-📖 **Documentazione**:
-- **[Guida CLI Completa](CLI-README.md)** - Tutti i comandi disponibili
-- **[Gestione Workers e Scheduler](WORKERS-GUIDE.md)** - Laravel scheduler, queue workers, supervisor
-- **[Certificati SSL Locali](SSL-SETUP.md)** - Setup certificati per HTTPS locale
-- **[Configurazione Vite per HMR](VITE-SETUP.md)** - Setup Vite per Hot Module Replacement in Docker
-- **[Architettura Sistema](ARCHITECTURE.md)** - Dettagli tecnici architettura Docker
+### Gestione Progetti
+
+```bash
+# Lista progetti
+docker-dev project list
+
+# Avvia progetto
+docker-dev dev myapp
+
+# Shell nel container
+docker-dev project shell myapp
+
+# Laravel commands
+docker-dev project artisan myapp migrate
+docker-dev project composer myapp install
+```
+
+### Servizi Condivisi
+
+```bash
+# Status
+docker-dev shared status
+
+# Avvia tutti i servizi
+docker-dev shared start
+
+# PHP condiviso
+docker-dev shared php 8.3
+```
+
+📖 **Documentazione Completa**:
+- **[Installazione →](INSTALLATION.md)** - Guida completa all'installazione e troubleshooting
+- **[Guida CLI →](CLI-README.md)** - Tutti i comandi disponibili
+- **[Quick Start →](QUICK-START.md)** - Tutorial passo-passo
+- **[Workers e Scheduler →](WORKERS-GUIDE.md)** - Laravel queues e cron jobs
+- **[SSL Setup →](SSL-SETUP.md)** - Certificati HTTPS locali
+- **[Vite HMR →](VITE-SETUP.md)** - Hot Module Replacement in Docker
+- **[Architettura →](ARCHITECTURE.md)** - Dettagli tecnici
 
 ## 📋 Indice
 
@@ -54,60 +94,35 @@ Ambiente di sviluppo Docker completo per gestire più progetti con:
 
 ## 🔧 Requisiti
 
-- **macOS** (testato su macOS)
-- **Docker Desktop** installato e in esecuzione
-- **Homebrew** (per installare dnsmasq)
+- **macOS** (testato su macOS)  
+- **Docker Desktop** - [Download](https://www.docker.com/products/docker-desktop)
+- **Git** - `brew install git` o incluso in Xcode
+- **mkcert** (opzionale) - `brew install mkcert` per certificati HTTPS
+- **dnsmasq** (opzionale) - `brew install dnsmasq` per DNS wildcard *.test
 
 ## 📥 Installazione
 
-### Setup Completo Automatico
-
-Il modo più veloce per iniziare:
+Usa lo script di installazione automatico:
 
 ```bash
-./docker-dev setup init
+bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-development-environment/main/install.sh)
 ```
 
-Questo comando interattivo:
-1. Verifica Docker e Docker Compose
-2. Configura dnsmasq per domini `.test` (opzionale)
-3. Avvia il reverse proxy nginx
-4. Verifica mkcert per certificati SSL locali
+Oppure segui la **[Guida Installazione →](INSTALLATION.md)** per installazione manuale.
 
-### Setup Manuale
+### Setup Post-Installazione
 
-Se preferisci configurare manualmente:
-
-#### 1. Avvia il Proxy
+Dopo l'installazione, configura l'ambiente:
 
 ```bash
-./docker-dev setup proxy
+docker-dev setup init
 ```
 
-Questo creerà la rete Docker `proxy` e avvierà nginx-proxy con acme-companion per i certificati SSL.
-
-#### 2. Configura DNS Locale (Opzionale)
-
-```bash
-./docker-dev setup dns
-```
-
-Installa e configura dnsmasq per far funzionare i domini `*.test`.
-
-Lo script:
-- Installa dnsmasq via Homebrew
-- Configura la risoluzione di tutti i domini `*.test` a `127.0.0.1`
-- Avvia il servizio dnsmasq
-
-**Verifica:** Dopo l'installazione, prova:
-```bash
-ping test.test
-# Dovrebbe rispondere da 127.0.0.1
-```
-
-#### 3. (Opzionale) Avvia i Servizi Condivisi
-
-Se prevedi di usare servizi condivisi per risparmiare RAM:
+Questo:
+1. Verifica Docker e docker-compose
+2. Configura dnsmasq per domini `.test` (opzionale)  
+3. Avvia nginx reverse proxy
+4. Configura certificati SSL locali con mkcert
 
 ```bash
 ./docker-dev shared start
