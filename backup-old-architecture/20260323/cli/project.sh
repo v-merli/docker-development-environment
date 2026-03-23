@@ -157,25 +157,8 @@ cmd_remove() {
     if [ "$confirm" = "yes" ]; then
         cd "$project_path"
         
-        # Trova tutti i container del progetto (anche con profili)
-        print_info "Fermando container..."
-        local containers=$(docker ps -aq --filter "name=^${project}-")
-        
-        if [ -n "$containers" ]; then
-            echo "$containers" | xargs docker stop 2>/dev/null || true
-            echo "$containers" | xargs docker rm 2>/dev/null || true
-        fi
-        
-        # Rimuovi volumi del progetto
-        print_info "Rimozione volumi..."
-        local volumes=$(docker volume ls -q --filter "name=^${project}_")
-        if [ -n "$volumes" ]; then
-            echo "$volumes" | xargs docker volume rm 2>/dev/null || true
-        fi
-        
-        # Rimuovi network
-        local network="${project}_backend"
-        docker network rm "$network" 2>/dev/null || true
+        # Ferma e rimuovi container (nasconde il warning per progetti fully-shared)
+        $DOCKER_COMPOSE down -v 2>&1 | grep -v "No resource found to remove" || true
         
         cd "$SCRIPT_DIR"
         rm -rf "$project_path"

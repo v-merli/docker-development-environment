@@ -179,47 +179,55 @@ cmd_create() {
     mkdir -p "$PROJECT_PATH/app"
     
     # Seleziona template docker-compose
-    # Ora usiamo SEMPRE il template unificato
+    local USE_FULLY_SHARED_TEMPLATE=false
+    local USE_SHARED_TEMPLATE=false
     local NGINX_CONF=""
+    
+    if [[ "$USE_SHARED_PHP" == true ]]; then
+        USE_FULLY_SHARED_TEMPLATE=true
+    elif [[ "$USE_SHARED_DB" == true ]] || [[ "$USE_SHARED_REDIS" == true ]]; then
+        USE_SHARED_TEMPLATE=true
+    fi
     
     case $PROJECT_TYPE in
         html)
             NGINX_CONF="html.conf"
             cp "$SCRIPT_DIR/shared/templates/docker-compose-html.yml" "$PROJECT_PATH/docker-compose.yml"
             ;;
-        *)
-            # Laravel, WordPress, PHP usano il template unificato
-            case $PROJECT_TYPE in
-                wordpress) NGINX_CONF="wordpress.conf" ;;
-                php) NGINX_CONF="php.conf" ;;
-                laravel)
-                    if [[ "$USE_SHARED_PHP" == true ]]; then
-                        NGINX_CONF="laravel-shared.conf"
-                    else
-                        NGINX_CONF="laravel.conf"
-                    fi
-                    ;;
-            esac
-            
-            # Copia template unificato
-            cp "$SCRIPT_DIR/shared/templates/docker-compose-unified.yml" "$PROJECT_PATH/docker-compose.yml"
-            
-            # Genera nginx.conf per progetti PHP condiviso
-            if [[ "$USE_SHARED_PHP" == true ]]; then
-                print_info "Configurazione Nginx per PHP condiviso..."
-                sed -e "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" \
-                    -e "s/PHP_VERSION_PLACEHOLDER/php-$PHP_VERSION/g" \
-                    "$SCRIPT_DIR/shared/nginx/laravel-shared.conf" > "$PROJECT_PATH/nginx.conf"
-                # Imposta NGINX_CONF per montare il file locale invece del template
-                NGINX_CONF="./nginx.conf"
+        wordpress|php)
+            NGINX_CONF="${PROJECT_TYPE}.conf"
+            if [[ "$USE_SHARED_TEMPLATE" == true ]]; then
+                cp "$SCRIPT_DIR/shared/templates/docker-compose-shared.yml" "$PROJECT_PATH/docker-compose.yml"
+            else
+                cp "$SCRIPT_DIR/shared/templates/docker-compose-php.yml" "$PROJECT_PATH/docker-compose.yml"
+            fi
+            ;;
+        laravel)
+            if [[ "$USE_FULLY_SHARED_TEMPLATE" == true ]]; then
+                NGINX_CONF="laravel-shared.conf"
+                cp "$SCRIPT_DIR/shared/templates/docker-compose-fully-shared.yml" "$PROJECT_PATH/docker-compose.yml"
+            elif [[ "$USE_SHARED_TEMPLATE" == true ]]; then
+                NGINX_CONF="laravel.conf"
+                cp "$SCRIPT_DIR/shared/templates/docker-compose-shared.yml" "$PROJECT_PATH/docker-compose.yml"
+            else
+                NGINX_CONF="laravel.conf"
+                cp "$SCRIPT_DIR/shared/templates/docker-compose.yml" "$PROJECT_PATH/docker-compose.yml"
             fi
             ;;
     esac
     
-    # Crea .env con configurazione unificata
-    create_unified_env_file "$PROJECT_PATH" "$PROJECT_SLUG" "$PROJECT_TYPE" "$DOMAIN" "$NGINX_CONF" \
+    # Crea nginx.conf per PHP condiviso
+    if [[ "$USE_FULLY_SHARED_TEMPLATE" == true ]]; then
+        print_info "Configurazione Nginx per PHP condiviso..."
+        sed -e "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" \
+            -e "s/PHP_VERSION_PLACEHOLDER/php-$PHP_VERSION/g" \
+            "$SCRIPT_DIR/shared/nginx/laravel-shared.conf" > "$PROJECT_PATH/nginx.conf"
+    fi
+    
+    # Crea .env
+    create_env_file "$PROJECT_PATH" "$PROJECT_SLUG" "$PROJECT_TYPE" "$DOMAIN" "$NGINX_CONF" \
                     "$PHP_VERSION" "$NODE_VERSION" "$MYSQL_VERSION" \
-                    "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP"
+                    "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS"
     
     print_success "Struttura progetto creata"
     
@@ -238,30 +246,7 @@ cmd_create() {
     # Avvia container del progetto
     print_info "Avvio container..."
     cd "$PROJECT_PATH"
-    
-    # Costruisci i flag --profile basandosi sul .env
-    local profile_flags="--profile app"
-    
-    if [[ "$INCLUDE_DB" == true ]] && [[ "$USE_SHARED_DB" != true ]]; then
-        profile_flags="$profile_flags --profile mysql-dedicated"
-    fi
-    
-    if [[ "$INCLUDE_REDIS" == true ]] && [[ "$USE_SHARED_REDIS" != true ]]; then
-        profile_flags="$profile_flags --profile redis-dedicated"
-    fi
-    
-    # Attiva sempre scheduler/queue per progetti Laravel
-    # I container aspetteranno che artisan esista prima di partire
-    if [[ "$PROJECT_TYPE" == "laravel" ]]; then
-        profile_flags="$profile_flags --profile scheduler --profile queue"
-    fi
-    
-    # Build delle immagini necessarie
-    print_info "Build immagine app..."
-    $DOCKER_COMPOSE build app
-    
-    # Avvia i container con i profili appropriati
-    $DOCKER_COMPOSE $profile_flags up -d
+    $DOCKER_COMPOSE up -d --build
     
     # Genera SSL
     generate_ssl_cert "$DOMAIN"
@@ -286,192 +271,19 @@ show_create_usage() {
     echo "  --php <versione>      Versione PHP: 7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5 (default: 8.3)"
     echo "  --node <versione>     Versione Node.js: 18, 20, 21 (default: 20)"
     echo "  --mysql <versione>    Versione MySQL: 5.7, 8.0 (default: 8.0)"
-    echo ""
-    echo "Cherry-picking servizi condivisi:"
-    echo "  --shared-db           Usa MySQL condiviso"
-    echo "  --shared-redis        Usa Redis condiviso"
-    echo "  --shared-php          Scheduler/Queue usano PHP condiviso"
     echo "  --no-db               Senza MySQL"
     echo "  --no-redis            Senza Redis"
-    echo ""
-    echo "Preset (shortcut):"
-    echo "  --shared              Equivalente a: --shared-db --shared-redis"
-    echo "  --fully-shared        Equivalente a: --shared-db --shared-redis --shared-php"
-    echo ""
-    echo "Altro:"
+    echo "  --shared-db           MySQL condiviso"
+    echo "  --shared-redis        Redis condiviso"
+    echo "  --shared              MySQL + Redis condivisi"
+    echo "  --shared-php          PHP condiviso"
+    echo "  --fully-shared        Tutto condiviso (massimo risparmio)"
     echo "  --no-install          Non installare framework"
     echo ""
     echo "Esempi:"
-    echo "  ./docker-dev create my-shop"
-    echo "  ./docker-dev create blog --shared-db --shared-redis"
+    echo "  ./docker-dev create my-shop --type laravel"
+    echo "  ./docker-dev create blog --type wordpress --php 8.2"
     echo "  ./docker-dev create api --fully-shared"
-    echo "  ./docker-dev create cms --shared-db --no-redis"
-}
-
-create_unified_env_file() {
-    local path=$1 slug=$2 type=$3 domain=$4 nginx_conf=$5
-    local php_ver=$6 node_ver=$7 mysql_ver=$8
-    local inc_db=$9 inc_redis=${10} shared_db=${11} shared_redis=${12} shared_php=${13}
-    
-    # Determina servizi e configurazione
-    local db_service="mysql"
-    local db_host="mysql"
-    local redis_service="redis"
-    local redis_host="redis"
-    local scheduler_image="\${PROJECT_NAME}-app"
-    local queue_image="\${PROJECT_NAME}-app"
-    local profiles="app"
-    
-    if [[ "$shared_db" == true ]]; then
-        db_service="mysql-shared"
-        db_host="mysql-shared"
-    elif [[ "$inc_db" == true ]]; then
-        profiles="$profiles mysql-dedicated"
-    fi
-    
-    if [[ "$shared_redis" == true ]]; then
-        redis_service="redis-shared"
-        redis_host="redis-shared"
-    elif [[ "$inc_redis" == true ]]; then
-        profiles="$profiles redis-dedicated"
-    fi
-    
-    if [[ "$shared_php" == true ]]; then
-        scheduler_image="proxy-php-\${PHP_VERSION}-shared"
-        queue_image="proxy-php-\${PHP_VERSION}-shared"
-    fi
-    
-    # Aggiungi sempre scheduler ai profiles per progetti con PHP
-    if [[ -n "$php_ver" ]] && [[ "$type" == "laravel" ]]; then
-        profiles="$profiles scheduler"
-    fi
-    
-    # Crea .env
-    cat > "$path/.env" << EOF
-# ============================================
-# PROJECT BASICS
-# ============================================
-PROJECT_NAME=$slug
-PROJECT_TYPE=$type
-DOMAIN=$domain
-LETSENCRYPT_EMAIL=dev@localhost
-
-# ============================================
-# WEB SERVER
-# ============================================
-EOF
-
-    # Determina path nginx.conf in base al tipo di configurazione
-    if [[ "$nginx_conf" == "./"* ]]; then
-        # Path locale (per shared-php)
-        cat >> "$path/.env" << EOF
-NGINX_CONF_PATH=$nginx_conf
-EOF
-    else
-        # Path in shared (standard)
-        cat >> "$path/.env" << EOF
-NGINX_CONF_PATH=../../shared/nginx/$nginx_conf
-EOF
-    fi
-
-    cat >> "$path/.env" << EOF
-
-# ============================================
-# VERSIONS
-# ============================================
-EOF
-
-    if [[ -n "$php_ver" ]]; then
-        cat >> "$path/.env" << EOF
-PHP_VERSION=$php_ver
-NODE_VERSION=$node_ver
-EOF
-    fi
-    
-    if [[ "$inc_db" == true ]]; then
-        cat >> "$path/.env" << EOF
-MYSQL_VERSION=$mysql_ver
-
-# ============================================
-# DATABASE CONFIGURATION
-# ============================================
-DB_SERVICE=$db_service
-DB_HOST=$db_host
-DB_CONNECTION=mysql
-EOF
-
-        if [[ "$shared_db" == true ]]; then
-            cat >> "$path/.env" << EOF
-
-# MySQL (SHARED)
-MYSQL_DATABASE=${slug//-/_}_db
-MYSQL_ROOT_PASSWORD=rootpassword
-MYSQL_USER=root
-MYSQL_PASSWORD=rootpassword
-EOF
-        else
-            local port=$((13306 + $(echo -n "$slug" | sum | cut -d' ' -f1) % 1000))
-            cat >> "$path/.env" << EOF
-
-# MySQL (DEDICATED)
-MYSQL_DATABASE=${slug//-/_}_db
-MYSQL_ROOT_PASSWORD=root
-MYSQL_USER=$type
-MYSQL_PASSWORD=secret
-MYSQL_PORT=$port
-EOF
-        fi
-    fi
-    
-    if [[ "$inc_redis" == true ]]; then
-        cat >> "$path/.env" << EOF
-
-# ============================================
-# REDIS CONFIGURATION
-# ============================================
-REDIS_SERVICE=$redis_service
-REDIS_HOST=$redis_host
-EOF
-
-        if [[ "$shared_redis" != true ]]; then
-            cat >> "$path/.env" << EOF
-REDIS_PORT=6379
-EOF
-        fi
-    fi
-    
-    if [[ -n "$php_ver" ]]; then
-        cat >> "$path/.env" << EOF
-
-# ============================================
-# SCHEDULER & QUEUE CONFIGURATION
-# ============================================
-SCHEDULER_IMAGE=$scheduler_image
-QUEUE_IMAGE=$queue_image
-EOF
-    fi
-    
-    # Vite port
-    if [[ -n "$node_ver" ]]; then
-        local vite_port=$(find_available_port 5173 100)
-        cat >> "$path/.env" << EOF
-
-# ============================================
-# VITE DEV SERVER
-# ============================================
-VITE_PORT=$vite_port
-EOF
-    fi
-    
-    # Compose profiles
-    cat >> "$path/.env" << EOF
-
-# ============================================
-# DOCKER COMPOSE PROFILES
-# ============================================
-# Enabled profiles: $profiles
-COMPOSE_PROFILES=$profiles
-EOF
 }
 
 create_env_file() {
@@ -541,7 +353,7 @@ EOF
     
     # Vite dev server port (calculate unique port based on project name)
     if [[ -n "$node_ver" ]]; then
-        local vite_port=$(find_available_port 5173 100)
+        local vite_port=$((5173 + $(echo -n "$slug" | sum | cut -d' ' -f1) % 100))
         cat >> "$path/.env" << EOF
 
 # Vite Dev Server

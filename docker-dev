@@ -37,6 +37,27 @@ print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
 print_error() { echo -e "${RED}❌ $1${NC}"; }
 print_title() { echo -e "${CYAN}━━━ $1 ━━━${NC}"; }
 
+# Trova porta disponibile (per evitare conflitti)
+find_available_port() {
+    local base_port=$1
+    local range=${2:-100}
+    local port=$base_port
+    
+    local used_ports=$(docker ps --format '{{.Ports}}' | grep -oE '0\.0\.0\.0:[0-9]+' | cut -d':' -f2 | sort -n)
+    local env_ports=$(find "$PROJECTS_DIR" -name ".env" -exec grep "^VITE_PORT=" {} \; 2>/dev/null | cut -d'=' -f2 | sort -n)
+    local all_ports=$(echo -e "$used_ports\n$env_ports" | sort -n | uniq)
+    
+    while [ $port -lt $((base_port + range)) ]; do
+        if ! echo "$all_ports" | grep -q "^${port}$"; then
+            echo "$port"
+            return 0
+        fi
+        ((port++))
+    done
+    
+    echo $((base_port + RANDOM % range))
+}
+
 # Mostra versione
 show_version() {
     echo "Docker Development Environment v$VERSION"
