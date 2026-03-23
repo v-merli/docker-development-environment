@@ -71,15 +71,9 @@ if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/
     exit 1
 fi
 
-# Git
-if ! command -v git &> /dev/null; then
-    print_error "Git non installato"
-    if [ "$OS_TYPE" = "macOS" ]; then
-        echo "Installa Git: brew install git"
-    else
-        echo "Installa Git: sudo apt-get install git  (Debian/Ubuntu)"
-        echo "             sudo yum install git      (RHEL/CentOS)"
-    fi
+# Docker Compose
+if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+    print_error "Docker Compose non disponibile"
     exit 1
 fi
 
@@ -101,6 +95,12 @@ echo ""
 # ==================================================
 # INSTALLAZIONE
 # ==================================================
+
+# GitHub repository info
+GITHUB_USER="your-username"
+GITHUB_REPO="docker-development-environment"
+RELEASE_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases/latest/download/docker-dev-env.tar.gz"
+
 print_info "Directory di installazione: $INSTALL_DIR"
 
 # Controlla se già installato
@@ -113,15 +113,52 @@ if [ -d "$INSTALL_DIR" ]; then
         exit 0
     fi
     
-    print_info "Aggiornamento in corso..."
-    cd "$INSTALL_DIR"
-    git pull origin main
+    print_info "Scaricamento ultima versione..."
+    
+    # Backup configurazione esistente (se presente)
+    if [ -f "$INSTALL_DIR/.env" ]; then
+        cp "$INSTALL_DIR/.env" "$INSTALL_DIR/.env.backup"
+    fi
+    
+    # Rimuovi installazione vecchia (ma mantieni projects/)
+    TEMP_PROJECTS="$HOME/.docker-dev-env-projects-backup"
+    if [ -d "$INSTALL_DIR/projects" ]; then
+        mv "$INSTALL_DIR/projects" "$TEMP_PROJECTS"
+    fi
+    
+    rm -rf "$INSTALL_DIR"
+    mkdir -p "$INSTALL_DIR"
+    
+    # Scarica e estrai
+    curl -fsSL "$RELEASE_URL" | tar -xz -C "$INSTALL_DIR" --strip-components=1
+    
+    # Ripristina projects/
+    if [ -d "$TEMP_PROJECTS" ]; then
+        mv "$TEMP_PROJECTS" "$INSTALL_DIR/projects"
+    fi
+    
+    print_success "Aggiornamento completato"
 else
-    print_info "Clonazione repository..."
-    git clone https://github.com/your-username/docker-development-environment.git "$INSTALL_DIR"
+    print_info "Scaricamento Docker Dev Environment..."
+    
+    # Crea directory
+    mkdir -p "$INSTALL_DIR"
+    
+    # Scarica e estrai release
+    if curl -fsSL "$RELEASE_URL" | tar -xz -C "$INSTALL_DIR" --strip-components=1; then
+        print_success "Download completato"
+    else
+        print_error "Errore durante il download"
+        echo "Verifica che la release sia disponibile su:"
+        echo "$RELEASE_URL"
+        echo ""
+        echo "Se il progetto è in sviluppo, usa git clone manualmente:"
+        echo "git clone https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git $INSTALL_DIR"
+        exit 1
+    fi
 fi
 
-print_success "Repository installato"
+print_success "Installazione completata"
 echo ""
 
 # ==================================================

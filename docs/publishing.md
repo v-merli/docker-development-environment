@@ -98,41 +98,75 @@ git branch -M main
 git push -u origin main
 ```
 
-### Step 2: Aggiorna URL Installer
+### Step 2: Crea Release Package
 
-Dopo il primo push, aggiorna questi file con il tuo username GitHub:
-
-**File da aggiornare**:
-1. `install.sh` - Riga clone repository
-2. `INSTALLATION.md` - URL installazione one-liner
-3. `README.md` - URL installazione one-liner
-4. `CONTRIBUTING.md` - URL repository
-
-**Cerca e sostituisci**:
-```bash
-# Trova tutte le occorrenze
-grep -r "your-username" .
-
-# Sostituisci con il tuo username
-# (fai manualmente o usa sed)
-```
-
-Poi commit e push:
+Prima di creare la release su GitHub, genera il tarball pulito:
 
 ```bash
-git add install.sh INSTALLATION.md README.md CONTRIBUTING.md
-git commit -m "docs: update GitHub username in installation URLs"
-git push
+# Genera tarball per release v1.0.0
+./create-release.sh 1.0.0
+
+# Output: releases/docker-dev-env-1.0.0.tar.gz
 ```
 
-### Step 3: Release v1.0.0
+Lo script:
+- ✅ Esclude file di sviluppo (archive/, .github/, legacy/, .git/)
+- ✅ Crea tarball ottimizzato per distribuzione
+- ✅ Genera checksum SHA256
+- ✅ Mostra dimensione e contenuto
 
-Crea il primo release su GitHub:
+**Testa il tarball localmente:**
+```bash
+# Estrai in directory temporanea
+mkdir -p /tmp/test-release
+tar -xzf releases/docker-dev-env-1.0.0.tar.gz -C /tmp/test-release
 
-1. Vai su **Releases** → **Create a new release**
+# Verifica contenuto
+ls -la /tmp/test-release
+
+# Testa installazione
+cd /tmp/test-release
+./install.sh  # Dovrebbe fallire (nessuna release su GitHub ancora)
+```
+
+### Step 3: Crea GitHub Release
+
+**⚠️ IMPORTANTE**: Il tarball caricato su GitHub **deve** chiamarsi esattamente `docker-dev-env.tar.gz` (senza versione) perché l'installer usa quell'URL fisso: `releases/latest/download/docker-dev-env.tar.gz`
+
+1. Vai su **Releases** → **Create a new release** o usa la CLI:
+
+#### Opzione A: Via Web (Consigliata)
+
+1. Vai su: `https://github.com/TUO-USERNAME/docker-development-environment/releases/new`
 2. Tag: `v1.0.0`
-3. Title: `🚀 v1.0.0 - Initial Release`
-4. Description:
+3. Target: `main` branch
+4. Title: `🚀 v1.0.0 - Initial Release`
+5. Description: (vedi template sotto)
+6. **📎 Attach binaries**: Drag & drop `releases/docker-dev-env-1.0.0.tar.gz`
+7. **⚠️ CRITICO**: Dopo il caricamento, clicca sulla matita (✏️) e rinomina il file in: `docker-dev-env.tar.gz`
+   - ❌ Errore: `docker-dev-env-1.0.0.tar.gz`
+   - ✅ Corretto: `docker-dev-env.tar.gz`
+8. ✅ Set as latest release
+9. **Publish release**
+
+#### Opzione B: Via GitHub CLI
+
+```bash
+# Installa gh CLI se non presente
+brew install gh  # macOS
+# oppure: https://cli.github.com/
+
+# Autenticati
+gh auth login
+
+# Crea release e carica tarball
+gh release create v1.0.0 \
+  releases/docker-dev-env-1.0.0.tar.gz#docker-dev-env.tar.gz \
+  --title "🚀 v1.0.0 - Initial Release" \
+  --notes-file RELEASE_NOTES.md
+```
+
+**Template Description:**
 
 ```markdown
 ## 🎉 First Public Release

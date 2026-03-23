@@ -84,6 +84,12 @@ yarn-error.log*
 .backup/
 
 # ====================================
+# Release Packages
+# ====================================
+# Directory contenente i tarball per le release
+releases/
+
+# ====================================
 # Environment Variables
 # ====================================
 # File .env nella root (se presente) - contiene config locali

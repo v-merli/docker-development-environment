@@ -16,11 +16,6 @@ Guida completa all'installazione di Docker Development Environment.
   - macOS: [Docker Desktop](https://www.docker.com/products/docker-desktop)
   - Linux: [Docker Engine](https://docs.docker.com/engine/install/)
   - Verifica: `docker --version`
-  
-- **Git**
-  - macOS: `brew install git` o già incluso in Xcode
-  - Linux: `sudo apt-get install git` (Debian/Ubuntu) o `sudo yum install git` (RHEL/CentOS)
-  - Verifica: `git --version`
 
 ### Opzionali (ma consigliati)
 
