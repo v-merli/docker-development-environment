@@ -132,7 +132,7 @@ cmd_info() {
     # Link utili
     echo -e "${CYAN}Documentazione:${NC}"
     echo "  README: $SCRIPT_DIR/README.md"
-    echo "  Quick Start: $SCRIPT_DIR/QUICK-START.md"
-    echo "  Shared Services: $SCRIPT_DIR/SHARED-SERVICES.md"
-    echo "  Architecture: $SCRIPT_DIR/ARCHITECTURE.md"
+    echo "  Docs: $SCRIPT_DIR/docs/"
+    echo "  Quick Start: $SCRIPT_DIR/docs/quick-start.md"
+    echo "  CLI Reference: $SCRIPT_DIR/docs/cli-reference.md"
 }
