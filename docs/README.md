@@ -12,6 +12,12 @@ Documentazione completa per Docker Development Environment.
   - Setup post-installazione
   - Troubleshooting installazione
 
+- **[Windows Setup](windows-setup.md)** - Guida specifica per Windows/WSL2
+  - Installazione WSL2
+  - Configurazione Docker Desktop
+  - Performance e best practices
+  - Troubleshooting Windows
+
 - **[Quick Start](quick-start.md)** - Tutorial passo-passo
   - Primo progetto
   - Comandi base

@@ -8,6 +8,8 @@ Ambiente di sviluppo Docker flessibile per Laravel, WordPress, PHP e HTML con se
 bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-development-environment/main/install.sh)
 ```
 
+> 🪟 **Windows**: Usa [WSL2](docs/windows-setup.md) | 🐧 **Linux/macOS**: Funziona direttamente
+
 ## ⚡ Quick Start
 
 ```bash
@@ -54,10 +56,15 @@ open https://myapp.test
 
 ## 🔧 Requisiti
 
-- Docker Desktop 
+- **Docker**:
+  - macOS: Docker Desktop
+  - Linux: Docker Engine
+  - Windows: Docker Desktop + WSL2
 - Git
 - mkcert (opzionale, per HTTPS)
 - dnsmasq (opzionale, per DNS *.test)
+
+> 💡 **Compatibilità**: macOS, Linux, Windows (via WSL2) → **[Setup Windows](docs/windows-setup.md)**
 
 ## 🎯 Esempi d'Uso
 

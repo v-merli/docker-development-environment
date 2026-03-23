@@ -20,6 +20,14 @@ print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
 print_error() { echo -e "${RED}❌ $1${NC}"; }
 print_title() { echo -e "${CYAN}━━━ $1 ━━━${NC}"; }
 
+# Rileva sistema operativo
+OS="$(uname -s)"
+case "${OS}" in
+    Linux*)     OS_TYPE=Linux;;
+    Darwin*)    OS_TYPE=macOS;;
+    *)          OS_TYPE="UNKNOWN:${OS}"
+esac
+
 # Directory
 INSTALL_DIR="$HOME/.docker-dev-env"
 BIN_LINK="/usr/local/bin/docker-dev"
@@ -150,10 +158,15 @@ print_info "Pulizia configurazione shell..."
 
 for shell_rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$shell_rc" ]; then
-        # Rimuovi righe docker-dev
-        sed -i.bak '/docker-dev-completion/d' "$shell_rc" 2>/dev/null || true
-        sed -i.bak '/Docker Development Environment/d' "$shell_rc" 2>/dev/null || true
-        rm -f "${shell_rc}.bak"
+        # Rimuovi righe docker-dev (compatibile con macOS e Linux)
+        if [ "$OS_TYPE" = "macOS" ]; then
+            sed -i.bak '/docker-dev-completion/d' "$shell_rc" 2>/dev/null || true
+            sed -i.bak '/Docker Development Environment/d' "$shell_rc" 2>/dev/null || true
+            rm -f "${shell_rc}.bak"
+        else
+            sed -i '/docker-dev-completion/d' "$shell_rc" 2>/dev/null || true
+            sed -i '/Docker Development Environment/d' "$shell_rc" 2>/dev/null || true
+        fi
         print_success "Autocompletamento rimosso da $shell_rc"
     fi
 done

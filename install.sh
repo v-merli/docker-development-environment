@@ -20,11 +20,37 @@ print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
 print_error() { echo -e "${RED}❌ $1${NC}"; }
 print_title() { echo -e "${CYAN}━━━ $1 ━━━${NC}"; }
 
+# Rileva sistema operativo
+OS="$(uname -s)"
+IS_WSL=false
+
+case "${OS}" in
+    Linux*)     
+        OS_TYPE=Linux
+        # Verifica se è WSL
+        if grep -qi microsoft /proc/version 2>/dev/null || grep -qi wsl /proc/version 2>/dev/null; then
+            IS_WSL=true
+            OS_TYPE="Linux (WSL2)"
+        fi
+        ;;
+    Darwin*)    OS_TYPE=macOS;;
+    *)          OS_TYPE="UNKNOWN:${OS}"
+esac
+
 # Directory di installazione
 INSTALL_DIR="$HOME/.docker-dev-env"
 BIN_LINK="/usr/local/bin/docker-dev"
 
 print_title "Docker Development Environment - Installer"
+echo ""
+print_info "Sistema operativo rilevato: $OS_TYPE"
+
+# Messaggio specifico WSL
+if [ "$IS_WSL" = true ]; then
+    print_info "WSL2 rilevato! Assicurati che Docker Desktop sia installato su Windows"
+    print_info "con integrazione WSL2 abilitata (Settings → Resources → WSL Integration)"
+fi
+
 echo ""
 
 # ==================================================
@@ -48,14 +74,24 @@ fi
 # Git
 if ! command -v git &> /dev/null; then
     print_error "Git non installato"
-    echo "Installa Git: brew install git"
+    if [ "$OS_TYPE" = "macOS" ]; then
+        echo "Installa Git: brew install git"
+    else
+        echo "Installa Git: sudo apt-get install git  (Debian/Ubuntu)"
+        echo "             sudo yum install git      (RHEL/CentOS)"
+    fi
     exit 1
 fi
 
 # mkcert (opzionale ma consigliato)
 if ! command -v mkcert &> /dev/null; then
     print_warning "mkcert non installato (opzionale per SSL locale)"
-    echo "    Installa con: brew install mkcert"
+    if [ "$OS_TYPE" = "macOS" ]; then
+        echo "    Installa con: brew install mkcert"
+    else
+        echo "    Installa con: https://github.com/FiloSottile/mkcert#installation"
+        echo "    Debian/Ubuntu: scarica binary da GitHub releases"
+    fi
     echo "    Necessario per certificati HTTPS locali"
 fi
 
@@ -122,8 +158,13 @@ elif [ "$SHELL" = "/bin/bash" ] || [ "$SHELL" = "/usr/bin/bash" ]; then
 fi
 
 if [ -n "$SHELL_RC" ] && [ -f "$SHELL_RC" ]; then
-    # Rimuovi righe esistenti
-    sed -i.bak '/docker-dev-completion/d' "$SHELL_RC"
+    # Rimuovi righe esistenti (compatibile con macOS e Linux)
+    if [ "$OS_TYPE" = "macOS" ]; then
+        sed -i.bak '/docker-dev-completion/d' "$SHELL_RC"
+        rm -f "${SHELL_RC}.bak"
+    else
+        sed -i '/docker-dev-completion/d' "$SHELL_RC"
+    fi
     
     # Aggiungi completion
     echo "" >> "$SHELL_RC"

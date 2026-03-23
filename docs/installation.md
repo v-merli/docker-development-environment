@@ -4,28 +4,44 @@ Guida completa all'installazione di Docker Development Environment.
 
 ## 📋 Requisiti
 
+### Sistema Operativo
+
+- ✅ **macOS** (10.15+)
+- ✅ **Linux** (Ubuntu, Debian, RHEL, CentOS, ecc.)
+- ✅ **Windows** (10/11 con WSL2) → **[Guida Windows completa →](windows-setup.md)**
+
 ### Obbligatori
 
-- **Docker Desktop** (v2024.0.0+)
-  - macOS: [Download](https://www.docker.com/products/docker-desktop)
+- **Docker** (v20.10+)
+  - macOS: [Docker Desktop](https://www.docker.com/products/docker-desktop)
+  - Linux: [Docker Engine](https://docs.docker.com/engine/install/)
   - Verifica: `docker --version`
   
 - **Git**
   - macOS: `brew install git` o già incluso in Xcode
+  - Linux: `sudo apt-get install git` (Debian/Ubuntu) o `sudo yum install git` (RHEL/CentOS)
   - Verifica: `git --version`
 
 ### Opzionali (ma consigliati)
 
 - **mkcert** - Per certificati SSL locali HTTPS
-  ```bash
-  brew install mkcert
-  mkcert -install
-  ```
+  - macOS:
+    ```bash
+    brew install mkcert
+    mkcert -install
+    ```
+  - Linux: [Installazione da GitHub](https://github.com/FiloSottile/mkcert#installation)
+    ```bash
+    # Debian/Ubuntu
+    wget https://github.com/FiloSottile/mkcert/releases/latest/download/mkcert-v*-linux-amd64
+    chmod +x mkcert-v*-linux-amd64
+    sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+    mkcert -install
+    ```
 
 - **dnsmasq** - Per DNS wildcard (*.test → 127.0.0.1)
-  ```bash
-  brew install dnsmasq
-  ```
+  - macOS: `brew install dnsmasq`
+  - Linux: `sudo apt-get install dnsmasq` (Debian/Ubuntu)
 
 ---
 
@@ -33,19 +49,22 @@ Guida completa all'installazione di Docker Development Environment.
 
 ### Metodo 1: Script di Installazione (Consigliato)
 
-Un solo comando per installare tutto:
+Un solo comando per installare tutto (funziona su **macOS, Linux e Windows WSL2**):
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-development-environment/main/install.sh)
 ```
 
 Lo script:
+- ✅ Rileva automaticamente il sistema operativo (macOS/Linux/WSL2)
 - ✅ Verifica prerequisiti
 - ✅ Clona il repository in `~/.docker-dev-env`
 - ✅ Imposta permessi eseguibili su `docker-dev`
 - ✅ Crea symlink `/usr/local/bin/docker-dev`
 - ✅ Configura autocompletamento bash/zsh
 - ✅ Esegue setup iniziale (opzionale)
+
+> 🪟 **Utenti Windows**: Prima di eseguire lo script, segui la **[Guida Windows/WSL2 →](windows-setup.md)** per installare WSL2 e Docker Desktop.
 
 ### Metodo 2: Installazione Manuale
 
