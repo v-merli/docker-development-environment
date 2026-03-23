@@ -55,10 +55,13 @@ cmd_info() {
     echo -e "${CYAN}Reverse Proxy:${NC}"
     if docker ps | grep -q nginx-proxy; then
         echo "  ✓ nginx-proxy in esecuzione"
+        echo "    HTTP:  http://localhost:$HTTP_PORT"
+        echo "    HTTPS: https://localhost:$HTTPS_PORT"
         echo "  ✓ acme-companion per SSL"
     else
         echo "  ✗ Proxy non avviato"
         echo "    Avvialo con: ./docker-dev setup proxy"
+        echo "    Porte configurate: HTTP=$HTTP_PORT, HTTPS=$HTTPS_PORT"
     fi
     
     echo ""
@@ -68,12 +71,12 @@ cmd_info() {
     local shared_count=0
     
     if docker ps | grep -q mysql-shared; then
-        echo "  ✓ MySQL condiviso (porta 3306)"
+        echo "  ✓ MySQL condiviso (porta $MYSQL_SHARED_PORT)"
         ((shared_count++))
     fi
     
     if docker ps | grep -q redis-shared; then
-        echo "  ✓ Redis condiviso (porta 6379)"
+        echo "  ✓ Redis condiviso (porta $REDIS_SHARED_PORT)"
         ((shared_count++))
     fi
     
@@ -87,6 +90,7 @@ cmd_info() {
     if [ "$shared_count" -eq 0 ]; then
         echo "  ✗ Nessun servizio condiviso attivo"
         echo "    Avviali con: ./docker-dev shared start"
+        echo "    Porte configurate: MySQL=$MYSQL_SHARED_PORT, Redis=$REDIS_SHARED_PORT"
     fi
     
     echo ""
@@ -123,6 +127,18 @@ cmd_info() {
     # Directory
     echo -e "${CYAN}Percorsi:${NC}"
     echo "  Progetti: $PROJECTS_DIR"
+    
+    # Mostra se config custom
+    if [ -f "$CONFIG_FILE" ]; then
+        local default_dir="$SCRIPT_DIR/projects"
+        if [ "$PROJECTS_DIR" != "$default_dir" ]; then
+            echo "           ${GREEN}(configurazione personalizzata)${NC}"
+            echo "           Per cambiarla: docker-dev setup config"
+        fi
+    else
+        echo "           ${YELLOW}(default - configura con: docker-dev setup config)${NC}"
+    fi
+    
     echo "  Proxy: $SCRIPT_DIR/proxy"
     echo "  Condivisi: $SCRIPT_DIR/shared"
     echo "  CLI: $SCRIPT_DIR/cli"

@@ -96,5 +96,11 @@ releases/
 /.env
 /.env.local
 
+# File .env del proxy - generato automaticamente
+proxy/.env
+
+# Configurazione locale utente
+/.config
+
 # Ma NON ignorare i .env nei template
 !shared/templates/**/.env.example

@@ -29,6 +29,8 @@ docker-dev dev myapp
 open https://myapp.test
 ```
 
+> 💡 **Directory Progetti**: Durante il setup, scegli dove salvare i progetti (default: `~/.docker-dev-env/projects`). Puoi cambiarla in seguito con `docker-dev setup config`
+
 ## ✨ Features
 
 - 🎯 Multi-progetto (Laravel, WordPress, HTML, PHP)

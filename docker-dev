@@ -17,8 +17,72 @@ NC='\033[0m'
 
 # Directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECTS_DIR="$SCRIPT_DIR/projects"
+CONFIG_FILE="$SCRIPT_DIR/.config"
 TEMPLATES_DIR="$SCRIPT_DIR/shared/templates"
+
+# Carica configurazione
+load_config() {
+    # Default
+    PROJECTS_DIR="$SCRIPT_DIR/projects"
+    HTTP_PORT=8080
+    HTTPS_PORT=8443
+    MYSQL_SHARED_PORT=3306
+    REDIS_SHARED_PORT=6379
+    
+    # Leggi da config se esiste
+    if [ -f "$CONFIG_FILE" ]; then
+        source "$CONFIG_FILE"
+    fi
+    
+    # Esporta per uso negli script caricati
+    export PROJECTS_DIR
+    export HTTP_PORT
+    export HTTPS_PORT
+    export MYSQL_SHARED_PORT
+    export REDIS_SHARED_PORT
+}
+
+# Salva configurazione
+save_config() {
+    cat > "$CONFIG_FILE" << EOF
+# Docker Development Environment - Configuration
+# Questo file viene generato automaticamente dal comando 'setup'
+
+# Directory dove vengono salvati i progetti
+PROJECTS_DIR="$PROJECTS_DIR"
+
+# Porte servizi (Proxy)
+HTTP_PORT=$HTTP_PORT
+HTTPS_PORT=$HTTPS_PORT
+
+# Porte servizi condivisi
+MYSQL_SHARED_PORT=$MYSQL_SHARED_PORT
+REDIS_SHARED_PORT=$REDIS_SHARED_PORT
+
+# Data ultima modifica: $(date)
+EOF
+    
+    # Aggiorna anche il file .env del proxy
+    update_proxy_env
+}
+
+# Aggiorna file .env del proxy
+update_proxy_env() {
+    local proxy_env="$SCRIPT_DIR/proxy/.env"
+    
+    cat > "$proxy_env" << EOF
+# Proxy ports configuration
+HTTP_PORT=$HTTP_PORT
+HTTPS_PORT=$HTTPS_PORT
+
+# Shared services ports (optional)
+MYSQL_SHARED_PORT=$MYSQL_SHARED_PORT
+REDIS_SHARED_PORT=$REDIS_SHARED_PORT
+EOF
+}
+
+# Carica config all'avvio
+load_config
 
 # Rileva comando docker compose
 if command -v docker-compose &> /dev/null; then
@@ -103,6 +167,8 @@ COMMANDS:
     ssl install           Installa/reinstalla CA
     
   System Setup:
+    setup config          Configura directory progetti
+    setup ports           Configura porte servizi (HTTP, HTTPS, MySQL, Redis)
     setup dns             Configura dnsmasq per domini .test
     setup proxy           Avvia nginx reverse proxy
     setup init            Setup iniziale completo

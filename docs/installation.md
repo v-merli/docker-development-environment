@@ -95,10 +95,69 @@ docker-dev setup init
 ```
 
 Questo crea:
+- **Directory Progetti** - Scegli dove salvare i progetti (default: `~/.docker-dev-env/projects`)
 - **Nginx Reverse Proxy** - Routing automatico dei progetti
 - **SSL Certificate Authority** - Certificati HTTPS locali
 - **Rete Docker condivisa** - Comunicazione tra container
 - **DNS locale** (opzionale) - Risoluzione *.test
+
+### 📁 Configurazione Directory Progetti
+
+Durante il setup ti verrà chiesto dove salvare i progetti:
+
+```
+Dove vuoi salvare i tuoi progetti Docker?
+
+1) ~/.docker-dev-env/projects (default)
+2) ~/Development/docker-projects
+3) Percorso personalizzato
+```
+
+**Vantaggi directory custom:**
+- ✅ Organizzazione personale (es: tutti i progetti in `~/Development`)
+- ✅ Performance (usa SSD separato più veloce)
+- ✅ Backup semplificato (cartella esterna al tool)
+- ✅ Condivisione con altri strumenti
+
+**Cambiare directory in seguito:**
+```bash
+docker-dev setup config
+```
+
+Lo script può anche **spostare automaticamente** i progetti esistenti nella nuova directory.
+
+### 🔌 Configurazione Porte
+
+Puoi personalizzare le porte dei servizi per evitare conflitti:
+
+```bash
+docker-dev setup ports
+```
+
+**Porte configurabili:**
+- **HTTP**: Default 8080 (accesso web progetti)
+- **HTTPS**: Default 8443 (accesso HTTPS progetti)
+- **MySQL**: Default 3306 (MySQL condiviso)
+- **Redis**: Default 6379 (Redis condiviso)
+
+**Casi d'uso comuni:**
+- Porta 8080 già occupata → Usa 8090
+- Multipli ambienti Docker → Usa porte diverse per non confondere
+- MySQL locale già attivo → Usa 3307 per quello condiviso
+
+**Modifica manuale:**
+Puoi anche modificare direttamente `~/.docker-dev-env/.config`:
+```bash
+HTTP_PORT=8090
+HTTPS_PORT=8444
+MYSQL_SHARED_PORT=3307
+REDIS_SHARED_PORT=6380
+```
+
+Dopo la modifica, riavvia i servizi:
+```bash
+docker-dev setup proxy  # Riavvia proxy con nuove porte
+```
 
 ---
 

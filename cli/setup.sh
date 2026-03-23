@@ -8,6 +8,8 @@ cmd_setup() {
         echo "Uso: ./docker-dev setup <comando>"
         echo ""
         echo "Comandi:"
+        echo "  config  Configura directory progetti"
+        echo "  ports   Configura porte servizi (HTTP, HTTPS, MySQL, Redis)"
         echo "  dns     Installa e configura dnsmasq per *.test"
         echo "  proxy   Avvia il reverse proxy nginx"
         echo "  init    Setup completo interattivo"
@@ -18,6 +20,12 @@ cmd_setup() {
     shift
     
     case $subcmd in
+        config)
+            setup_config "$@"
+            ;;
+        ports)
+            setup_ports "$@"
+            ;;
         dns)
             setup_dns "$@"
             ;;
@@ -33,12 +41,281 @@ cmd_setup() {
             echo "Uso: ./docker-dev setup <comando>"
             echo ""
             echo "Comandi:"
+            echo "  config  Configura directory progetti"
+            echo "  ports   Configura porte servizi"
             echo "  dns     Installa e configura dnsmasq per *.test"
             echo "  proxy   Avvia il reverse proxy nginx"
             echo "  init    Inizializza l'ambiente (dns + proxy)"
             exit 1
             ;;
     esac
+}
+
+setup_config() {
+    print_title "Configurazione Directory Progetti"
+    echo ""
+    
+    local default_dir="$SCRIPT_DIR/projects"
+    local current_dir="${PROJECTS_DIR:-$default_dir}"
+    
+    echo "Directory attuale: $current_dir"
+    echo ""
+    echo "Dove vuoi salvare i tuoi progetti Docker?"
+    echo ""
+    echo "1) $default_dir (default)"
+    echo "2) $HOME/Development/docker-projects"
+    echo "3) Percorso personalizzato"
+    echo "4) Mantieni attuale ($current_dir)"
+    echo ""
+    
+    read -p "Scelta [4]: " choice
+    choice=${choice:-4}
+    
+    case $choice in
+        1)
+            PROJECTS_DIR="$default_dir"
+            ;;
+        2)
+            PROJECTS_DIR="$HOME/Development/docker-projects"
+            ;;
+        3)
+            read -p "Inserisci il percorso completo: " custom_path
+            # Espandi ~ e variabili
+            PROJECTS_DIR=$(eval echo "$custom_path")
+            ;;
+        4)
+            print_info "Mantengo configurazione attuale"
+            return
+            ;;
+        *)
+            print_warning "Scelta non valida, mantengo configurazione attuale"
+            return
+            ;;
+    esac
+    
+    # Verifica se ci sono progetti nella directory attuale
+    if [ -d "$current_dir" ] && [ "$(ls -A "$current_dir" 2>/dev/null)" ]; then
+        echo ""
+        print_warning "ATTENZIONE: Trovati progetti in $current_dir"
+        echo ""
+        read -p "Vuoi spostarli nella nuova directory? (y/n): " -n 1 -r
+        echo ""
+        
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            # Crea nuova directory se non esiste
+            mkdir -p "$PROJECTS_DIR"
+            
+            # Sposta progetti (escludendo README.md)
+            print_info "Spostamento progetti..."
+            for project in "$current_dir"/*; do
+                if [ -d "$project" ] && [ "$(basename "$project")" != "README.md" ]; then
+                    project_name=$(basename "$project")
+                    print_info "Spostamento $project_name..."
+                    mv "$project" "$PROJECTS_DIR/"
+                fi
+            done
+            print_success "Progetti spostati!"
+        fi
+    fi
+    
+    # Crea directory se non esiste
+    if [ ! -d "$PROJECTS_DIR" ]; then
+        print_info "Creazione directory: $PROJECTS_DIR"
+        mkdir -p "$PROJECTS_DIR"
+    fi
+    
+    # Salva configurazione
+    save_config
+    
+    print_success "Configurazione aggiornata!"
+    echo ""
+    echo "Nuova directory progetti: $PROJECTS_DIR"
+    echo ""
+    print_info "Ricarica il terminale o esegui: source ~/.zshrc (o ~/.bashrc)"
+}
+
+setup_ports() {
+    print_title "Configurazione Porte Servizi"
+    echo ""
+    
+    echo "Configurazione attuale:"
+    echo "  HTTP:  $HTTP_PORT"
+    echo "  HTTPS: $HTTPS_PORT"
+    echo "  MySQL: $MYSQL_SHARED_PORT"
+    echo "  Redis: $REDIS_SHARED_PORT"
+    echo ""
+    
+    # Verifica se ci sono servizi in esecuzione
+    local proxy_running=false
+    if docker ps | grep -q nginx-proxy; then
+        proxy_running=true
+        print_warning "ATTENZIONE: Il proxy è in esecuzione!"
+        echo "Le modifiche alle porte richiederanno un riavvio del proxy."
+        echo ""
+    fi
+    
+    # Menu
+    echo "Cosa vuoi configurare?"
+    echo ""
+    echo "1) Porte Proxy (HTTP/HTTPS)"
+    echo "2) Porte Servizi Condivisi (MySQL/Redis)"
+    echo "3) Tutte le porte"
+    echo "4) Ripristina default (8080, 8443, 3306, 6379)"
+    echo "5) Annulla"
+    echo ""
+    
+    read -p "Scelta [5]: " choice
+    choice=${choice:-5}
+    
+    case $choice in
+        1)
+            configure_proxy_ports
+            ;;
+        2)
+            configure_shared_ports
+            ;;
+        3)
+            configure_proxy_ports
+            configure_shared_ports
+            ;;
+        4)
+            HTTP_PORT=8080
+            HTTPS_PORT=8443
+            MYSQL_SHARED_PORT=3306
+            REDIS_SHARED_PORT=6379
+            print_success "Porte ripristinate ai valori default"
+            ;;
+        5)
+            print_info "Operazione annullata"
+            return
+            ;;
+        *)
+            print_error "Scelta non valida"
+            return
+            ;;
+    esac
+    
+    # Salva configurazione
+    save_config
+    
+    print_success "Configurazione porte aggiornata!"
+    echo ""
+    echo "Nuove porte:"
+    echo "  HTTP:  $HTTP_PORT"
+    echo "  HTTPS: $HTTPS_PORT"
+    echo "  MySQL: $MYSQL_SHARED_PORT"
+    echo "  Redis: $REDIS_SHARED_PORT"
+    echo ""
+    
+    # Avvisa se serve riavvio
+    if [ "$proxy_running" = true ]; then
+        print_warning "Per applicare le modifiche, riavvia il proxy:"
+        echo "  docker-dev setup proxy"
+        echo ""
+        read -p "Vuoi riavviare ora il proxy? (y/n): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            cd "$SCRIPT_DIR/proxy"
+            $DOCKER_COMPOSE down
+            $DOCKER_COMPOSE up -d
+            print_success "Proxy riavviato con nuove porte!"
+        fi
+    fi
+}
+
+# Funzione helper per configurare porte proxy
+configure_proxy_ports() {
+    echo ""
+    echo "=== Configurazione Porte Proxy ==="
+    echo ""
+    
+    # HTTP Port
+    while true; do
+        read -p "Porta HTTP [$HTTP_PORT]: " new_http
+        new_http=${new_http:-$HTTP_PORT}
+        
+        if validate_port "$new_http"; then
+            HTTP_PORT=$new_http
+            break
+        else
+            print_error "Porta non valida (1-65535)"
+        fi
+    done
+    
+    # HTTPS Port
+    while true; do
+        read -p "Porta HTTPS [$HTTPS_PORT]: " new_https
+        new_https=${new_https:-$HTTPS_PORT}
+        
+        if validate_port "$new_https"; then
+            if [ "$new_https" -eq "$HTTP_PORT" ]; then
+                print_error "La porta HTTPS non può essere uguale alla porta HTTP"
+            else
+                HTTPS_PORT=$new_https
+                break
+            fi
+        else
+            print_error "Porta non valida (1-65535)"
+        fi
+    done
+    
+    print_success "Porte proxy configurate"
+}
+
+# Funzione helper per configurare porte servizi condivisi
+configure_shared_ports() {
+    echo ""
+    echo "=== Configurazione Porte Servizi Condivisi ==="
+    echo ""
+    
+    # MySQL Port
+    while true; do
+        read -p "Porta MySQL [$MYSQL_SHARED_PORT]: " new_mysql
+        new_mysql=${new_mysql:-$MYSQL_SHARED_PORT}
+        
+        if validate_port "$new_mysql"; then
+            MYSQL_SHARED_PORT=$new_mysql
+            break
+        else
+            print_error "Porta non valida (1-65535)"
+        fi
+    done
+    
+    # Redis Port
+    while true; do
+        read -p "Porta Redis [$REDIS_SHARED_PORT]: " new_redis
+        new_redis=${new_redis:-$REDIS_SHARED_PORT}
+        
+        if validate_port "$new_redis"; then
+            if [ "$new_redis" -eq "$MYSQL_SHARED_PORT" ]; then
+                print_error "La porta Redis non può essere uguale alla porta MySQL"
+            else
+                REDIS_SHARED_PORT=$new_redis
+                break
+            fi
+        else
+            print_error "Porta non valida (1-65535)"
+        fi
+    done
+    
+    print_success "Porte servizi condivisi configurate"
+}
+
+# Valida porta
+validate_port() {
+    local port=$1
+    
+    # Verifica che sia un numero
+    if ! [[ "$port" =~ ^[0-9]+$ ]]; then
+        return 1
+    fi
+    
+    # Verifica range valido
+    if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+        return 1
+    fi
+    
+    return 0
 }
 
 setup_dns() {
@@ -91,6 +368,12 @@ setup_proxy() {
         return
     fi
     
+    # Assicurati che il file .env esista
+    if [ ! -f ".env" ]; then
+        print_info "Creazione file di configurazione proxy..."
+        update_proxy_env
+    fi
+    
     print_info "Avvio nginx-proxy e acme-companion..."
     $DOCKER_COMPOSE up -d nginx-proxy acme-companion
     
@@ -114,6 +397,98 @@ setup_proxy() {
 setup_init() {
     print_title "Inizializzazione Ambiente Docker Dev"
     echo ""
+    
+    # ==================================================
+    # Configurazione Directory Progetti
+    # ==================================================
+    print_info "Configurazione directory progetti..."
+    echo ""
+    
+    local default_dir="$SCRIPT_DIR/projects"
+    local current_dir="${PROJECTS_DIR:-$default_dir}"
+    
+    echo "Dove vuoi salvare i tuoi progetti Docker?"
+    echo ""
+    echo "1) $default_dir (default)"
+    echo "2) $HOME/Development/docker-projects"
+    echo "3) Percorso personalizzato"
+    echo ""
+    
+    # Se esiste già config, mostra quella attuale
+    if [ -f "$CONFIG_FILE" ]; then
+        echo -e "${YELLOW}Configurazione attuale: $current_dir${NC}"
+        echo ""
+    fi
+    
+    read -p "Scelta [1]: " choice
+    choice=${choice:-1}
+    
+    case $choice in
+        1)
+            PROJECTS_DIR="$default_dir"
+            ;;
+        2)
+            PROJECTS_DIR="$HOME/Development/docker-projects"
+            ;;
+        3)
+            read -p "Inserisci il percorso completo: " custom_path
+            # Espandi ~ e variabili
+            PROJECTS_DIR=$(eval echo "$custom_path")
+            ;;
+        *)
+            print_warning "Scelta non valida, uso default"
+            PROJECTS_DIR="$default_dir"
+            ;;
+    esac
+    
+    # Crea directory se non esiste
+    if [ ! -d "$PROJECTS_DIR" ]; then
+        print_info "Creazione directory: $PROJECTS_DIR"
+        mkdir -p "$PROJECTS_DIR"
+    fi
+    
+    # Salva configurazione
+    save_config
+    
+    print_success "Directory progetti: $PROJECTS_DIR"
+    echo ""
+    
+    # Crea README se non esiste
+    if [ ! -f "$PROJECTS_DIR/README.md" ]; then
+        cat > "$PROJECTS_DIR/README.md" << 'EOF'
+# Docker Projects
+
+Questa directory contiene tutti i progetti Docker creati con docker-dev.
+
+Ogni progetto ha la sua directory con:
+- `docker-compose.yml` - Configurazione container
+- `.env` - Variabili d'ambiente
+- `app/` - Codice applicazione
+
+## Comandi Utili
+
+```bash
+# Lista progetti
+docker-dev project list
+
+# Avvia progetto
+docker-dev dev PROGETTO
+
+# Shell nel container
+docker-dev project shell PROGETTO
+
+# Rimuovi progetto
+docker-dev project remove PROGETTO
+```
+EOF
+        print_info "Creato README in $PROJECTS_DIR"
+    fi
+    
+    echo ""
+    
+    # ==================================================
+    # Verifica Docker
+    # ==================================================
     
     # Verifica Docker
     print_info "Verifica Docker..."
