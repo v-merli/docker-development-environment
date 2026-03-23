@@ -3,6 +3,181 @@
 # Module: Create
 # Comando: create - Crea nuovo progetto
 
+# ==================================================
+# MODALITÀ INTERATTIVA
+# ==================================================
+interactive_create() {
+    print_title "Creazione Progetto Interattiva"
+    echo ""
+    
+    # Nome progetto
+    read -p "$(echo -e "${CYAN}Nome progetto:${NC} ")" PROJECT_NAME
+    if [ -z "$PROJECT_NAME" ]; then
+        print_error "Nome progetto obbligatorio"
+        exit 1
+    fi
+    echo ""
+    
+    # Tipo progetto
+    print_info "Tipo progetto:"
+    PS3="$(echo -e "${CYAN}Scegli (1-4):${NC} ")"
+    select type in "Laravel" "WordPress" "PHP" "HTML"; do
+        case $type in
+            Laravel) PROJECT_TYPE="laravel"; break;;
+            WordPress) PROJECT_TYPE="wordpress"; break;;
+            PHP) PROJECT_TYPE="php"; break;;
+            HTML) PROJECT_TYPE="html"; break;;
+            *) echo "Scelta non valida";;
+        esac
+    done
+    echo ""
+    
+    # Versione PHP (solo se non HTML)
+    if [ "$PROJECT_TYPE" != "html" ]; then
+        print_info "Versione PHP:"
+        PS3="$(echo -e "${CYAN}Scegli (1-7):${NC} ")"
+        select php in "8.5" "8.4" "8.3" "8.2" "8.1" "7.4" "7.3"; do
+            case $php in
+                8.5|8.4|8.3|8.2|8.1|7.4|7.3) PHP_VERSION="$php"; break;;
+                *) echo "Scelta non valida";;
+            esac
+        done
+        echo ""
+    fi
+    
+    # Versione Node (solo per Laravel)
+    if [ "$PROJECT_TYPE" == "laravel" ]; then
+        print_info "Versione Node.js:"
+        PS3="$(echo -e "${CYAN}Scegli (1-3):${NC} ")"
+        select node in "20 (LTS)" "21" "18"; do
+            case $node in
+                "20 (LTS)") NODE_VERSION="20"; break;;
+                "21") NODE_VERSION="21"; break;;
+                "18") NODE_VERSION="18"; break;;
+                *) echo "Scelta non valida";;
+            esac
+        done
+        echo ""
+    fi
+    
+    # Database
+    print_info "Database MySQL:"
+    PS3="$(echo -e "${CYAN}Scegli (1-3):${NC} ")"
+    select db_choice in "Dedicato" "Condiviso" "Nessuno"; do
+        case $db_choice in
+            "Dedicato")
+                INCLUDE_DB=true
+                USE_SHARED_DB=false
+                
+                # Versione MySQL
+                print_info "Versione MySQL:"
+                PS3="$(echo -e "${CYAN}Scegli (1-2):${NC} ")"
+                select mysql in "8.0" "5.7"; do
+                    case $mysql in
+                        8.0|5.7) MYSQL_VERSION="$mysql"; break;;
+                        *) echo "Scelta non valida";;
+                    esac
+                done
+                break
+                ;;
+            "Condiviso")
+                INCLUDE_DB=true
+                USE_SHARED_DB=true
+                break
+                ;;
+            "Nessuno")
+                INCLUDE_DB=false
+                break
+                ;;
+            *) echo "Scelta non valida";;
+        esac
+    done
+    echo ""
+    
+    # Redis
+    print_info "Cache Redis:"
+    PS3="$(echo -e "${CYAN}Scegli (1-3):${NC} ")"
+    select redis_choice in "Dedicato" "Condiviso" "Nessuno"; do
+        case $redis_choice in
+            "Dedicato")
+                INCLUDE_REDIS=true
+                USE_SHARED_REDIS=false
+                break
+                ;;
+            "Condiviso")
+                INCLUDE_REDIS=true
+                USE_SHARED_REDIS=true
+                break
+                ;;
+            "Nessuno")
+                INCLUDE_REDIS=false
+                break
+                ;;
+            *) echo "Scelta non valida";;
+        esac
+    done
+    echo ""
+    
+    # PHP condiviso per scheduler/queue (solo Laravel)
+    if [ "$PROJECT_TYPE" == "laravel" ]; then
+        print_info "PHP per Scheduler/Queue:"
+        PS3="$(echo -e "${CYAN}Scegli (1-2):${NC} ")"
+        select php_choice in "Dedicato (immagine progetto)" "Condiviso (php-shared)"; do
+            case $php_choice in
+                "Dedicato"*)
+                    USE_SHARED_PHP=false
+                    break
+                    ;;
+                "Condiviso"*)
+                    USE_SHARED_PHP=true
+                    break
+                    ;;
+                *) echo "Scelta non valida";;
+            esac
+        done
+        echo ""
+    fi
+    
+    # Installare il framework
+    if [ "$PROJECT_TYPE" == "laravel" ] || [ "$PROJECT_TYPE" == "wordpress" ]; then
+        print_info "Installare $PROJECT_TYPE automaticamente?"
+        PS3="$(echo -e "${CYAN}Scegli (1-2):${NC} ")"
+        select install in "Sì" "No"; do
+            case $install in
+                "Sì")
+                    INSTALL_FRAMEWORK=true
+                    break
+                    ;;
+                "No")
+                    INSTALL_FRAMEWORK=false
+                    break
+                    ;;
+                *) echo "Scelta non valida";;
+            esac
+        done
+        echo ""
+    fi
+    
+    # Costruisci comando e chiama la funzione di creazione
+    local cmd_args=("$PROJECT_NAME")
+    [ "$PROJECT_TYPE" != "laravel" ] && cmd_args+=(--type "$PROJECT_TYPE")
+    [ -n "$PHP_VERSION" ] && cmd_args+=(--php "$PHP_VERSION")
+    [ -n "$NODE_VERSION" ] && cmd_args+=(--node "$NODE_VERSION")
+    [ -n "$MYSQL_VERSION" ] && cmd_args+=(--mysql "$MYSQL_VERSION")
+    [ "$USE_SHARED_DB" == true ] && cmd_args+=(--shared-db)
+    [ "$USE_SHARED_REDIS" == true ] && cmd_args+=(--shared-redis)
+    [ "$USE_SHARED_PHP" == true ] && cmd_args+=(--shared-php)
+    [ "$INCLUDE_DB" == false ] && cmd_args+=(--no-db)
+    [ "$INCLUDE_REDIS" == false ] && cmd_args+=(--no-redis)
+    [ "$INSTALL_FRAMEWORK" == false ] && cmd_args+=(--no-install)
+    
+    # Chiama la funzione principale con i parametri raccolti
+    cmd_create "${cmd_args[@]}"
+}
+
+# ==================================================
+# COMANDO CREATE
+# ==================================================
 cmd_create() {
     # Check per --help
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
@@ -22,12 +197,10 @@ cmd_create() {
     local USE_SHARED_PHP=false
     local INSTALL_FRAMEWORK=true
     
-    # Parse argomenti
+    # Parse argomenti - se vuoto, modalità interattiva
     if [ $# -eq 0 ]; then
-        print_error "Nome progetto non specificato"
-        echo ""
-        show_create_usage
-        exit 1
+        interactive_create
+        return
     fi
     
     local PROJECT_NAME=$1
