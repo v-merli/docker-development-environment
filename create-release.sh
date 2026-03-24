@@ -44,6 +44,33 @@ for item in "${EXCLUDE_ITEMS[@]}"; do
 done
 echo ""
 
+# Genera file build info
+echo -e "${BLUE}Generazione build info...${NC}"
+
+GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+BUILD_TIMESTAMP=$(date +%s)
+
+# Crea file .build-info
+cat > .build-info << EOF
+# Docker Dev Environment Build Information
+# This file is generated automatically during release creation
+
+VERSION="$VERSION"
+GIT_HASH="$GIT_HASH"
+GIT_COMMIT="$GIT_COMMIT"
+BUILD_DATE="$BUILD_DATE"
+BUILD_TIMESTAMP="$BUILD_TIMESTAMP"
+REPOSITORY="https://github.com/v-merli/docker-development-environment"
+EOF
+
+echo -e "${GREEN}✓${NC} Build info generato"
+echo "  Hash: $GIT_HASH"
+echo "  Commit: $GIT_COMMIT"
+echo "  Data: $BUILD_DATE"
+echo ""
+
 # Crea tarball
 echo -e "${BLUE}Creazione tarball...${NC}"
 
@@ -88,7 +115,7 @@ echo "1. Testa il tarball localmente:"
 echo "   tar -xzf $OUTPUT_DIR/${PACKAGE_NAME}.tar.gz -C /tmp/test"
 echo ""
 echo "2. Crea release su GitHub:"
-echo "   - Vai su: https://github.com/YOUR-USERNAME/docker-development-environment/releases/new"
+echo "   - Vai su: https://github.com/v-merli/docker-development-environment/releases/new"
 echo "   - Tag: v${VERSION}"
 echo "   - Titolo: Docker Dev Environment v${VERSION}"
 echo "   - Carica: $OUTPUT_DIR/${PACKAGE_NAME}.tar.gz"

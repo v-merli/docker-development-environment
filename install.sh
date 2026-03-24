@@ -97,7 +97,7 @@ echo ""
 # ==================================================
 
 # GitHub repository info
-GITHUB_USER="your-username"
+GITHUB_USER="v-merli"
 GITHUB_REPO="docker-development-environment"
 RELEASE_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases/latest/download/docker-dev-env.tar.gz"
 
@@ -253,6 +253,6 @@ echo "4) Documenta te stesso:"
 echo "   ${GREEN}docker-dev help${NC}"
 echo ""
 echo -e "${BLUE}Repository:${NC} $INSTALL_DIR"
-echo -e "${BLUE}Documentazione:${NC} https://github.com/your-username/docker-development-environment"
+echo -e "${BLUE}Documentazione:${NC} https://github.com/v-merli/docker-development-environment"
 echo ""
 print_success "Buon sviluppo! 🚀"

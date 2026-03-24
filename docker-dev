@@ -5,7 +5,7 @@
 
 set -e
 
-VERSION="2.0.0"
+VERSION="1.0.0"
 
 # Colori
 RED='\033[0;31m'
@@ -81,8 +81,23 @@ REDIS_SHARED_PORT=$REDIS_SHARED_PORT
 EOF
 }
 
-# Carica config all'avvio
+# Carica build info se disponibile
+load_build_info() {
+    local build_file="$SCRIPT_DIR/.build-info"
+    
+    if [ -f "$build_file" ]; then
+        source "$build_file"
+        BUILD_INFO_LOADED=true
+    else
+        BUILD_INFO_LOADED=false
+        GIT_HASH="dev"
+        BUILD_DATE="development"
+    fi
+}
+
+# Carica config e build info all'avvio
 load_config
+load_build_info
 
 # Rileva comando docker compose
 if command -v docker-compose &> /dev/null; then
@@ -139,7 +154,13 @@ find_available_port() {
 
 # Mostra versione
 show_version() {
-    echo "Docker Development Environment v$VERSION"
+    if [ "$BUILD_INFO_LOADED" = "true" ]; then
+        echo "Docker Development Environment v$VERSION ($GIT_HASH)"
+    else
+        # Prova a leggere hash corrente (sviluppo)
+        local current_hash=$(git rev-parse --short HEAD 2>/dev/null || echo "dev")
+        echo "Docker Development Environment v$VERSION ($current_hash)"
+    fi
 }
 
 # Mostra help generale
@@ -187,6 +208,11 @@ COMMANDS:
     setup dns             Configura dnsmasq per domini .test
     setup proxy           Avvia nginx reverse proxy
     setup init            Setup iniziale completo
+    
+  System Update:
+    update check          Verifica disponibilità aggiornamenti
+    update install        Installa l'ultima versione
+    update changelog      Mostra changelog ultima versione
     
   Information:
     stats                 Mostra statistiche risorse Docker
@@ -306,6 +332,10 @@ case $COMMAND in
     setup)
         load_module "setup"
         cmd_setup "$@"
+        ;;
+    update)
+        load_module "update"
+        cmd_update "$@"
         ;;
     stats)
         load_module "system"

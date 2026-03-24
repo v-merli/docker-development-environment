@@ -32,6 +32,21 @@ cmd_info() {
     print_title "Informazioni Ambiente"
     echo ""
     
+    # Informazioni Build
+    echo -e "${CYAN}Docker Dev Environment:${NC}"
+    if [ "$BUILD_INFO_LOADED" = "true" ]; then
+        echo "  Versione: $VERSION ($GIT_HASH)"
+        echo "  Build: $BUILD_DATE"
+        if [ -n "$REPOSITORY" ]; then
+            echo "  Repository: $REPOSITORY/commit/$GIT_COMMIT"
+        fi
+    else
+        local dev_hash=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+        echo "  Versione: $VERSION ($dev_hash)"
+        echo "  Ambiente: development"
+    fi
+    echo ""
+    
     # Versioni
     echo -e "${CYAN}Versioni Software:${NC}"
     echo "  Docker: $(docker --version | cut -d' ' -f3 | tr -d ',')"

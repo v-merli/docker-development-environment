@@ -99,6 +99,9 @@ releases/
 # File .env del proxy - generato automaticamente
 proxy/.env
 
+# Build info - generato durante release
+/.build-info
+
 # Configurazione locale utente
 /.config
 
