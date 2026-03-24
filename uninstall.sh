@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Docker Development Environment - Uninstaller
+# PHPHarbor - Uninstaller
 # Rimuove completamente l'ambiente di sviluppo
 
 set -e
@@ -29,7 +29,7 @@ case "${OS}" in
 esac
 
 # Directory
-INSTALL_DIR="$HOME/.docker-dev-env"
+INSTALL_DIR="$HOME/.phpharbor"
 BIN_LINK="/usr/local/bin/docker-dev"
 
 print_title "Docker Development Environment - Disinstallazione"

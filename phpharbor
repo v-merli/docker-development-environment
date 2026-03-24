@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Docker Development Environment CLI
+# PHPHarbor CLI
 # Unified command-line interface for managing Docker projects
 
 set -e
@@ -155,11 +155,11 @@ find_available_port() {
 # Mostra versione
 show_version() {
     if [ "$BUILD_INFO_LOADED" = "true" ]; then
-        echo "Docker Development Environment v$VERSION ($GIT_HASH)"
+        echo "PHPHarbor v$VERSION ($GIT_HASH)"
     else
         # Prova a leggere hash corrente (sviluppo)
         local current_hash=$(git rev-parse --short HEAD 2>/dev/null || echo "dev")
-        echo "Docker Development Environment v$VERSION ($current_hash)"
+        echo "PHPHarbor v$VERSION ($current_hash)"
     fi
 }
 

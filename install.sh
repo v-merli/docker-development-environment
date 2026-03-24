@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Docker Development Environment - Installer
+# PHPHarbor - Installer
 # Installa e configura l'ambiente di sviluppo Docker locale
 
 set -e
@@ -38,10 +38,10 @@ case "${OS}" in
 esac
 
 # Directory di installazione
-INSTALL_DIR="$HOME/.docker-dev-env"
+INSTALL_DIR="$HOME/.phpharbor"
 BIN_LINK="/usr/local/bin/docker-dev"
 
-print_title "Docker Development Environment - Installer"
+print_title "PHPHarbor - Installer"
 echo ""
 print_info "Sistema operativo rilevato: $OS_TYPE"
 
@@ -98,8 +98,8 @@ echo ""
 
 # GitHub repository info
 GITHUB_USER="v-merli"
-GITHUB_REPO="docker-development-environment"
-RELEASE_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases/latest/download/docker-dev-env.tar.gz"
+GITHUB_REPO="php-harbor"
+RELEASE_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases/latest/download/php-harbor.tar.gz"
 
 print_info "Directory di installazione: $INSTALL_DIR"
 

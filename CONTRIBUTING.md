@@ -1,4 +1,4 @@
-# Contributing to Docker Development Environment
+# Contributing to PHPHarbor
 
 Grazie per il tuo interesse nel contribuire! Questo documento spiega il workflow di sviluppo e come contribuire al progetto.
 
@@ -165,13 +165,13 @@ MAJOR.MINOR.PATCH
 
 ```bash
 # Clone e setup
-git clone https://github.com/v-merli/docker-development-environment.git
-cd docker-development-environment
+git clone https://github.com/v-merli/php-harbor.git
+cd php-harbor
 git checkout develop
-./docker-dev setup init
+./phpharbor setup init
 
 # Test
-./docker-dev version
+./phpharbor version
 ./test-update-system.sh
 ```
 

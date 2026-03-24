@@ -13,9 +13,9 @@ NC='\033[0m'
 
 VERSION=${1:-"latest"}
 OUTPUT_DIR="./releases"
-PACKAGE_NAME="docker-dev-env-${VERSION}"
+PACKAGE_NAME="php-harbor-${VERSION}"
 
-echo -e "${BLUE}━━━ Docker Dev Environment - Release Builder ━━━${NC}"
+echo -e "${BLUE}━━━ PHPHarbor - Release Builder ━━━${NC}"
 echo ""
 echo "📦 Versione: $VERSION"
 echo ""
@@ -54,7 +54,7 @@ BUILD_TIMESTAMP=$(date +%s)
 
 # Crea file .build-info
 cat > .build-info << EOF
-# Docker Dev Environment Build Information
+# PHPHarbor Build Information
 # This file is generated automatically during release creation
 
 VERSION="$VERSION"
@@ -62,7 +62,7 @@ GIT_HASH="$GIT_HASH"
 GIT_COMMIT="$GIT_COMMIT"
 BUILD_DATE="$BUILD_DATE"
 BUILD_TIMESTAMP="$BUILD_TIMESTAMP"
-REPOSITORY="https://github.com/v-merli/docker-development-environment"
+REPOSITORY="https://github.com/v-merli/php-harbor"
 EOF
 
 echo -e "${GREEN}✓${NC} Build info generato"
@@ -115,7 +115,7 @@ echo "1. Testa il tarball localmente:"
 echo "   tar -xzf $OUTPUT_DIR/${PACKAGE_NAME}.tar.gz -C /tmp/test"
 echo ""
 echo "2. Crea release su GitHub:"
-echo "   - Vai su: https://github.com/v-merli/docker-development-environment/releases/new"
+echo "   - Vai su: https://github.com/v-merli/php-harbor/releases/new"
 echo "   - Tag: v${VERSION}"
 echo "   - Titolo: Docker Dev Environment v${VERSION}"
 echo "   - Carica: $OUTPUT_DIR/${PACKAGE_NAME}.tar.gz"

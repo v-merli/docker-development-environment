@@ -1,11 +1,11 @@
-# 🚀 Docker Development Environment
+# � PHPHarbor
 
 Ambiente di sviluppo Docker flessibile per Laravel, WordPress, PHP e HTML con servizi dedicati o condivisi.
 
 ## 📦 Installazione One-Line
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-development-environment/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/v-merli/php-harbor/main/install.sh)
 ```
 
 > 🪟 **Windows**: Usa [WSL2](docs/windows-setup.md) | 🐧 **Linux/macOS**: Funziona direttamente
@@ -14,22 +14,22 @@ bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-develop
 
 ```bash
 # Setup iniziale
-docker-dev setup init
+phpharbor setup init
 
 # Crea progetto (modalità interattiva)
-docker-dev create
+phpharbor create
 
 # Oppure CLI diretta
-docker-dev create myapp --type laravel --php 8.3
+phpharbor create myapp --type laravel --php 8.3
 
 # Avvia sviluppo
-docker-dev dev myapp
+phpharbor dev myapp
 
 # Accedi al sito
 open https://myapp.test
 ```
 
-> 💡 **Directory Progetti**: Durante il setup, scegli dove salvare i progetti (default: `~/.docker-dev-env/projects`). Puoi cambiarla in seguito con `docker-dev setup config`
+> 💡 **Directory Progetti**: Durante il setup, scegli dove salvare i progetti (default: `~/.docker-dev-env/projects`). Puoi cambiarla in seguito con `phpharbor setup config`
 
 ## ✨ Features
 
@@ -72,26 +72,26 @@ open https://myapp.test
 
 ```bash
 # Laravel con tutto dedicato (max performance)
-docker-dev create shop --type laravel --php 8.3
+phpharbor create shop --type laravel --php 8.3
 
 # Laravel con tutto condiviso (min RAM)
-docker-dev create api --type laravel --fully-shared
+phpharbor create api --type laravel --fully-shared
 
 # WordPress con MySQL condiviso
-docker-dev create blog --type wordpress --shared-db
+phpharbor create blog --type wordpress --shared-db
 
 # HTML statico con PHP condiviso
-docker-dev create landing --type html --shared-php
+phpharbor create landing --type html --shared-php
 
 # Gestione
-docker-dev project list
-docker-dev project logs shop
-docker-dev project artisan shop migrate
-docker-dev project composer shop require package
+phpharbor project list
+phpharbor project logs shop
+phpharbor project artisan shop migrate
+phpharbor project composer shop require package
 
 # Servizi
-docker-dev shared status
-docker-dev shared php 8.3
+phpharbor shared status
+phpharbor shared php 8.3
 ```
 
 ## 🏗️ Architettura

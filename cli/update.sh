@@ -5,7 +5,7 @@
 
 # CONFIGURAZIONE REPOSITORY
 # Repository GitHub per gli aggiornamenti
-GITHUB_REPO="${DOCKER_DEV_GITHUB_REPO:-v-merli/docker-development-environment}"
+GITHUB_REPO="${PHPHARBOR_GITHUB_REPO:-v-merli/php-harbor}"
 RELEASES_API_URL="https://api.github.com/repos/$GITHUB_REPO/releases"
 RELEASE_LATEST_URL="$RELEASES_API_URL/latest"
 RELEASE_TAG_URL="https://api.github.com/repos/$GITHUB_REPO/releases/tags"
@@ -189,9 +189,9 @@ update_install() {
     print_info "Download versione $version_to_install..."
     
     # URL download specifico per versione
-    local download_url="https://github.com/$GITHUB_REPO/releases/download/v${version_to_install}/docker-dev-env.tar.gz"
+    local download_url="https://github.com/$GITHUB_REPO/releases/download/v${version_to_install}/php-harbor.tar.gz"
     
-    if ! curl -fsSL "$download_url" -o "$temp_dir/docker-dev-env.tar.gz"; then
+    if ! curl -fsSL "$download_url" -o "$temp_dir/php-harbor.tar.gz"; then
         print_error "Errore durante il download"
         echo "URL: $download_url"
         exit 1
@@ -201,7 +201,7 @@ update_install() {
     
     # Estrai in directory temporanea
     print_info "Estrazione archivio..."
-    tar -xzf "$temp_dir/docker-dev-env.tar.gz" -C "$temp_dir"
+    tar -xzf "$temp_dir/php-harbor.tar.gz" -C "$temp_dir"
     
     # Backup dei file da preservare
     print_info "Backup configurazioni..."
@@ -433,7 +433,7 @@ show_update_usage() {
     cat << EOF
 Uso: ./docker-dev update <comando> [opzioni]
 
-Gestisce gli aggiornamenti di Docker Dev Environment.
+Gestisce gli aggiornamenti di PHPHarbor.
 
 COMANDI:
   check                 Verifica disponibilità aggiornamenti
