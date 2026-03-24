@@ -35,7 +35,7 @@ Fixes #(issue number)
 
 ```bash
 # Comandi usati per testare
-./docker-dev create test-project --type laravel --php 8.3
+./phpharbor create test-project --type laravel --php 8.3
 # ...
 ```
 

@@ -16,7 +16,7 @@ cmd_ssl() {
         generate)
             if [ -z "$2" ]; then
                 print_error "Dominio non specificato"
-                echo "Uso: ./docker-dev ssl generate <dominio>"
+                echo "Uso: ./phpharbor ssl generate <dominio>"
                 exit 1
             fi
             ssl_generate "$2"
@@ -75,7 +75,7 @@ ssl_generate() {
         print_error "mkcert non trovato"
         echo ""
         echo "Installa prima mkcert:"
-        echo "  ./docker-dev ssl setup"
+        echo "  ./phpharbor ssl setup"
         exit 1
     fi
     
@@ -144,7 +144,7 @@ ssl_verify() {
                 print_success "CA installata nel keychain di sistema"
             else
                 print_warning "CA non trovata nel keychain di sistema"
-                echo "  Esegui: ./docker-dev ssl install"
+                echo "  Esegui: ./phpharbor ssl install"
             fi
         else
             # Su Linux verifica nel certutil o certificate store
@@ -154,12 +154,12 @@ ssl_verify() {
                 print_success "CA installata in /usr/local/share/ca-certificates"
             else
                 print_warning "CA potrebbe non essere installata nel sistema"
-                echo "  Esegui: ./docker-dev ssl install"
+                echo "  Esegui: ./phpharbor ssl install"
             fi
         fi
     else
         print_warning "CA locale non configurata"
-        echo "  Esegui: ./docker-dev ssl install"
+        echo "  Esegui: ./phpharbor ssl install"
     fi
     
     echo ""
@@ -182,11 +182,11 @@ ssl_verify() {
     
     echo ""
     print_info "Per generare un nuovo certificato:"
-    echo "  ./docker-dev ssl generate <dominio>"
+    echo "  ./phpharbor ssl generate <dominio>"
 }
 
 show_ssl_usage() {
-    echo "Uso: ./docker-dev ssl <comando> [opzioni]"
+    echo "Uso: ./phpharbor ssl <comando> [opzioni]"
     echo ""
     echo "Comandi:"
     echo "  setup              Configura Certificate Authority locale (prima volta)"
@@ -196,7 +196,7 @@ show_ssl_usage() {
     echo "  help               Mostra questo help"
     echo ""
     echo "Esempi:"
-    echo "  ./docker-dev ssl setup                  # Setup iniziale"
-    echo "  ./docker-dev ssl generate myapp.test    # Genera cert per dominio"
-    echo "  ./docker-dev ssl verify                 # Verifica configurazione"
+    echo "  ./phpharbor ssl setup                  # Setup iniziale"
+    echo "  ./phpharbor ssl generate myapp.test    # Genera cert per dominio"
+    echo "  ./phpharbor ssl verify                 # Verifica configurazione"
 }

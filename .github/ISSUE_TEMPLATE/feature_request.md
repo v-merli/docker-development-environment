@@ -27,7 +27,7 @@ assignees: ''
 
 ```bash
 # Esempio di come userai questa feature
-docker-dev create myapp --new-feature
+phpharbor create myapp --new-feature
 ```
 
 **Caso d'uso specifico:**

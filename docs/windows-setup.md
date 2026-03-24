@@ -1,10 +1,10 @@
 # Windows Setup (WSL2)
 
-Guida completa per installare Docker Development Environment su Windows utilizzando WSL2.
+Guida completa per installare PHPHarbor su Windows utilizzando WSL2.
 
 ## 🪟 Panoramica
 
-Docker Development Environment funziona perfettamente su Windows tramite **WSL2** (Windows Subsystem for Linux 2), che offre:
+PHPHarbor funziona perfettamente su Windows tramite **WSL2** (Windows Subsystem for Linux 2), che offre:
 
 - ✅ Performance native Linux
 - ✅ Piena compatibilità con script bash
@@ -85,7 +85,7 @@ Apri **Ubuntu** (dal menu Start) e esegui:
 
 ```bash
 # Installa con un solo comando
-bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-development-environment/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/your-username/php-harbor/main/install.sh)
 ```
 
 Lo script:
@@ -97,10 +97,10 @@ Lo script:
 
 ```bash
 # Setup iniziale
-docker-dev setup init
+phpharbor setup init
 
 # Crea progetto
-docker-dev create myapp --type laravel --php 8.3
+phpharbor create myapp --type laravel --php 8.3
 
 # Accedi al progetto
 # Da Windows: http://myapp.test
@@ -132,7 +132,7 @@ cd ~/projects  # File system WSL2 (VELOCE!)
 I file WSL sono accessibili da Esplora File Windows:
 
 ```
-\\wsl$\Ubuntu\home\tuo-username\.docker-dev-env\projects
+\\wsl$\Ubuntu\home\tuo-username\.phpharbor\projects
 ```
 
 Oppure da terminale Ubuntu:
@@ -150,7 +150,7 @@ Questo apre la cartella corrente in Esplora File Windows!
 2. Installa l'estensione **WSL** (Microsoft)
 3. Da Ubuntu, apri il progetto:
    ```bash
-   cd ~/.docker-dev-env/projects/myapp
+   cd ~/.phpharbor/projects/myapp
    code .
    ```
 
@@ -272,10 +272,10 @@ Aggiungi a `~/.bashrc` in Ubuntu:
 # Apri file/cartelle in Windows
 alias open='explorer.exe'
 
-# Shortcut docker-dev
-alias dd='docker-dev'
-alias ddl='docker-dev project list'
-alias ddc='docker-dev create'
+# Shortcut phpharbor
+alias dd='phpharbor
+alias ddl='phpharbor project list'
+alias ddc='phpharbor create'
 ```
 
 ### Terminal Windows Moderno
@@ -292,7 +292,7 @@ I progetti in WSL2 non sono automaticamente backuppati da Windows Backup!
 
 ```bash
 # Backup progetti
-tar -czf ~/projects-backup.tar.gz ~/.docker-dev-env/projects
+tar -czf ~/projects-backup.tar.gz ~/.phpharbor/projects
 
 # Copia su Windows
 cp ~/projects-backup.tar.gz /mnt/c/Users/TuoNome/Backup/
@@ -323,10 +323,10 @@ Per aggiornare Docker Dev Environment:
 
 ```bash
 # Riesegui l'installer (rileva installazione esistente)
-bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-development-environment/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/your-username/php-harbor/main/install.sh)
 
 # Oppure manualmente
-cd ~/.docker-dev-env
+cd ~/.phpharbor
 git pull origin main
 ```
 
@@ -349,7 +349,7 @@ git pull origin main
 ## 🆘 Supporto
 
 **Problemi specifici Windows/WSL2?**
-- [GitHub Issues](https://github.com/your-username/docker-development-environment/issues)
+- [GitHub Issues](https://github.com/your-username/php-harbor/issues)
 - Tag: `windows` o `wsl2`
 
 **Risorse WSL2:**
@@ -362,7 +362,7 @@ git pull origin main
 
 - [ ] WSL2 installato e aggiornato
 - [ ] Docker Desktop in esecuzione e integrato
-- [ ] docker-dev installato e funzionante
+- [ ] phpharbor installato e funzionante
 - [ ] Primo progetto creato con successo
 - [ ] Progetti salvati in `~` (non in `/mnt/c/`)
 - [ ] VS Code con WSL extension configurato

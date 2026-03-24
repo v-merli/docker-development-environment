@@ -101,7 +101,7 @@ Quindi forziamo `hmr.host: 'localhost'` per connettersi direttamente alla porta 
 
 1. Accedi alla shell del container app:
    ```bash
-   ./docker-dev shell myproject
+   ./phpharborshell myproject
    ```
 
 2. Avvia Vite:

@@ -75,7 +75,7 @@ cmd_info() {
         echo "  ✓ acme-companion per SSL"
     else
         echo "  ✗ Proxy non avviato"
-        echo "    Avvialo con: ./docker-dev setup proxy"
+        echo "    Avvialo con: ./phpharbor setup proxy"
         echo "    Porte configurate: HTTP=$HTTP_PORT, HTTPS=$HTTPS_PORT"
     fi
     
@@ -104,7 +104,7 @@ cmd_info() {
     
     if [ "$shared_count" -eq 0 ]; then
         echo "  ✗ Nessun servizio condiviso attivo"
-        echo "    Avviali con: ./docker-dev shared start"
+        echo "    Avviali con: ./phpharbor shared start"
         echo "    Porte configurate: MySQL=$MYSQL_SHARED_PORT, Redis=$REDIS_SHARED_PORT"
     fi
     
@@ -148,10 +148,10 @@ cmd_info() {
         local default_dir="$SCRIPT_DIR/projects"
         if [ "$PROJECTS_DIR" != "$default_dir" ]; then
             echo "           ${GREEN}(configurazione personalizzata)${NC}"
-            echo "           Per cambiarla: docker-dev setup config"
+            echo "           Per cambiarla: phpharbor setup config"
         fi
     else
-        echo "           ${YELLOW}(default - configura con: docker-dev setup config)${NC}"
+        echo "           ${YELLOW}(default - configura con: phpharbor setup config)${NC}"
     fi
     
     echo "  Proxy: $SCRIPT_DIR/proxy"

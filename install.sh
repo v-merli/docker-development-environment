@@ -39,7 +39,7 @@ esac
 
 # Directory di installazione
 INSTALL_DIR="$HOME/.phpharbor"
-BIN_LINK="/usr/local/bin/docker-dev"
+BIN_LINK="/usr/local/bin/phpharbor"
 
 print_title "PHPHarbor - Installer"
 echo ""
@@ -121,7 +121,7 @@ if [ -d "$INSTALL_DIR" ]; then
     fi
     
     # Rimuovi installazione vecchia (ma mantieni projects/)
-    TEMP_PROJECTS="$HOME/.docker-dev-env-projects-backup"
+    TEMP_PROJECTS="$HOME/.php-harbor-projects-backup"
     if [ -d "$INSTALL_DIR/projects" ]; then
         mv "$INSTALL_DIR/projects" "$TEMP_PROJECTS"
     fi
@@ -166,19 +166,19 @@ echo ""
 # ==================================================
 print_info "Configurazione permessi..."
 
-# Assicura che docker-dev sia eseguibile
-chmod +x "$INSTALL_DIR/docker-dev"
+# Assicura che phpharbor sia eseguibile
+chmod +x "$INSTALL_DIR/phpharbor"
 
-print_info "Creazione symlink per comando docker-dev..."
+print_info "Creazione symlink per comando phpharbor..."
 
 if [ -L "$BIN_LINK" ] || [ -f "$BIN_LINK" ]; then
     sudo rm -f "$BIN_LINK"
 fi
 
 # Il symlink eredita automaticamente i permessi del file originale
-sudo ln -sf "$INSTALL_DIR/docker-dev" "$BIN_LINK"
+sudo ln -sf "$INSTALL_DIR/phpharbor" "$BIN_LINK"
 
-print_success "Comando docker-dev disponibile globalmente"
+print_success "Comando phpharbor disponibile globalmente"
 echo ""
 
 # ==================================================
@@ -197,16 +197,16 @@ fi
 if [ -n "$SHELL_RC" ] && [ -f "$SHELL_RC" ]; then
     # Rimuovi righe esistenti (compatibile con macOS e Linux)
     if [ "$OS_TYPE" = "macOS" ]; then
-        sed -i.bak '/docker-dev-completion/d' "$SHELL_RC"
+        sed -i.bak '/phpharbor-completion/d' "$SHELL_RC"
         rm -f "${SHELL_RC}.bak"
     else
-        sed -i '/docker-dev-completion/d' "$SHELL_RC"
+        sed -i '/phpharbor-completion/d' "$SHELL_RC"
     fi
     
     # Aggiungi completion
     echo "" >> "$SHELL_RC"
-    echo "# Docker Development Environment - Autocompletamento" >> "$SHELL_RC"
-    echo "[ -f $INSTALL_DIR/docker-dev-completion.bash ] && source $INSTALL_DIR/docker-dev-completion.bash" >> "$SHELL_RC"
+    echo "# PHPHarbor - Autocompletamento" >> "$SHELL_RC"
+    echo "[ -f $INSTALL_DIR/phpharbor-completion.bash ] && source $INSTALL_DIR/phpharbor-completion.bash" >> "$SHELL_RC"
     
     print_success "Autocompletamento configurato in $SHELL_RC"
 else
@@ -228,7 +228,7 @@ echo ""
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     cd "$INSTALL_DIR"
-    ./docker-dev setup init
+    ./phpharbor setup init
     echo ""
 fi
 
@@ -243,16 +243,16 @@ echo "1) Ricarica la shell per attivare autocompletamento:"
 echo "   ${GREEN}source $SHELL_RC${NC}"
 echo ""
 echo "2) Verifica installazione:"
-echo "   ${GREEN}docker-dev version${NC}"
+echo "   ${GREEN}phpharbor version${NC}"
 echo ""
 echo "3) Crea il tuo primo progetto:"
-echo "   ${GREEN}docker-dev create${NC}  # Modalità interattiva"
-echo "   ${GREEN}docker-dev create myapp --type laravel${NC}"
+echo "   ${GREEN}phpharbor create${NC}  # Modalità interattiva"
+echo "   ${GREEN}phpharbor create myapp --type laravel${NC}"
 echo ""
 echo "4) Documenta te stesso:"
-echo "   ${GREEN}docker-dev help${NC}"
+echo "   ${GREEN}phpharbor help${NC}"
 echo ""
 echo -e "${BLUE}Repository:${NC} $INSTALL_DIR"
-echo -e "${BLUE}Documentazione:${NC} https://github.com/v-merli/docker-development-environment"
+echo -e "${BLUE}Documentazione:${NC} https://github.com/v-merli/php-harbor"
 echo ""
 print_success "Buon sviluppo! 🚀"

@@ -100,7 +100,7 @@ services:
 docker logs {progetto}-scheduler -f
 
 # Esegui manualmente il scheduler
-./docker-dev shell {progetto}
+./phpharborshell {progetto}
 php artisan schedule:run
 ```
 
@@ -111,7 +111,7 @@ php artisan schedule:run
 docker logs {progetto}-queue -f
 
 # Visualizza job in coda
-./docker-dev shell {progetto}
+./phpharborshell {progetto}
 php artisan queue:work --once    # Esegui un solo job
 php artisan queue:restart        # Riavvia tutti i worker
 php artisan queue:failed         # Lista job falliti
@@ -217,7 +217,7 @@ docker ps | grep scheduler
 docker logs {progetto}-scheduler -f
 
 # Test manuale
-./docker-dev shell {progetto}
+./phpharborshell {progetto}
 php artisan schedule:list  # Lista task schedulati
 ```
 
@@ -228,7 +228,7 @@ php artisan schedule:list  # Lista task schedulati
 cat projects/{progetto}/app/.env | grep QUEUE
 
 # Verifica connessione Redis/Database
-./docker-dev shell {progetto}
+./phpharborshell {progetto}
 php artisan queue:monitor redis:default
 
 # Riavvia worker
@@ -239,7 +239,7 @@ docker compose restart queue
 ### Job bloccati in elaborazione
 
 ```bash
-./docker-dev shell {progetto}
+./phpharborshell {progetto}
 php artisan queue:restart  # Riavvia tutti i worker
 php artisan queue:clear    # Pulisci code (ATTENZIONE!)
 ```

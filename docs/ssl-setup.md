@@ -38,7 +38,7 @@ Il sistema è configurato con **mkcert** per generare certificati SSL fidati loc
 
 ```bash
 # Verifica che il certificato sia presente
-./docker-dev ssl verify
+./phpharborssl verify
 
 # Testa l'accesso HTTPS
 open https://ptest.test:8443
@@ -63,7 +63,7 @@ Firefox usa il **proprio archivio certificati**, separato dal sistema.
 **Metodo 1: Installa nss (raccomandato)**
 ```bash
 brew install nss
-./docker-dev ssl install
+./phpharborssl install
 ```
 
 **Metodo 2: Importa manualmente**
@@ -81,16 +81,16 @@ brew install nss
 
 ```bash
 # Verifica configurazione SSL
-./docker-dev ssl verify
+./phpharborssl verify
 
 # Genera certificato per nuovo dominio
-./docker-dev ssl generate miodominio.test
+./phpharborssl generate miodominio.test
 
 # Reinstalla CA (se necessario)
-./docker-dev ssl install
+./phpharborssl install
 
 # Setup completo (prima volta)
-./docker-dev ssl setup
+./phpharborssl setup
 ```
 
 ## 🔄 Rigenerare Tutti i Certificati
@@ -99,11 +99,11 @@ Se hai problemi persistenti:
 
 ```bash
 # 1. Reinstalla la CA
-./docker-dev ssl install
+./phpharborssl install
 
 # 2. Rigenera i certificati per i tuoi progetti
-./docker-dev ssl generate ptest.test
-./docker-dev ssl generate test-ssl.test
+./phpharborssl generate ptest.test
+./phpharborssl generate test-ssl.test
 
 # 3. Riavvia nginx-proxy
 cd proxy && docker compose restart nginx-proxy
@@ -136,7 +136,7 @@ security dump-trust-settings -d | grep -A 5 mkcert
 ### "NET::ERR_CERT_AUTHORITY_INVALID"
 
 La CA non è fidata dal browser:
-1. Esegui: `./docker-dev ssl install`
+1. Esegui: `./phpharborssl install`
 2. Apri Keychain Access e marca come "Fidati sempre"
 3. Riavvia il browser
 
@@ -145,7 +145,7 @@ La CA non è fidata dal browser:
 Il certificato non copre il dominio:
 ```bash
 # Rigenera il certificato
-./docker-dev ssl generate nome-progetto.test
+./phpharborssl generate nome-progetto.test
 ```
 
 ### Funziona su Chrome ma non su Firefox
@@ -153,5 +153,5 @@ Il certificato non copre il dominio:
 Firefox usa il proprio archivio:
 ```bash
 brew install nss
-./docker-dev ssl setup
+./phpharborssl setup
 ```

@@ -110,7 +110,7 @@ update_check() {
         update_install
     else
         echo ""
-        print_info "Puoi aggiornare in seguito con: ./docker-dev update install"
+        print_info "Puoi aggiornare in seguito con: ./phpharbor update install"
     fi
 }
 
@@ -137,7 +137,7 @@ update_install() {
             print_error "Versione $target_version non trovata"
             echo ""
             echo "Versioni disponibili:"
-            echo "  ./docker-dev update list"
+            echo "  ./phpharbor update list"
             exit 1
         fi
         
@@ -269,8 +269,8 @@ update_install() {
         cp "$file" "$SCRIPT_DIR/$file"
     done
     
-    # Assicurati che docker-dev sia eseguibile
-    chmod +x "$SCRIPT_DIR/docker-dev" 2>/dev/null || true
+    # Assicurati che phpharbor sia eseguibile
+    chmod +x "$SCRIPT_DIR/phpharbor" 2>/dev/null || true
     chmod +x "$SCRIPT_DIR"/cli/*.sh 2>/dev/null || true
     
     cd "$SCRIPT_DIR"
@@ -289,7 +289,7 @@ update_install() {
     fi
     
     # Verifica nuovo numero di versione
-    local new_version=$(grep "^VERSION=" "$SCRIPT_DIR/docker-dev" | cut -d'"' -f2)
+    local new_version=$(grep "^VERSION=" "$SCRIPT_DIR/phpharbor" | cut -d'"' -f2)
     
     print_success "Aggiornamento completato! 🎉"
     echo ""
@@ -422,16 +422,16 @@ update_list() {
     
     echo ""
     print_info "Per installare una versione specifica:"
-    echo "  ./docker-dev update install <versione>"
+    echo "  ./phpharbor update install <versione>"
     echo ""
     echo "Esempi:"
-    echo "  ./docker-dev update install 2.0.0"
-    echo "  ./docker-dev update install          # Installa ultima"
+    echo "  ./phpharbor update install 2.0.0"
+    echo "  ./phpharbor update install          # Installa ultima"
 }
 
 show_update_usage() {
     cat << EOF
-Uso: ./docker-dev update <comando> [opzioni]
+Uso: ./phpharbor update <comando> [opzioni]
 
 Gestisce gli aggiornamenti di PHPHarbor.
 
@@ -444,21 +444,21 @@ COMANDI:
 
 ESEMPI:
   # Verifica aggiornamenti
-  ./docker-dev update check
+  ./phpharbor update check
   
   # Installa ultima versione
-  ./docker-dev update install
+  ./phpharbor update install
   
   # Installa versione specifica
-  ./docker-dev update install 1.5.0
-  ./docker-dev update install v1.5.0
+  ./phpharbor update install 1.5.0
+  ./phpharbor update install v1.5.0
   
   # Elenca tutte le versioni
-  ./docker-dev update list
+  ./phpharbor update list
   
   # Vedi changelog
-  ./docker-dev update changelog          # Ultima versione
-  ./docker-dev update changelog 2.0.0    # Versione specifica
+  ./phpharbor update changelog          # Ultima versione
+  ./phpharbor update changelog 2.0.0    # Versione specifica
 
 NOTE:
   • L'aggiornamento preserva configurazioni e progetti

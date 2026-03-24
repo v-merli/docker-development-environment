@@ -5,7 +5,7 @@
 
 cmd_shared() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "Uso: ./docker-dev shared <comando>"
+        echo "Uso: ./phpharbor shared <comando>"
         echo ""
         echo "Comandi:"
         echo "  start [service]   Avvia servizi condivisi (mysql/redis)"
@@ -42,7 +42,7 @@ cmd_shared() {
         *)
             print_error "Sotto-comando sconosciuto: $subcmd"
             echo ""
-            echo "Uso: ./docker-dev shared <comando>"
+            echo "Uso: ./phpharbor shared <comando>"
             echo ""
             echo "Comandi:"
             echo "  start [service]   Avvia servizi condivisi"
@@ -123,7 +123,7 @@ shared_logs() {
 shared_mysql() {
     if ! docker ps | grep -q mysql-shared; then
         print_error "MySQL condiviso non in esecuzione"
-        echo "Avvialo con: ./docker-dev shared start mysql"
+        echo "Avvialo con: ./phpharbor shared start mysql"
         exit 1
     fi
     
@@ -133,7 +133,7 @@ shared_mysql() {
 shared_php() {
     if [ -z "$1" ]; then
         print_error "Specifica la versione PHP"
-        echo "Uso: ./docker-dev shared php <versione>"
+        echo "Uso: ./phpharbor shared php <versione>"
         echo "Versioni: 7.3, 7.4, 8.1, 8.2, 8.3, 8.5"
         exit 1
     fi

@@ -1,6 +1,6 @@
 # Projects Directory
 
-Questa directory contiene tutti i progetti utente creati con `docker-dev`.
+Questa directory contiene tutti i progetti utente creati con `phpharbor.
 
 ## 🚀 Crea il tuo primo progetto
 
@@ -9,10 +9,10 @@ Questa directory contiene tutti i progetti utente creati con `docker-dev`.
 cd ..
 
 # Crea un nuovo progetto
-./docker-dev create myapp --type laravel --php 8.3
+./phpharbor create myapp --type laravel --php 8.3
 
 # Oppure con configurazione fully-shared (risparmio RAM)
-./docker-dev create myapp --fully-shared --php 8.3
+./phpharbor create myapp --fully-shared --php 8.3
 ```
 
 ## 📁 Struttura (esempio)
@@ -40,7 +40,7 @@ projects/
 - Questa directory è **ignorata da git** (vedi `.gitignore` nella root)
 - Ogni progetto è isolato con i propri container
 - I progetti possono condividere servizi (MySQL, Redis, PHP) per risparmiare RAM
-- Usa `./docker-dev list` per vedere tutti i progetti
+- Usa `./phpharbor list` per vedere tutti i progetti
 
 ## 📚 Documentazione
 

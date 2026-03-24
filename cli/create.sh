@@ -452,7 +452,7 @@ cmd_create() {
 }
 
 show_create_usage() {
-    echo "Uso: ./docker-dev create <nome> [opzioni]"
+    echo "Uso: ./phpharbor create <nome> [opzioni]"
     echo ""
     echo "Opzioni:"
     echo "  --type <tipo>         Tipo: laravel, wordpress, php, html (default: laravel)"
@@ -475,10 +475,10 @@ show_create_usage() {
     echo "  --no-install          Non installare framework"
     echo ""
     echo "Esempi:"
-    echo "  ./docker-dev create my-shop"
-    echo "  ./docker-dev create blog --shared-db --shared-redis"
-    echo "  ./docker-dev create api --fully-shared"
-    echo "  ./docker-dev create cms --shared-db --no-redis"
+    echo "  ./phpharbor create my-shop"
+    echo "  ./phpharbor create blog --shared-db --shared-redis"
+    echo "  ./phpharbor create api --fully-shared"
+    echo "  ./phpharbor create cms --shared-db --no-redis"
 }
 
 create_unified_env_file() {
@@ -932,12 +932,12 @@ show_project_summary() {
     echo -e "${CYAN}Path:${NC}      $path"
     echo ""
     echo "Comandi rapidi:"
-    echo "  ./docker-dev start $( basename $path)"
-    echo "  ./docker-dev logs $( basename $path)"
-    echo "  ./docker-dev shell $( basename $path)"
+    echo "  ./phpharbor start $( basename $path)"
+    echo "  ./phpharbor logs $( basename $path)"
+    echo "  ./phpharbor shell $( basename $path)"
     
     if [[ "$type" == "laravel" ]] && [[ "$installed" == true ]] && [[ "$inc_db" == true ]]; then
         echo ""
-        print_info "Esegui le migrazioni: ./docker-dev artisan $(basename $path) migrate"
+        print_info "Esegui le migrazioni: ./phpharbor artisan $(basename $path) migrate"
     fi
 }

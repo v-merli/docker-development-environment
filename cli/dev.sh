@@ -4,7 +4,7 @@
 # Comandi: shell, artisan, composer, npm, mysql
 
 show_dev_help() {
-    echo "Uso: ./docker-dev <comando> <progetto> [args]"
+    echo "Uso: ./phpharbor <comando> <progetto> [args]"
     echo ""
     echo "Comandi:"
     echo "  shell <progetto>          Apri shell bash"
@@ -16,7 +16,7 @@ show_dev_help() {
 
 cmd_shell() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "Uso: ./docker-dev shell <progetto>"
+        echo "Uso: ./phpharbor shell <progetto>"
         echo ""
         echo "Apre una shell bash interattiva nel container PHP del progetto."
         exit 0
@@ -24,7 +24,7 @@ cmd_shell() {
     
     if [ -z "$1" ]; then
         print_error "Specifica il nome del progetto"
-        echo "Uso: ./docker-dev shell <progetto>"
+        echo "Uso: ./phpharbor shell <progetto>"
         exit 1
     fi
     
@@ -58,19 +58,19 @@ cmd_shell() {
 
 cmd_artisan() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "Uso: ./docker-dev artisan <progetto> <comando>"
+        echo "Uso: ./phpharbor artisan <progetto> <comando>"
         echo ""
         echo "Esegue un comando artisan Laravel nel container del progetto."
         echo ""
         echo "Esempi:"
-        echo "  ./docker-dev artisan myapp migrate"
-        echo "  ./docker-dev artisan myapp make:controller UserController"
+        echo "  ./phpharbor artisan myapp migrate"
+        echo "  ./phpharbor artisan myapp make:controller UserController"
         exit 0
     fi
     
     if [ -z "$1" ]; then
         print_error "Specifica il nome del progetto"
-        echo "Uso: ./docker-dev artisan <progetto> <comando>"
+        echo "Uso: ./phpharbor artisan <progetto> <comando>"
         exit 1
     fi
     
@@ -105,7 +105,7 @@ cmd_artisan() {
 cmd_composer() {
     if [ -z "$1" ]; then
         print_error "Specifica il nome del progetto"
-        echo "Uso: ./docker-dev composer <progetto> <comando>"
+        echo "Uso: ./phpharbor composer <progetto> <comando>"
         exit 1
     fi
     
@@ -141,7 +141,7 @@ cmd_composer() {
 cmd_npm() {
     if [ -z "$1" ]; then
         print_error "Specifica il nome del progetto"
-        echo "Uso: ./docker-dev npm <progetto> <comando>"
+        echo "Uso: ./phpharbor npm <progetto> <comando>"
         exit 1
     fi
     
@@ -176,7 +176,7 @@ cmd_npm() {
 cmd_mysql() {
     if [ -z "$1" ]; then
         print_error "Specifica il nome del progetto"
-        echo "Uso: ./docker-dev mysql <progetto>"
+        echo "Uso: ./phpharbor mysql <progetto>"
         exit 1
     fi
     

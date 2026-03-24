@@ -1,6 +1,6 @@
 # Compatibilità Cross-Platform
 
-Docker Development Environment è completamente compatibile con macOS, Linux e Windows (via WSL2).
+PHPHarbor è completamente compatibile con macOS, Linux e Windows (via WSL2).
 
 ## Sistema di Rilevamento OS
 
@@ -33,7 +33,7 @@ brew services start dnsmasq
 sudo apt-get install -y dnsmasq
 
 # Configurazione
-/etc/dnsmasq.d/docker-dev-test.conf
+/etc/dnsmasq.d/phpharbor-test.conf
 /etc/systemd/resolved.conf.d/
 
 # Servizio
@@ -80,7 +80,7 @@ Questo è gestito automaticamente dallo script `install.sh`.
 ## File Modificati per Cross-Platform
 
 ### Core
-- `docker-dev` - Funzione `detect_os()` per rilevamento OS
+- `phpharbor - Funzione `detect_os()` per rilevamento OS
 - `install.sh` - Gestione `sed` specifico per OS
 
 ### Moduli CLI
@@ -103,7 +103,7 @@ multipass shell test-vm
 
 ## Compatibilità Windows
 
-Docker Development Environment funziona su Windows tramite WSL2:
+PHPHarbor funziona su Windows tramite WSL2:
 
 1. Installare WSL2 con Ubuntu
 2. Installare Docker Desktop con backend WSL2
@@ -126,14 +126,14 @@ Per verificare che tutto funzioni sulla tua piattaforma:
 
 ```bash
 # Info sistema
-./docker-dev info
+./phpharbor info
 
 # Test setup
-./docker-dev setup init
+./phpharbor setup init
 
 # Verifica DNS (se configurato)
 ping test.test
 
 # Verifica SSL (se configurato)
-./docker-dev ssl verify
+./phpharborssl verify
 ```

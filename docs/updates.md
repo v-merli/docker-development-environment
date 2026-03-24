@@ -1,6 +1,6 @@
 # Sistema di Aggiornamento Automatico
 
-Docker Development Environment include un sistema di aggiornamento automatico che permette di:
+PHPHarbor include un sistema di aggiornamento automatico che permette di:
 - Verificare se sono disponibili nuove versioni
 - Installare aggiornamenti con un comando
 - Preservare tutte le configurazioni e i progetti esistenti
@@ -12,7 +12,7 @@ Docker Development Environment include un sistema di aggiornamento automatico ch
 Controlla se è disponibile una nuova versione su GitHub:
 
 ```bash
-./docker-dev update check
+./phpharbor update check
 ```
 
 Questo comando:
@@ -26,14 +26,14 @@ Installa l'ultima versione disponibile o una versione specifica:
 
 ```bash
 # Installa ultima versione
-./docker-dev update install
+./phpharbor update install
 
 # Installa versione specifica
-./docker-dev update install 1.8.0
-./docker-dev update install v1.8.0
+./phpharbor update install 1.8.0
+./phpharbor update install v1.8.0
 
 # Downgrade a versione precedente
-./docker-dev update install 1.5.0
+./phpharbor update install 1.5.0
 ```
 
 Il processo di aggiornamento:
@@ -52,7 +52,7 @@ Il processo di aggiornamento:
 - ✓ Container e volumi Docker
 
 **Cosa viene aggiornato:**
-- ✓ Script principale `docker-dev`
+- ✓ Script principale `phpharbor
 - ✓ Moduli CLI in `cli/`
 - ✓ Template in `shared/templates/`
 - ✓ Dockerfile in `shared/dockerfiles/`
@@ -64,7 +64,7 @@ Il processo di aggiornamento:
 Mostra tutte le versioni pubblicate su GitHub:
 
 ```bash
-./docker-dev update list
+./phpharbor update list
 ```
 
 Output esempio:
@@ -85,10 +85,10 @@ Mostra le novità dell'ultima versione o di una versione specifica:
 
 ```bash
 # Changelog ultima versione
-./docker-dev update changelog
+./phpharbor update changelog
 
 # Changelog versione specifica
-./docker-dev update changelog 1.8.0
+./phpharbor update changelog 1.8.0
 ```
 
 ## Configurazione Repository
@@ -98,8 +98,8 @@ Dopo aver pubblicato il progetto su GitHub, configura il repository:
 ### Metodo 1: Variabile d'ambiente
 
 ```bash
-export DOCKER_DEV_GITHUB_REPO="tuo-username/docker-dev-env"
-./docker-dev update check
+export PHPHARBOR_GITHUB_REPO="tuo-username/pphpharbor
+./phpharbor update check
 ```
 
 ### Metodo 2: Modifica permanente
@@ -107,13 +107,13 @@ export DOCKER_DEV_GITHUB_REPO="tuo-username/docker-dev-env"
 Edita il file `cli/update.sh` e sostituisci:
 
 ```bash
-GITHUB_REPO="${DOCKER_DEV_GITHUB_REPO:-your-username/docker-dev-env}"
+GITHUB_REPO="${PHPHARBOR_GITHUB_REPO:-your-username/pphpharbor"
 ```
 
 con:
 
 ```bash
-GITHUB_REPO="${DOCKER_DEV_GITHUB_REPO:-tuo-username/docker-dev-env}"
+GITHUB_REPO="${PHPHARBOR_GITHUB_REPO:-tuo-username/pphpharbor"
 ```
 
 ## Workflow di Release
@@ -122,7 +122,7 @@ Per pubblicare una nuova versione:
 
 ### 1. Aggiorna Versione
 
-Modifica il numero di versione in `docker-dev`:
+Modifica il numero di versione in `phpharbor:
 
 ```bash
 VERSION="2.1.0"
@@ -134,14 +134,14 @@ VERSION="2.1.0"
 ./create-release.sh 2.1.0
 ```
 
-Questo genera `releases/docker-dev-env-2.1.0.tar.gz`.
+Questo genera `releases/phpharbor-2.1.0.tar.gz`.
 
 ### 3. Crea GitHub Release
 
 ```bash
 # Via GitHub CLI
 gh release create v2.1.0 \
-  releases/docker-dev-env-2.1.0.tar.gz#docker-dev-env.tar.gz \
+  releases/phpharbor-2.1.0.tar.gz#php-phpharbor.gz \
   --title "Release 2.1.0" \
   --notes "Changelog..."
 
@@ -149,7 +149,7 @@ gh release create v2.1.0 \
 # 1. Vai su https://github.com/username/repo/releases/new
 # 2. Tag: v2.1.0
 # 3. Title: Release 2.1.0
-# 4. Upload: docker-dev-env-2.1.0.tar.gz rinominato in docker-dev-env.tar.gz
+# 4. Upload: phpharbor-2.1.0.tar.gz rinominato in php-phpharbor.gz
 # 5. Pubblica
 ```
 
@@ -157,8 +157,8 @@ gh release create v2.1.0 \
 
 ```bash
 # Su un'installazione esistente
-./docker-dev update check
-./docker-dev update install
+./phpharbor update check
+./phpharbor update install
 ```
 
 ## API GitHub
@@ -170,7 +170,7 @@ Il sistema usa GitHub Releases API:
 https://api.github.com/repos/username/repo/releases/latest
 
 # Download tarball
-https://github.com/username/repo/releases/latest/download/docker-dev-env.tar.gz
+https://github.com/username/repo/releases/latest/download/phpharbor.tar.gz
 ```
 
 **Nota:** L'API di GitHub ha rate limit:
@@ -209,7 +209,7 @@ Possibili miglioramenti:
 
 ### Check automatico all'avvio
 
-Aggiungi in `docker-dev`:
+Aggiungi in `phpharbor:
 
 ```bash
 # Check aggiornamenti ogni 7 giorni
@@ -243,19 +243,19 @@ Test completo del sistema update:
 
 ```bash
 # 1. Simula versione vecchia
-sed -i.bak 's/VERSION=".*"/VERSION="1.0.0"/' docker-dev
+sed -i.bak 's/VERSION=".*"/VERSION="1.0.0"/' phpharbor
 
 # 2. Verifica check
-./docker-dev update check
+./phpharbor update check
 
 # 3. Verifica changelog
-./docker-dev update changelog
+./phpharbor update changelog
 
 # 4. Test install (se hai una release)
-./docker-dev update install
+./phpharbor update install
 
 # 5. Verifica versione aggiornata
-./docker-dev version
+./phpharbor version
 ```
 
 ## FAQ
@@ -274,7 +274,7 @@ Sì, ma manualmente:
 
 ```bash
 # Download versione specifica
-curl -fsSL https://github.com/username/repo/releases/download/v2.0.0/docker-dev-env.tar.gz | tar -xz
+curl -fsSL https://github.com/username/repo/releases/download/v2.0.0/phpharbor.tar.gz | tar -xz
 ```
 
 ### L'aggiornamento funziona offline?

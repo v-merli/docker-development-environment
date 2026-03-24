@@ -1,6 +1,6 @@
 # Documentazione
 
-Documentazione completa per Docker Development Environment.
+Documentazione completa per PHPHarbor.
 
 ## 📚 Indice
 
@@ -26,12 +26,12 @@ Documentazione completa per Docker Development Environment.
 ### 📖 Riferimenti
 
 - **[CLI Reference](cli-reference.md)** - Documentazione completa dei comandi
-  - `docker-dev create` - Creazione progetti
-  - `docker-dev project` - Gestione progetti
-  - `docker-dev dev` - Comandi sviluppo
-  - `docker-dev shared` - Servizi condivisi
-  - `docker-dev setup` - Configurazione sistema
-  - `docker-dev ssl` - Gestione certificati
+  - `phpharbor create` - Creazione progetti
+  - `phpharbor project` - Gestione progetti
+  - `phpharbor dev` - Comandi sviluppo
+  - `phpharbor shared` - Servizi condivisi
+  - `phpharbor setup` - Configurazione sistema
+  - `phpharborssl` - Gestione certificati
 
 ### 🔧 Guide Tecniche
 
@@ -110,6 +110,6 @@ Documentazione completa per Docker Development Environment.
 
 ## 💬 Serve Aiuto?
 
-- **Issue su GitHub**: [Issues](https://github.com/your-username/docker-development-environment/issues)
-- **Discussioni**: [Discussions](https://github.com/your-username/docker-development-environment/discussions)
+- **Issue su GitHub**: [Issues](https://github.com/your-username/php-harbor/issues)
+- **Discussioni**: [Discussions](https://github.com/your-username/php-harbor/discussions)
 - **README principale**: [../README.md](../README.md)

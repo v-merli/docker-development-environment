@@ -5,7 +5,7 @@
 
 cmd_setup() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "Uso: ./docker-dev setup <comando>"
+        echo "Uso: ./phpharbor setup <comando>"
         echo ""
         echo "Comandi:"
         echo "  dns     Installa e configura dnsmasq per *.test"
@@ -30,7 +30,7 @@ cmd_setup() {
         *)
             print_error "Sotto-comando sconosciuto: $subcmd"
             echo ""
-            echo "Uso: ./docker-dev setup <comando>"
+            echo "Uso: ./phpharbor setup <comando>"
             echo ""
             echo "Comandi:"
             echo "  dns     Installa e configura dnsmasq per *.test"
@@ -163,7 +163,7 @@ setup_init() {
     print_success "Ambiente configurato!"
     echo ""
     echo "Prossimi passi:"
-    echo "  1. Crea un progetto: ./docker-dev create"
-    echo "  2. Elenca progetti: ./docker-dev list"
-    echo "  3. Avvia progetto: ./docker-dev start <nome>"
+    echo "  1. Crea un progetto: ./phpharbor create"
+    echo "  2. Elenca progetti: ./phpharbor list"
+    echo "  3. Avvia progetto: ./phpharbor start <nome>"
 }

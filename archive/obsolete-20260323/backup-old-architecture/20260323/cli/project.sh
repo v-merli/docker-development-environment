@@ -4,7 +4,7 @@
 # Comandi: list, start, stop, restart, remove, logs
 
 show_project_help() {
-    echo "Uso: ./docker-dev <comando> [progetto]"
+    echo "Uso: ./phpharbor <comando> [progetto]"
     echo ""
     echo "Comandi:"
     echo "  list                  Elenca tutti i progetti"
@@ -17,7 +17,7 @@ show_project_help() {
 
 cmd_list() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "Uso: ./docker-dev list"
+        echo "Uso: ./phpharbor list"
         echo ""
         echo "Elenca tutti i progetti con stato (running/stopped), tipo e versione PHP."
         exit 0
@@ -61,7 +61,7 @@ cmd_list() {
 
 cmd_start() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "Uso: ./docker-dev start <progetto>"
+        echo "Uso: ./phpharbor start <progetto>"
         echo ""
         echo "Avvia tutti i container di un progetto."
         exit 0
@@ -69,7 +69,7 @@ cmd_start() {
     
     if [ -z "$1" ]; then
         print_error "Specifica il nome del progetto"
-        echo "Uso: ./docker-dev start <progetto>"
+        echo "Uso: ./phpharbor start <progetto>"
         exit 1
     fi
     
@@ -96,7 +96,7 @@ cmd_start() {
 cmd_stop() {
     if [ -z "$1" ]; then
         print_error "Specifica il nome del progetto"
-        echo "Uso: ./docker-dev stop <progetto>"
+        echo "Uso: ./phpharbor stop <progetto>"
         exit 1
     fi
     
@@ -117,7 +117,7 @@ cmd_stop() {
 cmd_restart() {
     if [ -z "$1" ]; then
         print_error "Specifica il nome del progetto"
-        echo "Uso: ./docker-dev restart <progetto>"
+        echo "Uso: ./phpharbor restart <progetto>"
         exit 1
     fi
     
@@ -138,7 +138,7 @@ cmd_restart() {
 cmd_remove() {
     if [ -z "$1" ]; then
         print_error "Specifica il nome del progetto"
-        echo "Uso: ./docker-dev remove <progetto>"
+        echo "Uso: ./phpharbor remove <progetto>"
         exit 1
     fi
     
@@ -171,7 +171,7 @@ cmd_remove() {
 cmd_logs() {
     if [ -z "$1" ]; then
         print_error "Specifica il nome del progetto"
-        echo "Uso: ./docker-dev logs <progetto> [-f]"
+        echo "Uso: ./phpharbor logs <progetto> [-f]"
         exit 1
     fi
     

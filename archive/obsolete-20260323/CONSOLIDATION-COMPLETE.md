@@ -1,16 +1,16 @@
 # 🎉 Consolidamento CLI Completato
 
 **Data:** 25 Febbraio 2026  
-**Versione:** docker-dev v2.0.0
+**Versione:** phpharbor v2.0.0
 
 ## ✅ Stato Finale
 
 ### 📦 Struttura Pulita
 
 ```
-docker-dev/
-├── docker-dev                     # CLI unificato (5KB)
-├── docker-dev-completion.bash     # 🆕 Autocompletamento bash/zsh
+phpharbor
+├── phpharbor                    # CLI unificato (5KB)
+├── phpharbor-completion.bash     # 🆕 Autocompletamento bash/zsh
 │
 ├── cli/                           # Moduli CLI (6 file, ~25KB)
 │   ├── project.sh
@@ -41,7 +41,7 @@ docker-dev/
 ## 🚀 Funzionalità Implementate
 
 ### 1. CLI Unificato ✅
-- ✅ Un solo comando: `./docker-dev`
+- ✅ Un solo comando: `./phpharbor
 - ✅ 25+ comandi disponibili
 - ✅ Help integrato: `--help` per ogni comando
 - ✅ Output colorato e chiaro
@@ -86,15 +86,15 @@ docker-dev/
 
 ### 3. Supporto --help ✅
 ```bash
-./docker-dev --help              # Help generale
-./docker-dev create --help       # Help creazione progetti
-./docker-dev shared --help       # Help servizi condivisi
-./docker-dev artisan --help      # Help comando artisan
+./phpharbor--help              # Help generale
+./phpharbor create --help       # Help creazione progetti
+./phpharbor shared --help       # Help servizi condivisi
+./phpharbor artisan --help      # Help comando artisan
 # ... supporto per tutti i comandi
 ```
 
 ### 4. Autocompletamento Bash/Zsh ✅
-- File `docker-dev-completion.bash`
+- File `phpharbor-completion.bash`
 - Autocomplete comandi principali
 - Autocomplete progetti disponibili
 - Autocomplete versioni PHP
@@ -104,7 +104,7 @@ docker-dev/
 ### 5. Riorganizzazione Script ✅
 - 10 script spostati in `legacy/`
 - README legacy con tabella migrazione
-- Root pulita (solo docker-dev + documentazione)
+- Root pulita (solo phpharbor+ documentazione)
 - Retrocompatibilità mantenuta
 
 ### 6. Documentazione Aggiornata ✅
@@ -117,24 +117,24 @@ docker-dev/
 
 ### Test Comandi Base ✅
 ```bash
-✅ ./docker-dev help             # Help funzionante
-✅ ./docker-dev version          # v2.0.0
-✅ ./docker-dev list             # 8 progetti visualizzati
-✅ ./docker-dev shared status    # MySQL, Redis, PHP-8.3 attivi
-✅ ./docker-dev stats            # Statistiche risorse
-✅ ./docker-dev info             # Info ambiente completo
+✅ ./phpharbor help             # Help funzionante
+✅ ./phpharbor version          # v2.0.0
+✅ ./phpharbor list             # 8 progetti visualizzati
+✅ ./phpharbor shared status    # MySQL, Redis, PHP-8.3 attivi
+✅ ./phpharbor stats            # Statistiche risorse
+✅ ./phpharbor info             # Info ambiente completo
 ```
 
 ### Test --help ✅
 ```bash
-✅ ./docker-dev create --help    # Mostra opzioni complete
-✅ ./docker-dev shared --help    # Mostra sotto-comandi
-✅ ./docker-dev artisan --help   # Mostra esempi usage
+✅ ./phpharbor create --help    # Mostra opzioni complete
+✅ ./phpharbor shared --help    # Mostra sotto-comandi
+✅ ./phpharbor artisan --help   # Mostra esempi usage
 ```
 
 ### Test Creazione Progetto ✅
 ```bash
-✅ ./docker-dev create test-cli-new --fully-shared --php 8.3 --no-install
+✅ ./phpharbor create test-cli-new --fully-shared --php 8.3 --no-install
 
 Risultato:
 - Progetto creato in 10 secondi
@@ -178,7 +178,7 @@ test-cli-new (fully-shared):
 - ✅ Autocompletamento con TAB
 - ✅ Help contestuale sempre disponibile
 - ✅ Output chiaro e colorato
-- ✅ Comandi più brevi: `./docker-dev` vs `./manage-projects.sh`
+- ✅ Comandi più brevi: `./phpharbor vs `./manage-projects.sh`
 
 ### Manutenibilità
 - ✅ Codice modulare in `cli/`
@@ -217,19 +217,19 @@ test-cli-new (fully-shared):
 ### Per Utenti Nuovi
 ```bash
 # Usa solo il nuovo CLI
-./docker-dev setup init
-./docker-dev create myapp --fully-shared
-./docker-dev start myapp
+./phpharbor setup init
+./phpharbor create myapp --fully-shared
+./phpharbor start myapp
 ```
 
 ### Per Utenti Esistenti
 ```bash
 # I vecchi progetti funzionano già
-./docker-dev list  # Vedi tutti i progetti
+./phpharbor list  # Vedi tutti i progetti
 
 # Migra gradualmente ai nuovi comandi
 # Vecchio: ./manage-projects.sh start myapp
-# Nuovo:   ./docker-dev start myapp
+# Nuovo:   ./phpharbor start myapp
 ```
 
 ### Per Contribuire
@@ -237,7 +237,7 @@ test-cli-new (fully-shared):
 # Aggiungere nuova funzionalità
 1. Crea modulo in cli/mynewmodule.sh
 2. Implementa cmd_mycommand()
-3. Aggiungi caso in docker-dev
+3. Aggiungi caso in phpharbor
 4. Documenta in CLI-README.md
 5. Test!
 ```
@@ -256,7 +256,7 @@ La transizione da v1.x (script multipli) a v2.0 (CLI unificato) è smooth e perm
 - Migrare gradualmente ai nuovi comandi
 - Beneficiare immediatamente delle nuove funzionalità
 
-**Il futuro del docker-dev è qui!** 🚀
+**Il futuro del phpharborè qui!** 🚀
 
 ---
-*docker-dev v2.0.0 - A modern Docker development environment*
+*phpharbor v2.0.0 - A modern Docker development environment*

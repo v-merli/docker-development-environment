@@ -6,13 +6,13 @@
 ## Contenuto
 
 ### 📁 legacy/
-Script originali rimpiazzati dal CLI unificato (`./docker-dev`):
+Script originali rimpiazzati dal CLI unificato (`./phpharbor):
 - `artisan.sh`, `code-project.sh`, `db-connect.sh`
 - `manage-projects.sh`, `new-project.sh`, `new-project-fixed.sh`
 - `restart-docker.sh`, `setup-dnsmasq.sh`
 - `start-shared-php.sh`, `start-shared-services.sh`
 
-**Sostituito da:** `./docker-dev` con moduli in `cli/`
+**Sostituito da:** `./phpharbor con moduli in `cli/`
 
 ### 📁 backup-old-architecture/
 Backup completo creato prima della migrazione al template unificato (20260323)
@@ -42,8 +42,8 @@ Template Docker Compose obsoleti sostituiti dal sistema unificato:
 
 ### CLI Unificato
 ```bash
-./docker-dev create <nome> [--shared-db] [--shared-redis] [--shared-php]
-./docker-dev create <nome> [--shared | --fully-shared]
+./phpharbor create <nome> [--shared-db] [--shared-redis] [--shared-php]
+./phpharbor create <nome> [--shared | --fully-shared]
 ```
 
 ### Flag Disponibili

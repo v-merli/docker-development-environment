@@ -30,13 +30,13 @@ esac
 
 # Directory
 INSTALL_DIR="$HOME/.phpharbor"
-BIN_LINK="/usr/local/bin/docker-dev"
+BIN_LINK="/usr/local/bin/phpharbor"
 
-print_title "Docker Development Environment - Disinstallazione"
+print_title "PHPHarbor - Disinstallazione"
 echo ""
 
 print_warning "ATTENZIONE: Questa operazione rimuoverà:"
-echo "  • Il comando docker-dev"
+echo "  • Il comando phpharbor"
 echo "  • La directory $INSTALL_DIR"
 echo "  • Autocompletamento shell (da .zshrc/.bashrc)"
 echo ""
@@ -158,14 +158,14 @@ print_info "Pulizia configurazione shell..."
 
 for shell_rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$shell_rc" ]; then
-        # Rimuovi righe docker-dev (compatibile con macOS e Linux)
+        # Rimuovi righe phpharbor (compatibile con macOS e Linux)
         if [ "$OS_TYPE" = "macOS" ]; then
-            sed -i.bak '/docker-dev-completion/d' "$shell_rc" 2>/dev/null || true
-            sed -i.bak '/Docker Development Environment/d' "$shell_rc" 2>/dev/null || true
+            sed -i.bak '/phpharbor-completion/d' "$shell_rc" 2>/dev/null || true
+            sed -i.bak '/PHPHarbor/d' "$shell_rc" 2>/dev/null || true
             rm -f "${shell_rc}.bak"
         else
-            sed -i '/docker-dev-completion/d' "$shell_rc" 2>/dev/null || true
-            sed -i '/Docker Development Environment/d' "$shell_rc" 2>/dev/null || true
+            sed -i '/phpharbor-completion/d' "$shell_rc" 2>/dev/null || true
+            sed -i '/PHPHarbor/d' "$shell_rc" 2>/dev/null || true
         fi
         print_success "Autocompletamento rimosso da $shell_rc"
     fi
@@ -188,4 +188,4 @@ echo ""
 echo "Per ricaricare la shell:"
 echo "  ${GREEN}source ~/.zshrc${NC}  # o ~/.bashrc"
 echo ""
-print_info "Grazie per aver usato Docker Development Environment! 👋"
+print_info "Grazie per aver usato PHPHarbor! 👋"

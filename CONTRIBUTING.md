@@ -99,9 +99,9 @@ Quando `develop` è pronto per il rilascio:
 git checkout develop
 git pull origin develop
 
-# 2. Aggiorna versione in docker-dev
+# 2. Aggiorna versione in phpharbor
 # Modifica: VERSION="1.1.0"
-git add docker-dev
+git add phpharbor
 git commit -m "chore: bump version to 1.1.0"
 
 # 3. Merge in main

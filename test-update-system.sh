@@ -29,7 +29,7 @@ echo ""
 # ====================================================
 print_info "Test 1: Verifica comando update..."
 
-if ./docker-dev update help > /dev/null 2>&1; then
+if ./phpharbor update help > /dev/null 2>&1; then
     print_success "Comando update disponibile"
 else
     print_error "Comando update non trovato"
@@ -44,13 +44,13 @@ echo ""
 print_info "Test 2: Simulazione versione vecchia..."
 
 # Backup versione corrente
-cp docker-dev docker-dev.backup
-CURRENT_VERSION=$(grep "^VERSION=" docker-dev | cut -d'"' -f2)
+cp phpharbor phpharbor.backup
+CURRENT_VERSION=$(grep "^VERSION=" phpharbor | cut -d'"' -f2)
 echo "  Versione corrente: $CURRENT_VERSION"
 
 # Cambia a versione vecchia
-sed -i.bak 's/VERSION=".*"/VERSION="1.0.0-test"/' docker-dev
-TEST_VERSION=$(grep "^VERSION=" docker-dev | cut -d'"' -f2)
+sed -i.bak 's/VERSION=".*"/VERSION="1.0.0-test"/' phpharbor
+TEST_VERSION=$(grep "^VERSION=" phpharbor | cut -d'"' -f2)
 echo "  Versione test: $TEST_VERSION"
 
 print_success "Versione modificata per il test"
@@ -79,7 +79,7 @@ echo ""
 # ====================================================
 print_info "Test 4: Verifica help command..."
 
-./docker-dev update help > /dev/null 2>&1
+./phpharbor update help > /dev/null 2>&1
 print_success "Help visualizzato correttamente"
 echo ""
 
@@ -146,11 +146,11 @@ done
 echo ""
 
 # ====================================================
-# Test 8: Test integrazione con docker-dev
+# Test 8: Test integrazione con phpharbor
 # ====================================================
 print_info "Test 8: Test integrazione comando principale..."
 
-if ./docker-dev help | grep -q "update"; then
+if ./phpharbor help | grep -q "update"; then
     print_success "Comando update integrato in help principale"
 else
     print_warning "Comando update non trovato in help"
@@ -192,11 +192,11 @@ echo ""
 print_info "Ripristino versione originale..."
 
 # Ripristina versione backup
-mv docker-dev.backup docker-dev
-rm -f docker-dev.bak
+mv phpharbor.backup phpharbor
+rm -f phpharbor.bak
 rm -rf test-releases
 
-RESTORED_VERSION=$(grep "^VERSION=" docker-dev | cut -d'"' -f2)
+RESTORED_VERSION=$(grep "^VERSION=" phpharbor | cut -d'"' -f2)
 echo "  Versione ripristinata: $RESTORED_VERSION"
 
 print_success "Sistema ripristinato"
@@ -222,5 +222,5 @@ echo ""
 echo "Per un test completo con GitHub:"
 echo "  1. Crea una release su GitHub"
 echo "  2. Configura GITHUB_REPO in cli/update.sh"
-echo "  3. Esegui: ./docker-dev update check"
+echo "  3. Esegui: ./phpharbor update check"
 echo ""

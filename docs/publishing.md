@@ -1,12 +1,12 @@
 # Publishing Guide
 
-Guida per pubblicare Docker Development Environment su GitHub e renderlo disponibile pubblicamente.
+Guida per pubblicare PHPHarbor su GitHub e renderlo disponibile pubblicamente.
 
 ## 📋 Pre-Pubblicazione Checklist
 
 ### 1. Repository Setup
 
-- [ ] Crea repository GitHub: `docker-development-environment`
+- [ ] Crea repository GitHub: `php-harbor`
 - [ ] Imposta visibilità: **Public**
 - [ ] Aggiungi descrizione: "🚀 Flexible Docker development environment for Laravel, WordPress, and PHP projects with cherry-picking of shared services"
 - [ ] Aggiungi topics: `docker`, `laravel`, `php`, `wordpress`, `development-environment`, `docker-compose`
@@ -26,17 +26,17 @@ git diff
 cat .gitignore
 
 # Verifica permessi file eseguibili (IMPORTANTE!)
-ls -lh docker-dev install.sh uninstall.sh
+ls -lh phpharbor install.sh uninstall.sh
 ```
 
 **Permessi Eseguibili** (critico per il funzionamento):
 ```bash
 # Assicurati che questi file abbiano permessi eseguibili
-chmod +x docker-dev install.sh uninstall.sh
+chmod +x phpharbor install.sh uninstall.sh
 
 # Git preserva i permessi eseguibili quando committa
 # Verifica che siano committati correttamente
-git ls-files -s docker-dev install.sh uninstall.sh
+git ls-files -s phpharbor install.sh uninstall.sh
 # Dovrebbe mostrare 100755 (eseguibile) non 100644 (normale)
 ```
 
@@ -48,7 +48,7 @@ git ls-files -s docker-dev install.sh uninstall.sh
 
 **Assicurati di includere**:
 - [x] `install.sh` e `uninstall.sh` **eseguibili** (chmod +x)
-- [x] `docker-dev` **eseguibile** (chmod +x)
+- [x] `phpharbor **eseguibile** (chmod +x)
 - [x] Tutti i file `.md` di documentazione
 - [x] Template `.github/`
 - [x] `LICENSE`
@@ -70,15 +70,15 @@ Prima di pubblicare, testa l'installatore:
 
 ```bash
 # Simula installazione da GitHub (usa il tuo username temporaneamente)
-bash <(curl -fsSL https://raw.githubusercontent.com/TUO-USERNAME/docker-development-environment/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/TUO-USERNAME/php-harbor/main/install.sh)
 
 # Oppure testa localmente
 ./install.sh
 
 # Verifica che funzioni
-docker-dev version
-docker-dev help
-docker-dev create test --type laravel --php 8.3
+phpharbor version
+phpharbor help
+phpharbor create test --type laravel --php 8.3
 ```
 
 ---
@@ -89,7 +89,7 @@ docker-dev create test --type laravel --php 8.3
 
 ```bash
 # Aggiungi remote origin (se non già fatto)
-git remote add origin https://github.com/TUO-USERNAME/docker-development-environment.git
+git remote add origin https://github.com/TUO-USERNAME/php-harbor.git
 
 # Verifica branch
 git branch -M main
@@ -106,7 +106,7 @@ Prima di creare la release su GitHub, genera il tarball pulito:
 # Genera tarball per release v1.0.0
 ./create-release.sh 1.0.0
 
-# Output: releases/docker-dev-env-1.0.0.tar.gz
+# Output: releases/phpharbor-1.0.0.tar.gz
 ```
 
 Lo script:
@@ -119,7 +119,7 @@ Lo script:
 ```bash
 # Estrai in directory temporanea
 mkdir -p /tmp/test-release
-tar -xzf releases/docker-dev-env-1.0.0.tar.gz -C /tmp/test-release
+tar -xzf releases/phpharbor-1.0.0.tar.gz -C /tmp/test-release
 
 # Verifica contenuto
 ls -la /tmp/test-release
@@ -131,21 +131,21 @@ cd /tmp/test-release
 
 ### Step 3: Crea GitHub Release
 
-**⚠️ IMPORTANTE**: Il tarball caricato su GitHub **deve** chiamarsi esattamente `docker-dev-env.tar.gz` (senza versione) perché l'installer usa quell'URL fisso: `releases/latest/download/docker-dev-env.tar.gz`
+**⚠️ IMPORTANTE**: Il tarball caricato su GitHub **deve** chiamarsi esattamente `phpharbor.tar.gz` (senza versione) perché l'installer usa quell'URL fisso: `releases/latest/download/php-phpharbor.gz`
 
 1. Vai su **Releases** → **Create a new release** o usa la CLI:
 
 #### Opzione A: Via Web (Consigliata)
 
-1. Vai su: `https://github.com/TUO-USERNAME/docker-development-environment/releases/new`
+1. Vai su: `https://github.com/TUO-USERNAME/php-harbor/releases/new`
 2. Tag: `v1.0.0`
 3. Target: `main` branch
 4. Title: `🚀 v1.0.0 - Initial Release`
 5. Description: (vedi template sotto)
-6. **📎 Attach binaries**: Drag & drop `releases/docker-dev-env-1.0.0.tar.gz`
-7. **⚠️ CRITICO**: Dopo il caricamento, clicca sulla matita (✏️) e rinomina il file in: `docker-dev-env.tar.gz`
-   - ❌ Errore: `docker-dev-env-1.0.0.tar.gz`
-   - ✅ Corretto: `docker-dev-env.tar.gz`
+6. **📎 Attach binaries**: Drag & drop `releases/phpharbor-1.0.0.tar.gz`
+7. **⚠️ CRITICO**: Dopo il caricamento, clicca sulla matita (✏️) e rinomina il file in: `phpharbor.tar.gz`
+   - ❌ Errore: `phpharbor-1.0.0.tar.gz`
+   - ✅ Corretto: `phpharbor.tar.gz`
 8. ✅ Set as latest release
 9. **Publish release**
 
@@ -161,7 +161,7 @@ gh auth login
 
 # Crea release e carica tarball
 gh release create v1.0.0 \
-  releases/docker-dev-env-1.0.0.tar.gz#docker-dev-env.tar.gz \
+  releases/phpharbor-1.0.0.tar.gz#php-phpharbor.gz \
   --title "🚀 v1.0.0 - Initial Release" \
   --notes-file RELEASE_NOTES.md
 ```
@@ -171,7 +171,7 @@ gh release create v1.0.0 \
 ```markdown
 ## 🎉 First Public Release
 
-Docker Development Environment è ora disponibile pubblicamente!
+PHPHarbor è ora disponibile pubblicamente!
 
 ### ✨ Features
 
@@ -185,7 +185,7 @@ Docker Development Environment è ora disponibile pubblicamente!
 ### 📦 Installation
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/TUO-USERNAME/docker-development-environment/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/TUO-USERNAME/php-harbor/main/install.sh)
 ```
 
 ### 📚 Documentation
@@ -208,7 +208,7 @@ Testa che l'installer funzioni da GitHub:
 
 ```bash
 # Su una macchina pulita o VM
-bash <(curl -fsSL https://raw.githubusercontent.com/TUO-USERNAME/docker-development-environment/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/TUO-USERNAME/php-harbor/main/install.sh)
 ```
 
 ---
@@ -225,7 +225,7 @@ Condividi il progetto su:
 
 **Post template**:
 ```
-🚀 Just released Docker Development Environment v1.0!
+🚀 Just released PHPHarbor v1.0!
 
 Flexible Docker setup for Laravel/WordPress/PHP with:
 ✅ Cherry-pick shared services (save RAM)
@@ -233,7 +233,7 @@ Flexible Docker setup for Laravel/WordPress/PHP with:
 ✅ Interactive project creation
 ✅ One-line installation
 
-https://github.com/TUO-USERNAME/docker-development-environment
+https://github.com/TUO-USERNAME/php-harbor
 
 #Laravel #Docker #PHP #DevOps
 ```

@@ -29,7 +29,7 @@ phpharbor dev myapp
 open https://myapp.test
 ```
 
-> 💡 **Directory Progetti**: Durante il setup, scegli dove salvare i progetti (default: `~/.docker-dev-env/projects`). Puoi cambiarla in seguito con `phpharbor setup config`
+> 💡 **Directory Progetti**: Durante il setup, scegli dove salvare i progetti (default: `~/.phpharbor/projects`). Puoi cambiarla in seguito con `phpharbor setup config`
 
 ## ✨ Features
 
@@ -115,9 +115,9 @@ Leggi [CONTRIBUTING.md](CONTRIBUTING.md) per le linee guida.
 ## 💬 Supporto
 
 - 📖 [Documentazione completa](docs/)
-- 🐛 [Report bug](https://github.com/your-username/docker-development-environment/issues)
-- 💡 [Richiedi feature](https://github.com/your-username/docker-development-environment/issues/new)
-- 💬 [Discussioni](https://github.com/your-username/docker-development-environment/discussions)
+- 🐛 [Report bug](https://github.com/your-username/php-harbor/issues)
+- 💡 [Richiedi feature](https://github.com/your-username/php-harbor/issues/new)
+- 💬 [Discussioni](https://github.com/your-username/php-harbor/discussions)
 
 ---
 

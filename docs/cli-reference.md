@@ -1,18 +1,18 @@
-# Docker Development Environment - CLI Unificato
+# PHPHarbor - CLI Unificato
 
-Il nuovo CLI unificato `docker-dev` sostituisce i vari script individuali con un'interfaccia coerente e modulare.
+Il nuovo CLI unificato `phpharbor` sostituisce i vari script individuali con un'interfaccia coerente e modulare.
 
 ## 🎯 Vantaggi
 
-- **Un solo comando**: `./docker-dev` invece di 5+ script diversi
-- **Help integrato**: `./docker-dev help` e `./docker-dev <comando> --help`
+- **Un solo comando**: `./phpharbor` invece di 5+ script diversi
+- **Help integrato**: `./phpharbor help` e `./phpharbor <comando> --help`
 - **Modularità**: Architettura a moduli in `cli/`
 - **Completezza**: Gestione progetti, sviluppo, servizi condivisi, setup
 
 ## 📦 Struttura
 
 ```
-docker-dev              # Entrypoint principale
+phpharbor              # Entrypoint principale
 cli/
   ├── project.sh        # Gestione progetti (list, start, stop, etc)
   ├── dev.sh            # Strumenti sviluppo (shell, artisan, composer, etc)
@@ -28,91 +28,91 @@ cli/
 
 ```bash
 # Creare nuovo progetto
-./docker-dev create myshop --type laravel --php 8.3
-./docker-dev create blog --fully-shared --php 8.3
-./docker-dev create api --shared-db --php 8.2
+./phpharbor create myshop --type laravel --php 8.3
+./phpharbor create blog --fully-shared --php 8.3
+./phpharbor create api --shared-db --php 8.2
 
 # Elencare progetti
-./docker-dev list
+./phpharbor list
 
 # Gestione lifecycle
-./docker-dev start myshop
-./docker-dev stop myshop
-./docker-dev restart myshop
-./docker-dev logs myshop
-./docker-dev remove myshop
+./phpharbor start myshop
+./phpharbor stop myshop
+./phpharbor restart myshop
+./phpharbor logs myshop
+./phpharbor remove myshop
 ```
 
 ### Strumenti Sviluppo
 
 ```bash
 # Shell nel container PHP
-./docker-dev shell myshop
+./phpharbor shell myshop
 
 # Comandi Laravel
-./docker-dev artisan myshop migrate
-./docker-dev artisan myshop make:controller UserController
+./phpharbor artisan myshop migrate
+./phpharbor artisan myshop make:controller UserController
 
 # Composer
-./docker-dev composer myshop require laravel/sanctum
-./docker-dev composer myshop update
+./phpharbor composer myshop require laravel/sanctum
+./phpharbor composer myshop update
 
 # NPM
-./docker-dev npm myshop install
-./docker-dev npm myshop run dev
+./phpharbor npm myshop install
+./phpharbor npm myshop run dev
 
 # MySQL CLI
-./docker-dev mysql myshop
+./phpharbor mysql myshop
 ```
 
 ### Servizi Condivisi
 
 ```bash
 # Avviare servizi
-./docker-dev shared start              # MySQL + Redis
-./docker-dev shared start mysql        # Solo MySQL
-./docker-dev shared start redis        # Solo Redis
-./docker-dev shared php 8.3            # PHP-FPM condiviso
+./phpharbor shared start              # MySQL + Redis
+./phpharbor shared start mysql        # Solo MySQL
+./phpharbor shared start redis        # Solo Redis
+./phpharbor shared php 8.3            # PHP-FPM condiviso
 
 # Stato e info
-./docker-dev shared status
-./docker-dev shared logs
+./phpharbor shared status
+./phpharbor shared logs
 
 # MySQL CLI condiviso
-./docker-dev shared mysql
+./phpharbor shared mysql
 
 # Fermare servizi
-./docker-dev shared stop
+./phpharbor shared stop
 ```
 
 ### Setup Sistema
 
 ```bash
 # Setup iniziale completo
-./docker-dev setup init
+./phpharbor setup init
 
 # Setup componenti individuali
-./docker-dev setup dns        # dnsmasq per *.test
-./docker-dev setup proxy      # nginx reverse proxy
+./phpharbor setup dns        # dnsmasq per *.test
+./phpharbor setup proxy      # nginx reverse proxy
 ```
 
 ### Informazioni
 
 ```bash
 # Statistiche risorse Docker
-./docker-dev stats
+./phpharbor stats
 
 # Info ambiente completo
-./docker-dev info
+./phpharbor info
 
 # Versione
-./docker-dev version
+./phpharbor version
 ```
 
 ## 🎨 Opzioni Creazione Progetto
 
 ```bash
-./docker-dev create <nome> [opzioni]
+./phpharbor create <nome> [opzioni]
 
 Opzioni:
   --type <tipo>         laravel, wordpress, php, html (default: laravel)
@@ -133,19 +133,19 @@ Opzioni:
 
 ```bash
 # Progetto Laravel standard
-./docker-dev create my-shop --type laravel --php 8.3
+./phpharbor create my-shop --type laravel --php 8.3
 
 # WordPress
-./docker-dev create blog --type wordpress --php 8.2
+./phpharbor create blog --type wordpress --php 8.2
 
 # Laravel fully-shared (minimo consumo RAM)
-./docker-dev create api --fully-shared --php 8.3
+./phpharbor create api --fully-shared --php 8.3
 
 # PHP generico con DB condiviso
-./docker-dev create legacy --type php --php 7.4 --shared-db
+./phpharbor create legacy --type php --php 7.4 --shared-db
 
 # HTML statico
-./docker-dev create landing --type html
+./phpharbor create landing --type html
 ```
 
 ## 📊 Configurazioni Supportate
@@ -153,7 +153,7 @@ Opzioni:
 ### 1. Dedicated (Default)
 Ogni progetto ha propri MySQL, Redis, PHP-FPM
 ```bash
-./docker-dev create project1
+./phpharbor create project1
 ```
 - **RAM**: ~500MB per progetto
 - **Pro**: Isolamento completo, nessuna interferenza
@@ -162,7 +162,7 @@ Ogni progetto ha propri MySQL, Redis, PHP-FPM
 ### 2. Shared DB
 MySQL e Redis condivisi, PHP dedicato
 ```bash
-./docker-dev create project2 --shared
+./phpharbor create project2 --shared
 ```
 - **RAM**: ~300MB per progetto
 - **Pro**: Risparmio su DB, PHP isolato
@@ -171,7 +171,7 @@ MySQL e Redis condivisi, PHP dedicato
 ### 3. Fully Shared
 Tutto condiviso (MySQL, Redis, PHP)
 ```bash
-./docker-dev create project3 --fully-shared --php 8.3
+./phpharbor create project3 --fully-shared --php 8.3
 ```
 - **RAM**: ~10-50MB per progetto (solo nginx!)
 - **Pro**: Massimo risparmio (80%+), ideale per molti progetti
@@ -189,10 +189,10 @@ Tutto condiviso (MySQL, Redis, PHP)
 
 ### Ora (CLI unificato)
 ```bash
-./docker-dev create myshop --type laravel
-./docker-dev start myshop
-./docker-dev shared start mysql
-./docker-dev artisan myshop migrate
+./phpharbor create myshop --type laravel
+./phpharbor start myshop
+./phpharbor shared start mysql
+./phpharbor artisan myshop migrate
 ```
 
 ## 🔧 Sviluppo Moduli
@@ -209,7 +209,7 @@ cmd_mycommand() {
 }
 ```
 
-Poi aggiungi il caso in `docker-dev`:
+Poi aggiungi il caso in `phpharbor`:
 ```bash
 case $COMMAND in
     mycommand)
@@ -230,19 +230,19 @@ esac
 
 ```bash
 # Quick workflow per nuovo progetto
-./docker-dev create myapp --fully-shared && \
-./docker-dev start myapp && \
-./docker-dev shell myapp
+./phpharbor create myapp --fully-shared && \
+./phpharbor start myapp && \
+./phpharbor shell myapp
 
 # Vedere log in tempo reale durante sviluppo
-./docker-dev logs myapp -f
+./phpharbor logs myapp -f
 
 # Controllare stato generale
-./docker-dev list && ./docker-dev shared status
+./phpharbor list && ./phpharbor shared status
 
 # Cleanup
-./docker-dev remove old-project
-./docker-dev shared stop
+./phpharbor remove old-project
+./phpharbor shared stop
 ```
 
 ## ⚡ Alias Consigliati
@@ -250,11 +250,11 @@ esac
 Aggiungi al tuo `~/.zshrc` o `~/.bashrc`:
 
 ```bash
-alias dd='./docker-dev'
-alias ddl='./docker-dev list'
-alias dds='./docker-dev start'
-alias ddsh='./docker-dev shell'
-alias dda='./docker-dev artisan'
+alias dd='./phpharbor'
+alias ddl='./phpharbor list'
+alias dds='./phpharbor start'
+alias ddsh='./phpharbor shell'
+alias dda='./phpharbor artisan'
 ```
 
 Uso:
@@ -271,20 +271,20 @@ Per abilitare l'autocompletamento dei comandi:
 
 ```bash
 # Copia lo script di completion
-cp docker-dev-completion.bash ~/.docker-dev-completion.bash
+cp phpharbor-completion.bash ~/.phpharbor-completion.bash
 
 # Aggiungi a ~/.bashrc o ~/.zshrc
-echo 'source ~/.docker-dev-completion.bash' >> ~/.zshrc
+echo 'source ~/.phpharbor-completion.bash' >> ~/.zshrc
 
 # Ricarica shell
 source ~/.zshrc
 ```
 
 Ora puoi usare TAB per autocompletare:
-- Comandi: `./docker-dev <TAB>`
-- Progetti: `./docker-dev start <TAB>`
-- Versioni PHP: `./docker-dev shared php <TAB>`
-- Opzioni: `./docker-dev create myapp --<TAB>`
+- Comandi: `./phpharbor <TAB>`
+- Progetti: `./phpharbor start <TAB>`
+- Versioni PHP: `./phpharbor shared php <TAB>`
+- Opzioni: `./phpharbor create myapp --<TAB>`
 
 **Con alias:**
 ```bash

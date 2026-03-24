@@ -1,6 +1,6 @@
-# Docker Development Environment - Configuration Example
-# Questo file viene generato automaticamente dal comando 'docker-dev setup init'
-# o 'docker-dev setup config'
+# PHPHarbor - Configuration Example
+# Questo file viene generato automaticamente dal comando 'phpharbor setup init'
+# o 'phpharbor setup config'
 
 # Directory dove vengono salvati i progetti
 # Default: ./projects (relativo alla directory di installazione)

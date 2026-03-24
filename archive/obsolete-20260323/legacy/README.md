@@ -4,24 +4,24 @@
 
 ## 🔄 Usa il Nuovo CLI
 
-Tutti questi script sono stati sostituiti dal CLI unificato `docker-dev`.
+Tutti questi script sono stati sostituiti dal CLI unificato `phpharbor.
 
 ### Tabella di Migrazione
 
 | Script Legacy | Nuovo Comando CLI |
 |---------------|-------------------|
-| `./legacy/new-project.sh <nome>` | `./docker-dev create <nome>` |
-| `./legacy/manage-projects.sh list` | `./docker-dev list` |
-| `./legacy/manage-projects.sh start <nome>` | `./docker-dev start <nome>` |
-| `./legacy/manage-projects.sh stop <nome>` | `./docker-dev stop <nome>` |
-| `./legacy/manage-projects.sh logs <nome>` | `./docker-dev logs <nome>` |
-| `./legacy/manage-projects.sh remove <nome>` | `./docker-dev remove <nome>` |
-| `./legacy/artisan.sh <nome> <cmd>` | `./docker-dev artisan <nome> <cmd>` |
-| `./legacy/code-project.sh <nome>` | `./docker-dev shell <nome>` |
-| `./legacy/db-connect.sh <nome>` | `./docker-dev mysql <nome>` |
-| `./legacy/start-shared-services.sh mysql` | `./docker-dev shared start mysql` |
-| `./legacy/start-shared-php.sh 8.3` | `./docker-dev shared php 8.3` |
-| `./legacy/setup-dnsmasq.sh` | `./docker-dev setup dns` |
+| `./legacy/new-project.sh <nome>` | `./phpharbor create <nome>` |
+| `./legacy/manage-projects.sh list` | `./phpharbor list` |
+| `./legacy/manage-projects.sh start <nome>` | `./phpharbor start <nome>` |
+| `./legacy/manage-projects.sh stop <nome>` | `./phpharbor stop <nome>` |
+| `./legacy/manage-projects.sh logs <nome>` | `./phpharbor logs <nome>` |
+| `./legacy/manage-projects.sh remove <nome>` | `./phpharbor remove <nome>` |
+| `./legacy/artisan.sh <nome> <cmd>` | `./phpharbor artisan <nome> <cmd>` |
+| `./legacy/code-project.sh <nome>` | `./phpharbor shell <nome>` |
+| `./legacy/db-connect.sh <nome>` | `./phpharbor mysql <nome>` |
+| `./legacy/start-shared-services.sh mysql` | `./phpharbor shared start mysql` |
+| `./legacy/start-shared-php.sh 8.3` | `./phpharbor shared php 8.3` |
+| `./legacy/setup-dnsmasq.sh` | `./phpharbor setup dns` |
 | `./legacy/restart-docker.sh` | _(usa Docker Desktop)_ |
 
 ## 📚 Documentazione
@@ -39,7 +39,7 @@ Leggi la documentazione completa del nuovo CLI:
 ## 🚀 Perché Migrare?
 
 Il nuovo CLI offre:
-- ✅ Un solo comando: `./docker-dev`
+- ✅ Un solo comando: `./phpharbor`
 - ✅ Help integrato per ogni comando
 - ✅ Output più pulito e colorato
 - ✅ Nuove funzionalità (stats, info, shared status)
@@ -50,15 +50,15 @@ Il nuovo CLI offre:
 
 ```bash
 # Invece di:
-cd /Users/vincenzo/docker-dev
+cd /Users/vincenzo/phpharbor
 ./legacy/new-project.sh myapp
 ./legacy/manage-projects.sh start myapp
 ./legacy/artisan.sh myapp migrate
 
 # Ora usa:
-./docker-dev create myapp
-./docker-dev start myapp
-./docker-dev artisan myapp migrate
+./phpharbor create myapp
+./phpharbor start myapp
+./phpharbor artisan myapp migrate
 ```
 
 ## ℹ️ Nota

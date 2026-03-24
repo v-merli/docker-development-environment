@@ -50,7 +50,7 @@ Questo backup contiene l'architettura **prima** della transizione al sistema di 
 Per tornare all'architettura precedente:
 
 ```bash
-cd /Users/vincenzo/docker-development-environment
+cd /Users/vincenzo/php-harbor
 
 # Backup architettura nuova
 mv cli cli-new

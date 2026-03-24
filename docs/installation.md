@@ -1,6 +1,6 @@
 # Installazione
 
-Guida completa all'installazione di Docker Development Environment.
+Guida completa all'installazione di PHPHarbor.
 
 ## 📋 Requisiti
 
@@ -47,15 +47,15 @@ Guida completa all'installazione di Docker Development Environment.
 Un solo comando per installare tutto (funziona su **macOS, Linux e Windows WSL2**):
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-development-environment/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/your-username/php-harbor/main/install.sh)
 ```
 
 Lo script:
 - ✅ Rileva automaticamente il sistema operativo (macOS/Linux/WSL2)
 - ✅ Verifica prerequisiti
-- ✅ Clona il repository in `~/.docker-dev-env`
-- ✅ Imposta permessi eseguibili su `docker-dev`
-- ✅ Crea symlink `/usr/local/bin/docker-dev`
+- ✅ Clona il repository in `~/.phpharbor`
+- ✅ Imposta permessi eseguibili su `phpharbor
+- ✅ Crea symlink `/usr/local/bin/phpharbor
 - ✅ Configura autocompletamento bash/zsh
 - ✅ Esegue setup iniziale (opzionale)
 
@@ -65,23 +65,23 @@ Lo script:
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/your-username/docker-development-environment.git ~/.docker-dev-env
-cd ~/.docker-dev-env
+git clone https://github.com/your-username/php-harbor.git ~/.phpharbor
+cd ~/.php-harbor
 
 # 2. Imposta permessi e crea symlink
-chmod +x docker-dev
-sudo ln -sf ~/.docker-dev-env/docker-dev /usr/local/bin/docker-dev
+chmod +x phpharbor
+sudo ln -sf ~/.php-harbor/phpharbor /local/bin/phpharbor
 
 # 3. Autocompletamento (bash)
-echo 'source ~/.docker-dev-env/docker-dev-completion.bash' >> ~/.bashrc
+echo 'source ~/.phpharbor/phpharbor-completion.bash' >> ~/.bashrc
 source ~/.bashrc
 
 # 3. Autocompletamento (zsh)
-echo 'source ~/.docker-dev-env/docker-dev-completion.bash' >> ~/.zshrc
+echo 'source ~/.phpharbor/phpharbor-completion.bash' >> ~/.zshrc
 source ~/.zshrc
 
 # 4. Setup iniziale
-docker-dev setup init
+phpharbor setup init
 ```
 
 ---
@@ -91,11 +91,11 @@ docker-dev setup init
 Dopo l'installazione, esegui il setup per configurare:
 
 ```bash
-docker-dev setup init
+phpharbor setup init
 ```
 
 Questo crea:
-- **Directory Progetti** - Scegli dove salvare i progetti (default: `~/.docker-dev-env/projects`)
+- **Directory Progetti** - Scegli dove salvare i progetti (default: `~/.phpharbor/projects`)
 - **Nginx Reverse Proxy** - Routing automatico dei progetti
 - **SSL Certificate Authority** - Certificati HTTPS locali
 - **Rete Docker condivisa** - Comunicazione tra container
@@ -108,7 +108,7 @@ Durante il setup ti verrà chiesto dove salvare i progetti:
 ```
 Dove vuoi salvare i tuoi progetti Docker?
 
-1) ~/.docker-dev-env/projects (default)
+1) ~/.phpharbor/projects (default)
 2) ~/Development/docker-projects
 3) Percorso personalizzato
 ```
@@ -121,7 +121,7 @@ Dove vuoi salvare i tuoi progetti Docker?
 
 **Cambiare directory in seguito:**
 ```bash
-docker-dev setup config
+phpharbor setup config
 ```
 
 Lo script può anche **spostare automaticamente** i progetti esistenti nella nuova directory.
@@ -131,7 +131,7 @@ Lo script può anche **spostare automaticamente** i progetti esistenti nella nuo
 Puoi personalizzare le porte dei servizi per evitare conflitti:
 
 ```bash
-docker-dev setup ports
+phpharbor setup ports
 ```
 
 **Porte configurabili:**
@@ -146,7 +146,7 @@ docker-dev setup ports
 - MySQL locale già attivo → Usa 3307 per quello condiviso
 
 **Modifica manuale:**
-Puoi anche modificare direttamente `~/.docker-dev-env/.config`:
+Puoi anche modificare direttamente `~/.phpharbor/.config`:
 ```bash
 HTTP_PORT=8090
 HTTPS_PORT=8444
@@ -156,7 +156,7 @@ REDIS_SHARED_PORT=6380
 
 Dopo la modifica, riavvia i servizi:
 ```bash
-docker-dev setup proxy  # Riavvia proxy con nuove porte
+phpharbor setup proxy  # Riavvia proxy con nuove porte
 ```
 
 ---
@@ -165,13 +165,13 @@ docker-dev setup proxy  # Riavvia proxy con nuove porte
 
 ```bash
 # Versione
-docker-dev version
+phpharbor version
 
 # Help
-docker-dev help
+phpharbor help
 
 # Status servizi condivisi
-docker-dev shared status
+phpharbor shared status
 ```
 
 ---
@@ -181,7 +181,7 @@ docker-dev shared status
 ### Modalità Interattiva
 
 ```bash
-docker-dev create
+phpharbor create
 ```
 
 Ti guida attraverso un menu per scegliere:
@@ -194,16 +194,16 @@ Ti guida attraverso un menu per scegliere:
 
 ```bash
 # Laravel completo
-docker-dev create myapp --type laravel --php 8.3 --node 22
+phpharbor create myapp --type laravel --php 8.3 --node 22
 
 # Laravel con servizi condivisi
-docker-dev create myapp --type laravel --fully-shared
+phpharbor create myapp --type laravel --fully-shared
 
 # WordPress con MySQL dedicato, Redis condiviso
-docker-dev create myblog --type wordpress --shared-redis
+phpharbor create myblog --type wordpress --shared-redis
 
 # HTML statico
-docker-dev create landing --type html --shared-php
+phpharbor create landing --type html --shared-php
 ```
 
 ---
@@ -212,22 +212,22 @@ docker-dev create landing --type html --shared-php
 
 ```bash
 # Lista progetti
-docker-dev project list
+phpharbor project list
 
 # Avvia progetto
-docker-dev dev myapp
+phpharbor dev myapp
 
 # Stop progetto
-docker-dev project stop myapp
+phpharbor project stop myapp
 
 # Logs
-docker-dev project logs myapp
+phpharbor project logs myapp
 
 # Info dettagliate
-docker-dev project info myapp
+phpharbor project info myapp
 
 # Rimuovi progetto
-docker-dev project remove myapp
+phpharbor project remove myapp
 ```
 
 ---
@@ -240,7 +240,7 @@ Se non hai permessi per creare symlink:
 
 ```bash
 # Alternativa: aggiungi al PATH
-echo 'export PATH="$HOME/.docker-dev-env:$PATH"' >> ~/.zshrc
+echo 'export PATH="$HOME/.phpharbor:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
@@ -277,7 +277,7 @@ Reinstalla CA:
 ```bash
 mkcert -uninstall
 mkcert -install
-docker-dev ssl setup-ca
+phpharborssl setup-ca
 ```
 
 ### Conflitti di porte Vite
@@ -286,7 +286,7 @@ Se hai conflitti sulla porta 5173:
 
 ```bash
 # Riavvia il progetto (cerca automaticamente porta libera)
-docker-dev project restart myapp
+phpharbor project restart myapp
 
 # Oppure specifica porta manuale in projects/myapp/.env
 VITE_PORT=5999
@@ -299,7 +299,7 @@ VITE_PORT=5999
 ### Script Automatico
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-development-environment/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/your-username/php-harbor/main/install.sh)
 ```
 
 Lo script rileva installazione esistente e propone aggiornamento.
@@ -307,7 +307,7 @@ Lo script rileva installazione esistente e propone aggiornamento.
 ### Manuale
 
 ```bash
-cd ~/.docker-dev-env
+cd ~/.phpharbor
 git pull origin main
 ```
 
@@ -319,10 +319,10 @@ git pull origin main
 
 ```bash
 # Rimuovi symlink
-sudo rm /usr/local/bin/docker-dev
+sudo rm /usr/local/bin/phpharbor
 
 # Rimuovi repository
-rm -rf ~/.docker-dev-env
+rm -rf ~/.phpharbor
 
 # Rimuovi autocompletamento da shell RC
 # Rimuovi manualmente le righe da ~/.zshrc o ~/.bashrc
@@ -332,13 +332,13 @@ rm -rf ~/.docker-dev-env
 
 ```bash
 # Lista tutti i progetti
-docker-dev project list
+phpharbor project list
 
 # Rimuovi singolarmente
-docker-dev project remove PROJECT_NAME
+phpharbor project remove PROJECT_NAME
 
 # Oppure rimuovi manualmente
-cd ~/.docker-dev-env/projects
+cd ~/.phpharbor/projects
 rm -rf PROJECT_NAME
 docker stop $(docker ps -q --filter "name=PROJECT_NAME")
 docker rm $(docker ps -aq --filter "name=PROJECT_NAME")
@@ -348,7 +348,7 @@ docker rm $(docker ps -aq --filter "name=PROJECT_NAME")
 
 ```bash
 # Stop servizi
-docker-dev shared stop
+phpharbor shared stop
 
 # Rimuovi container
 docker stop proxy mysql-shared redis-shared proxy-php-8.3-shared
@@ -377,8 +377,8 @@ docker volume rm mysql-data redis-data
 
 ## 💬 Supporto
 
-- **Issues**: [GitHub Issues](https://github.com/your-username/docker-development-environment/issues)
-- **Discussioni**: [GitHub Discussions](https://github.com/your-username/docker-development-environment/discussions)
+- **Issues**: [GitHub Issues](https://github.com/your-username/php-harbor/issues)
+- **Discussioni**: [GitHub Discussions](https://github.com/your-username/php-harbor/discussions)
 - **Pull Requests**: Contributi benvenuti!
 
 ---
@@ -386,6 +386,6 @@ docker volume rm mysql-data redis-data
 ## 📝 Note
 
 - L'installazione richiede circa **500MB** di spazio disco (repository + immagini Docker base)
-- Il primo `docker-dev create` scarica le immagini PHP (circa 300-500MB per versione)
-- I progetti risiedono in `~/.docker-dev-env/projects/PROJECT_NAME`
-- Configurazioni globali in `~/.docker-dev-env/proxy/` e `~/.docker-dev-env/shared/`
+- Il primo `phpharbor create` scarica le immagini PHP (circa 300-500MB per versione)
+- I progetti risiedono in `~/.phpharbor/projects/PROJECT_NAME`
+- Configurazioni globali in `~/.phpharbor/proxy/` e `~/.php-phpharbor/shared/`

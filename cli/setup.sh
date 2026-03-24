@@ -5,7 +5,7 @@
 
 cmd_setup() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "Uso: ./docker-dev setup <comando>"
+        echo "Uso: ./phpharbor setup <comando>"
         echo ""
         echo "Comandi:"
         echo "  config  Configura directory progetti"
@@ -38,7 +38,7 @@ cmd_setup() {
         *)
             print_error "Sotto-comando sconosciuto: $subcmd"
             echo ""
-            echo "Uso: ./docker-dev setup <comando>"
+            echo "Uso: ./phpharbor setup <comando>"
             echo ""
             echo "Comandi:"
             echo "  config  Configura directory progetti"
@@ -210,7 +210,7 @@ setup_ports() {
     # Avvisa se serve riavvio
     if [ "$proxy_running" = true ]; then
         print_warning "Per applicare le modifiche, riavvia il proxy:"
-        echo "  docker-dev setup proxy"
+        echo "  phpharbor setup proxy"
         echo ""
         read -p "Vuoi riavviare ora il proxy? (y/n): " -n 1 -r
         echo ""
@@ -380,7 +380,7 @@ setup_dns() {
         print_info "Configurazione dnsmasq (Linux)..."
         
         # Copia configurazione
-        sudo cp "$SCRIPT_DIR/shared/dnsmasq/dnsmasq.conf" /etc/dnsmasq.d/docker-dev-test.conf
+        sudo cp "$SCRIPT_DIR/shared/dnsmasq/dnsmasq.conf" /etc/dnsmasq.d/phpharbor-test.conf
         
         # Configura dnsmasq per ascoltare solo su localhost
         if ! grep -q "listen-address=127.0.0.1" /etc/dnsmasq.conf 2>/dev/null; then
@@ -394,12 +394,12 @@ setup_dns() {
             # Crea configurazione per *.test
             echo "[Resolve]
 DNS=127.0.0.1
-Domains=~test" | sudo tee /etc/systemd/resolved.conf.d/docker-dev.conf > /dev/null 2>&1 || true
+Domains=~test" | sudo tee /etc/systemd/resolved.conf.d/phpharbor.conf > /dev/null 2>&1 || true
             
             # Disabilita DNSStubListener per evitare conflitto porta 53
             sudo mkdir -p /etc/systemd/resolved.conf.d
             echo "[Resolve]
-DNSStubListener=no" | sudo tee /etc/systemd/resolved.conf.d/docker-dev-stub.conf > /dev/null
+DNSStubListener=no" | sudo tee /etc/systemd/resolved.conf.d/phpharbor-stub.conf > /dev/null
             
             sudo systemctl restart systemd-resolved
         fi
@@ -533,7 +533,7 @@ setup_init() {
         cat > "$PROJECTS_DIR/README.md" << 'EOF'
 # Docker Projects
 
-Questa directory contiene tutti i progetti Docker creati con docker-dev.
+Questa directory contiene tutti i progetti Docker creati con phpharbor
 
 Ogni progetto ha la sua directory con:
 - `docker-compose.yml` - Configurazione container
@@ -544,16 +544,16 @@ Ogni progetto ha la sua directory con:
 
 ```bash
 # Lista progetti
-docker-dev project list
+phpharbor project list
 
 # Avvia progetto
-docker-dev dev PROGETTO
+phpharbor dev PROGETTO
 
 # Shell nel container
-docker-dev project shell PROGETTO
+phpharbor project shell PROGETTO
 
 # Rimuovi progetto
-docker-dev project remove PROGETTO
+phpharbor project remove PROGETTO
 ```
 EOF
         print_info "Creato README in $PROJECTS_DIR"
@@ -618,7 +618,7 @@ EOF
     print_success "Ambiente configurato!"
     echo ""
     echo "Prossimi passi:"
-    echo "  1. Crea un progetto: ./docker-dev create"
-    echo "  2. Elenca progetti: ./docker-dev list"
-    echo "  3. Avvia progetto: ./docker-dev start <nome>"
+    echo "  1. Crea un progetto: ./phpharbor create"
+    echo "  2. Elenca progetti: ./phpharbor list"
+    echo "  3. Avvia progetto: ./phpharbor start <nome>"
 }

@@ -1,10 +1,10 @@
 #!/bin/bash
-# Bash completion per docker-dev CLI
-# Installa con: cp docker-dev-completion.bash ~/.docker-dev-completion.bash
+# Bash completion per phpharbor CLI
+# Installa con: cp phpharbor-completion.bash ~/.phpharbor-completion.bash
 # Poi aggiungi a ~/.bashrc o ~/.zshrc:
-#   source ~/.docker-dev-completion.bash
+#   source ~/.phpharbor-completion.bash
 
-_docker_dev_completion() {
+_phpharbor_completion() {
     local cur prev commands
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
@@ -83,9 +83,9 @@ _docker_dev_completion() {
 }
 
 # Registra la funzione di completion
-complete -F _docker_dev_completion docker-dev
-complete -F _docker_dev_completion ./docker-dev
+complete -F _phpharbor_completion phpharbor
+complete -F _phpharbor_completion ./phpharbor
 
 # Alias comuni (opzionale)
-# alias dd='./docker-dev'
-# complete -F _docker_dev_completion dd
+# alias dd='./phpharbor'
+# complete -F _phpharbor_completion dd

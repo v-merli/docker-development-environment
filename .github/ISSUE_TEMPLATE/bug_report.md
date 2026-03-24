@@ -45,7 +45,7 @@ Passaggi per riprodurre il comportamento:
 
 **Docker Dev Environment:**
 ```bash
-# Output di: docker-dev version
+# Output di: phpharbor version
 ```
 
 **Progetto:**
@@ -60,7 +60,7 @@ Passaggi per riprodurre il comportamento:
 <summary>Logs Progetto</summary>
 
 ```bash
-# Output di: docker-dev project logs PROJECT_NAME
+# Output di: phpharbor project logs PROJECT_NAME
 ```
 
 </details>

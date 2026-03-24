@@ -1,6 +1,6 @@
-## 🎉 Docker Development Environment v1.0.0
+## 🎉 PHPHarbor v1.0.0
 
-Prima release pubblica di Docker Development Environment!
+Prima release pubblica di PHPHarbor!
 
 ### ✨ Features Principali
 
@@ -27,7 +27,7 @@ Prima release pubblica di Docker Development Environment!
 Un solo comando:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-development-environment/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/your-username/php-harbor/main/install.sh)
 ```
 
 ### 📚 Documentazione
@@ -43,16 +43,16 @@ bash <(curl -fsSL https://raw.githubusercontent.com/your-username/docker-develop
 
 ```bash
 # Setup iniziale
-docker-dev setup init
+phpharbor setup init
 
 # Crea progetto (interattivo)
-docker-dev create
+phpharbor create
 
 # Oppure CLI diretta
-docker-dev create myapp --type laravel --php 8.3
+phpharbor create myapp --type laravel --php 8.3
 
 # Avvia sviluppo
-docker-dev dev myapp
+phpharbor dev myapp
 
 # Accedi
 open https://myapp.test

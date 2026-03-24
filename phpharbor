@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # PHPHarbor CLI
-# Unified command-line interface for managing Docker projects
+# Unified command-line interface for managing php projects with Docker
 
 set -e
 
@@ -45,7 +45,7 @@ load_config() {
 # Salva configurazione
 save_config() {
     cat > "$CONFIG_FILE" << EOF
-# Docker Development Environment - Configuration
+# PHPHarbor - Configuration
 # Questo file viene generato automaticamente dal comando 'setup'
 
 # Directory dove vengono salvati i progetti
@@ -168,7 +168,7 @@ show_help() {
     cat << EOF
 $(show_version)
 
-Usage: ./docker-dev <command> [options]
+Usage: ./phpharbor <command> [options]
 
 COMMANDS:
 
@@ -223,29 +223,29 @@ COMMANDS:
 EXAMPLES:
 
   # Setup iniziale
-  ./docker-dev setup init
+  ./phpharbor setup init
   
   # Crea progetti
-  ./docker-dev create myshop --type laravel --php 8.3
-  ./docker-dev create blog --fully-shared --php 8.3
+  ./phpharbor create myshop --type laravel --php 8.3
+  ./phpharbor create blog --fully-shared --php 8.3
   
   # Gestisci progetti
-  ./docker-dev list
-  ./docker-dev start myshop
-  ./docker-dev logs myshop
-  ./docker-dev shell myshop
+  ./phpharbor list
+  ./phpharbor start myshop
+  ./phpharbor logs myshop
+  ./phpharbor shell myshop
   
   # Servizi condivisi
-  ./docker-dev shared start
-  ./docker-dev shared php 8.3
-  ./docker-dev shared status
+  ./phpharbor shared start
+  ./phpharbor shared php 8.3
+  ./phpharbor shared status
   
   # Development
-  ./docker-dev artisan myshop migrate
-  ./docker-dev composer myshop require laravel/sanctum
-  ./docker-dev npm myshop install
+  ./phpharbor artisan myshop migrate
+  ./phpharbor composer myshop require laravel/sanctum
+  ./phpharbor npm myshop install
 
-Per help specifico: ./docker-dev <command> --help
+Per help specifico: ./phpharbor <command> --help
 
 EOF
 }
@@ -354,7 +354,7 @@ case $COMMAND in
     *)
         print_error "Comando sconosciuto: $COMMAND"
         echo ""
-        echo "Usa './docker-dev help' per la lista completa dei comandi"
+        echo "Usa './phpharbor help' per la lista completa dei comandi"
         exit 1
         ;;
 esac

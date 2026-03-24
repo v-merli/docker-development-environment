@@ -58,7 +58,7 @@ cmd_info() {
         echo "  ✓ acme-companion per SSL"
     else
         echo "  ✗ Proxy non avviato"
-        echo "    Avvialo con: ./docker-dev setup proxy"
+        echo "    Avvialo con: ./phpharbor setup proxy"
     fi
     
     echo ""
@@ -86,7 +86,7 @@ cmd_info() {
     
     if [ "$shared_count" -eq 0 ]; then
         echo "  ✗ Nessun servizio condiviso attivo"
-        echo "    Avviali con: ./docker-dev shared start"
+        echo "    Avviali con: ./phpharbor shared start"
     fi
     
     echo ""
