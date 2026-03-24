@@ -1,270 +1,190 @@
-# Contributing
+# Contributing to Docker Development Environment
 
-Grazie per l'interesse nel contribuire a Docker Development Environment! 🎉
+Grazie per il tuo interesse nel contribuire! Questo documento spiega il workflow di sviluppo e come contribuire al progetto.
 
-## 🤝 Come Contribuire
+## 📋 Tabella dei Contenuti
 
-Accettiamo contributi di ogni tipo:
-- 🐛 **Bug reports** - Segnala problemi o comportamenti inattesi
-- ✨ **Feature requests** - Suggerisci nuove funzionalità
-- 📝 **Documentazione** - Migliora guide e README
-- 💻 **Codice** - Fix bug, implementa features, ottimizza
+- [Git Workflow](#git-workflow)
+- [Branch Strategy](#branch-strategy)
+- [Commit Guidelines](#commit-guidelines)
+- [Release Process](#release-process)
+- [Development Setup](#development-setup)
 
-## 📋 Linee Guida
+## 🌳 Git Workflow
 
-### Prima di Iniziare
+Questo progetto usa **Git Flow** semplificato con due branch principali:
 
-1. **Cerca issue esistenti** - Qualcun altro potrebbe già lavorarci
-2. **Apri una issue** - Discuti l'idea prima di codificare
-3. **Fork il repository** - Lavora sul tuo fork
+### Branch Principali
 
-### Setup Ambiente di Sviluppo
+#### `main` - Branch di Produzione (Congelato)
+- ⭐ Contiene **solo** codice rilasciato ufficialmente
+- 🏷️ Ogni commit è taggato con una versione (v1.0.0, v1.1.0, etc.)
+- 🔒 **Non si lavora direttamente qui**
+- ✅ Sempre stabile e pronto per essere deployato
+- 📦 Da qui si generano le release GitHub
+
+#### `develop` - Branch di Sviluppo (Vivo)
+- 🚀 Branch di integrazione continua
+- 💻 Qui avviene tutto il lavoro quotidiano
+- 🔄 Riceve merge da feature/fix branches
+- 🧪 Codice testato ma non ancora rilasciato
+- 📝 Default branch per pull requests
+
+### Branch Feature e Fix
+
+Per ogni nuova feature o bugfix, crea un branch da `develop`:
 
 ```bash
-# Clone del tuo fork
-git clone https://github.com/tuo-username/docker-development-environment.git
-cd docker-development-environment
-
-# Aggiungi upstream
-git remote add upstream https://github.com/original-username/docker-development-environment.git
-
-# Crea branch per feature/fix
+# Feature branch
+git checkout develop
+git pull
 git checkout -b feature/nome-feature
+
+# Bugfix branch
+git checkout develop
+git pull
+git checkout -b fix/nome-bug
+
+# Hotfix urgente (da main)
+git checkout main
+git pull
+git checkout -b hotfix/nome-fix
 ```
 
-### Testing
+### Naming Convention
 
-Prima di inviare una PR, testa:
+- `feature/*` - Nuove funzionalità
+- `fix/*` - Bugfix normali
+- `hotfix/*` - Fix urgenti su main
+- `chore/*` - Manutenzione, refactoring
+- `docs/*` - Documentazione
+
+Esempi:
+- `feature/add-postgres-support`
+- `fix/port-conflict-detection`
+- `hotfix/critical-ssl-bug`
+- `docs/update-installation-guide`
+
+## 🔄 Workflow Sviluppo Quotidiano
 
 ```bash
-# Testa creazione progetto
-./docker-dev create test-project --type laravel --php 8.3
+# 1. Parti da develop aggiornato
+git checkout develop
+git pull origin develop
 
-# Testa con servizi condivisi
-./docker-dev create test-shared --fully-shared
+# 2. Crea feature branch
+git checkout -b feature/awesome-feature
 
-# Testa tutti i comandi
-./docker-dev project list
-./docker-dev project info test-project
-./docker-dev shared status
-./docker-dev project remove test-project
+# 3. Lavora e committa
+git add .
+git commit -m "feat: add awesome feature"
+
+# 4. Push del branch
+git push origin feature/awesome-feature
+
+# 5. Apri Pull Request su GitHub (target: develop)
+
+# 6. Dopo merge, pulisci
+git checkout develop
+git pull
+git branch -d feature/awesome-feature
 ```
 
-**Checklist di test**:
-- [ ] Creazione progetto Laravel con DB dedicato
-- [ ] Creazione progetto con servizi condivisi
-- [ ] Comandi project (start, stop, logs, shell)
-- [ ] Comandi shared (start, stop, status)
-- [ ] SSL funzionante (https://test-project.test)
-- [ ] Vite HMR funzionante
-- [ ] Laravel artisan/composer
-- [ ] Remove progetto completo
+## 📦 Workflow Release
 
-### Stile Codice
+Quando `develop` è pronto per il rilascio:
 
-**Bash Scripts**:
 ```bash
-# Usa set -e per fail-fast
-set -e
+# 1. Verifica develop
+git checkout develop
+git pull origin develop
 
-# Funzioni con nomi descrittivi
-function do_something() {
-    local var="value"
-    # ...
-}
+# 2. Aggiorna versione in docker-dev
+# Modifica: VERSION="1.1.0"
+git add docker-dev
+git commit -m "chore: bump version to 1.1.0"
 
-# Commenti per sezioni
-# ==================================================
-# SEZIONE IMPORTANTE
-# ==================================================
+# 3. Merge in main
+git checkout main
+git pull origin main
+git merge develop --no-ff -m "Release v1.1.0"
 
-# Quote sempre le variabili
-echo "$VAR"
-[ -d "$DIR" ]
+# 4. Crea tag
+git tag -a v1.1.0 -m "Release 1.1.0"
+git push origin main v1.1.0
 
-# Usa colori per output
-print_success "Operazione completata"
-print_error "Errore critico"
+# 5. Genera release
+./create-release.sh 1.1.0
+
+# 6. Pubblica su GitHub releases
+
+# 7. Torna su develop
+git checkout develop
 ```
 
-**Docker Compose**:
-```yaml
-# Indentazione 2 spazi
-services:
-  app:
-    # Usa variabili .env
-    image: ${PROJECT_NAME}-app
-    
-    # Commenti per sezioni complesse
-    environment:
-      # Laravel specifico
-      - DB_HOST=mysql
-```
-
-### Commit Messages
+## 📝 Commit Guidelines
 
 Usa [Conventional Commits](https://www.conventionalcommits.org/):
 
+### Format
 ```
-feat: add WordPress support
-fix: resolve port conflict in vite
-docs: update installation guide
-refactor: simplify project creation logic
-test: add integration tests for shared services
-```
+<type>(<scope>): <description>
 
-Esempi:
-- `feat(cli): add interactive mode for project creation`
-- `fix(docker): resolve PHP memory limit issue`
-- `docs(readme): add troubleshooting section`
-
-### Pull Request
-
-1. **Aggiorna il tuo fork**:
-   ```bash
-   git fetch upstream
-   git rebase upstream/main
-   ```
-
-2. **Pusha le modifiche**:
-   ```bash
-   git push origin feature/nome-feature
-   ```
-
-3. **Apri PR su GitHub**:
-   - Titolo chiaro (es: "Add WordPress multisite support")
-   - Descrizione dettagliata delle modifiche
-   - Link all'issue di riferimento
-   - Screenshot/logs se pertinenti
-
-4. **Checklist PR**:
-   - [ ] Codice testato localmente
-   - [ ] Documentazione aggiornata
-   - [ ] Commit messages seguono convenzioni
-   - [ ] Nessun file inutile committato (logs, .env, ecc)
-   - [ ] Funziona con tutte le versioni PHP supportate
-
-## 🏗️ Struttura Progetto
-
-```
-docker-development-environment/
-├── docker-dev              # Entry point principale
-├── docker-dev-completion.bash  # Autocompletamento bash/zsh
-├── install.sh              # Script installazione
-├── uninstall.sh            # Script disinstallazione
-│
-├── cli/                    # Moduli CLI
-│   ├── create.sh          # Creazione progetti
-│   ├── project.sh         # Gestione progetti
-│   ├── dev.sh             # Dev commands (artisan, composer)
-│   ├── shared.sh          # Servizi condivisi
-│   ├── ssl.sh             # SSL/certificati
-│   ├── setup.sh           # Setup iniziale
-│   └── system.sh          # System utilities
-│
-├── shared/                 # Configurazioni condivise
-│   ├── dockerfiles/       # PHP Dockerfiles (dev + fpm-only)
-│   ├── nginx/             # Nginx configs (Laravel, WordPress, HTML)
-│   ├── supervisor/        # Supervisor configs (workers)
-│   └── templates/         # Docker Compose templates
-│       └── docker-compose-unified.yml  # Template unificato con profiles
-│
-├── proxy/                  # Nginx reverse proxy
-│   ├── docker-compose.yml
-│   ├── setup-ssl-ca.sh
-│   └── nginx/
-│
-└── projects/               # Progetti creati
-    └── [project-name]/
+[optional body]
 ```
 
-## 🎯 Aree di Contribuzione
+### Types
+- `feat:` - Nuova feature
+- `fix:` - Bug fix
+- `docs:` - Documentazione
+- `chore:` - Manutenzione, release
+- `refactor:` - Refactoring
+- `test:` - Test
 
-### Facile (Good First Issue)
-
-- Migliorare documentazione
-- Aggiungere esempi in QUICK-START.md
-- Fix typos
-- Aggiungere test per edge cases
-- Migliorare output colorato/formattazione
-
-### Medio
-
-- Aggiungere supporto nuovi framework (Symfony, CodeIgniter)
-- Migliorare gestione errori
-- Ottimizzare performance build
-- Aggiungere validazione input
-
-### Avanzato
-
-- Supporto multi-OS (Linux, Windows WSL)
-- Orchestrazione complessa (Kubernetes)
-- Dashboard web per gestione progetti
-- Auto-update mechanism
-- Backup/restore automatico
-
-## 🐛 Segnalazione Bug
-
-Apri una [issue](https://github.com/your-username/docker-development-environment/issues/new) includendo:
-
-**Informazioni Sistema**:
+### Esempi
 ```bash
-# Output di questi comandi
-docker --version
-docker compose version
-sw_vers  # macOS
+feat(ssl): add automatic certificate renewal
+fix(proxy): resolve port conflict
+docs: add Windows setup guide
+chore: bump version to 1.2.0
+```
+
+## 🏷️ Versioning
+
+Seguiamo [Semantic Versioning](https://semver.org/):
+
+```
+MAJOR.MINOR.PATCH
+  │     │     │
+  │     │     └─ Bug fixes (1.0.0 → 1.0.1)
+  │     └─────── Nuove feature (1.0.0 → 1.1.0)
+  └───────────── Breaking changes (1.0.0 → 2.0.0)
+```
+
+## 🛠️ Development Setup
+
+```bash
+# Clone e setup
+git clone https://github.com/v-merli/docker-development-environment.git
+cd docker-development-environment
+git checkout develop
+./docker-dev setup init
+
+# Test
 ./docker-dev version
+./test-update-system.sh
 ```
 
-**Descrizione Bug**:
-- Cosa ti aspettavi
-- Cosa è successo invece
-- Steps per riprodurre
+## 🤝 Pull Request
 
-**Logs**:
-```bash
-# Logs progetto
-./docker-dev project logs project-name
-
-# Logs servizi condivisi
-docker logs proxy
-docker logs mysql-shared
-```
-
-## 📖 Documentazione
-
-Se modifichi funzionalità, aggiorna:
-- README.md - Overview generale
-- CLI-README.md - Documentazione comandi
-- INSTALLATION.md - Guida installazione
-- File specifici (WORKERS-GUIDE.md, SSL-SETUP.md, ecc)
-
-## 🔍 Code Review
-
-Le PR sono reviewate per:
-- **Funzionalità** - Fa quello che dice?
-- **Testing** - È stato testato adeguatamente?
-- **Stile** - Segue le convenzioni?
-- **Documentazione** - È documentato?
-- **Breaking Changes** - Rompe codice esistente?
-
-## 📜 Licenza
-
-Contribuendo, accetti che il tuo codice sia rilasciato sotto la stessa licenza del progetto (probabilmente MIT).
-
-## 💬 Domande?
-
-- Apri una [Discussion](https://github.com/your-username/docker-development-environment/discussions)
-- Commenta su issue esistenti
-- Contatta i maintainer
-
-## 🙏 Riconoscimenti
-
-Tutti i contributori sono listati in:
-- GitHub Contributors page
-- Releases notes
-- Hall of Fame (coming soon!)
+1. Fork il repository
+2. Crea branch da `develop`
+3. Committa seguendo le convenzioni
+4. Testa le modifiche
+5. Push e apri PR verso `develop`
+6. Descrivi cosa fa la PR
+7. Attendi review
 
 ---
 
-**Grazie per aver contribuito! Together we make development easier for everyone.** 🚀
+Grazie per contribuire! 🙏
