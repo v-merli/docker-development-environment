@@ -84,7 +84,7 @@ if [ -d "$INSTALL_DIR/projects" ]; then
                     
                     # Rimuovi network
                     docker network rm "${project_name}-network" 2>/dev/null || true
-                done
+                fi
             done
             print_success "Progetti rimossi"
         else
