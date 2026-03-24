@@ -45,7 +45,15 @@ ssl_install_ca() {
         print_error "mkcert non trovato"
         echo ""
         echo "Installa mkcert:"
-        echo "  brew install mkcert"
+        local os=$(detect_os)
+        if [ "$os" = "macos" ]; then
+            echo "  brew install mkcert"
+        else
+            echo "  # Installazione da source"
+            echo "  curl -JLO https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+            echo "  chmod +x mkcert-v*-linux-amd64"
+            echo "  sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert"
+        fi
         exit 1
     fi
     
@@ -111,7 +119,12 @@ ssl_verify() {
         echo "  Versione: $version"
     else
         print_error "mkcert non installato"
-        echo "  Installa: brew install mkcert"
+        local os=$(detect_os)
+        if [ "$os" = "macos" ]; then
+            echo "  Installa: brew install mkcert"
+        else
+            echo "  Installa: https://github.com/FiloSottile/mkcert#installation"
+        fi
         return 1
     fi
     
@@ -123,12 +136,26 @@ ssl_verify() {
         print_success "CA locale configurata"
         echo "  Directory: $ca_root"
         
-        # Verifica nel keychain (macOS)
-        if security find-certificate -c "mkcert" /Library/Keychains/System.keychain &> /dev/null; then
-            print_success "CA installata nel keychain di sistema"
+        # Verifica installazione CA nel sistema
+        local os=$(detect_os)
+        if [ "$os" = "macos" ]; then
+            # Verifica nel keychain (macOS)
+            if security find-certificate -c "mkcert" /Library/Keychains/System.keychain &> /dev/null; then
+                print_success "CA installata nel keychain di sistema"
+            else
+                print_warning "CA non trovata nel keychain di sistema"
+                echo "  Esegui: ./docker-dev ssl install"
+            fi
         else
-            print_warning "CA non trovata nel keychain di sistema"
-            echo "  Esegui: ./docker-dev ssl install"
+            # Su Linux verifica nel certutil o certificate store
+            if certutil -d sql:$HOME/.pki/nssdb -L 2>/dev/null | grep -q "mkcert"; then
+                print_success "CA installata nel certificate store (NSS)"
+            elif [ -f "/usr/local/share/ca-certificates/mkcert-rootCA.crt" ]; then
+                print_success "CA installata in /usr/local/share/ca-certificates"
+            else
+                print_warning "CA potrebbe non essere installata nel sistema"
+                echo "  Esegui: ./docker-dev ssl install"
+            fi
         fi
     else
         print_warning "CA locale non configurata"

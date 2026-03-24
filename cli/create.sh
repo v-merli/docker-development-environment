@@ -768,7 +768,12 @@ generate_ssl_cert() {
         print_warning "mkcert non trovato"
         echo ""
         echo "Per abilitare HTTPS locale, installa mkcert:"
-        echo "  brew install mkcert"
+        local os=$(detect_os)
+        if [ "$os" = "macos" ]; then
+            echo "  brew install mkcert"
+        else
+            echo "  # Vedi: https://github.com/FiloSottile/mkcert#installation"
+        fi
         echo "  $SCRIPT_DIR/proxy/setup-ssl-ca.sh"
         return
     fi

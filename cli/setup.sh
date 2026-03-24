@@ -322,37 +322,112 @@ setup_dns() {
     print_title "Configurazione DNS (dnsmasq)"
     echo ""
     
+    # Rileva sistema operativo
+    local OS=""
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        OS="macos"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if grep -qi microsoft /proc/version 2>/dev/null; then
+            OS="wsl"
+        else
+            OS="linux"
+        fi
+    else
+        print_error "Sistema operativo non supportato: $OSTYPE"
+        exit 1
+    fi
+    
     # Controlla se dnsmasq è già installato
     if command -v dnsmasq >/dev/null 2>&1; then
         print_info "dnsmasq già installato"
     else
-        print_info "Installazione dnsmasq via Homebrew..."
-        if ! command -v brew >/dev/null 2>&1; then
-            print_error "Homebrew non trovato. Installalo da https://brew.sh"
-            exit 1
+        print_info "Installazione dnsmasq..."
+        
+        if [ "$OS" = "macos" ]; then
+            # macOS: usa Homebrew
+            if ! command -v brew >/dev/null 2>&1; then
+                print_error "Homebrew non trovato. Installalo da https://brew.sh"
+                exit 1
+            fi
+            brew install dnsmasq
+        else
+            # Linux/WSL2: usa apt-get
+            print_info "Richiesta permessi sudo per installazione..."
+            sudo apt-get update
+            sudo apt-get install -y dnsmasq
         fi
-        brew install dnsmasq
     fi
     
-    # Crea directory configurazione
-    print_info "Configurazione dnsmasq..."
-    mkdir -p /usr/local/etc/dnsmasq.d
-    
-    # Copia configurazione
-    cp "$SCRIPT_DIR/shared/dnsmasq/dnsmasq.conf" /usr/local/etc/dnsmasq.conf
-    
-    # Configura resolver macOS
-    sudo mkdir -p /etc/resolver
-    echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/test > /dev/null
-    
-    # Avvia servizio
-    print_info "Avvio servizio dnsmasq..."
-    sudo brew services start dnsmasq
+    # Configurazione specifica per OS
+    if [ "$OS" = "macos" ]; then
+        # ===== macOS =====
+        print_info "Configurazione dnsmasq (macOS)..."
+        mkdir -p /usr/local/etc/dnsmasq.d
+        
+        # Copia configurazione
+        cp "$SCRIPT_DIR/shared/dnsmasq/dnsmasq.conf" /usr/local/etc/dnsmasq.conf
+        
+        # Configura resolver macOS
+        sudo mkdir -p /etc/resolver
+        echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/test > /dev/null
+        
+        # Avvia servizio
+        print_info "Avvio servizio dnsmasq..."
+        sudo brew services start dnsmasq
+        
+    else
+        # ===== Linux/WSL2 =====
+        print_info "Configurazione dnsmasq (Linux)..."
+        
+        # Copia configurazione
+        sudo cp "$SCRIPT_DIR/shared/dnsmasq/dnsmasq.conf" /etc/dnsmasq.d/docker-dev-test.conf
+        
+        # Configura dnsmasq per ascoltare solo su localhost
+        if ! grep -q "listen-address=127.0.0.1" /etc/dnsmasq.conf 2>/dev/null; then
+            echo "listen-address=127.0.0.1" | sudo tee -a /etc/dnsmasq.conf > /dev/null
+        fi
+        
+        # Su Linux, configura systemd-resolved se presente
+        if systemctl is-active systemd-resolved >/dev/null 2>&1; then
+            print_info "Configurazione systemd-resolved..."
+            
+            # Crea configurazione per *.test
+            echo "[Resolve]
+DNS=127.0.0.1
+Domains=~test" | sudo tee /etc/systemd/resolved.conf.d/docker-dev.conf > /dev/null 2>&1 || true
+            
+            # Disabilita DNSStubListener per evitare conflitto porta 53
+            sudo mkdir -p /etc/systemd/resolved.conf.d
+            echo "[Resolve]
+DNSStubListener=no" | sudo tee /etc/systemd/resolved.conf.d/docker-dev-stub.conf > /dev/null
+            
+            sudo systemctl restart systemd-resolved
+        fi
+        
+        # Riavvia dnsmasq
+        print_info "Avvio servizio dnsmasq..."
+        sudo systemctl enable dnsmasq
+        sudo systemctl restart dnsmasq
+        
+        # Verifica stato
+        if ! sudo systemctl is-active dnsmasq >/dev/null 2>&1; then
+            print_warning "dnsmasq potrebbe non essere avviato correttamente"
+            echo "Controlla i log: sudo journalctl -u dnsmasq -n 50"
+        fi
+    fi
     
     print_success "DNS configurato!"
     echo ""
     echo -e "${CYAN}Tutti i domini *.test puntano a 127.0.0.1${NC}"
     echo ""
+    
+    if [ "$OS" = "linux" ] || [ "$OS" = "wsl" ]; then
+        echo "NOTA: Su alcuni sistemi Linux potrebbe essere necessario:"
+        echo "  1. Modificare /etc/resolv.conf per usare 127.0.0.1"
+        echo "  2. Oppure usare 127.0.0.1 come DNS nelle impostazioni di rete"
+        echo ""
+    fi
+    
     echo "Test: ping progetto.test"
 }
 
@@ -528,7 +603,12 @@ EOF
     if ! command -v mkcert >/dev/null 2>&1; then
         echo ""
         print_info "Per i certificati SSL locali, installa mkcert:"
-        echo "  brew install mkcert"
+        local os=$(detect_os)
+        if [ "$os" = "macos" ]; then
+            echo "  brew install mkcert"
+        else
+            echo "  # Vedi: https://github.com/FiloSottile/mkcert#installation"
+        fi
         echo "  mkcert -install"
     else
         print_success "mkcert installato"

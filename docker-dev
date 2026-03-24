@@ -94,6 +94,21 @@ else
     exit 1
 fi
 
+# Rileva sistema operativo
+detect_os() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "macos"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if grep -qi microsoft /proc/version 2>/dev/null; then
+            echo "wsl"
+        else
+            echo "linux"
+        fi
+    else
+        echo "unknown"
+    fi
+}
+
 # Funzioni di output
 print_info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
 print_success() { echo -e "${GREEN}✅ $1${NC}"; }
