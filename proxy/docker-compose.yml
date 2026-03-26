@@ -86,7 +86,6 @@ services:
       - mysql_8_0_shared_data:/var/lib/mysql
     networks:
       - phpharbor-proxy
-    command: --default-authentication-plugin=mysql_native_password
     profiles:
       - shared-services
 
@@ -98,12 +97,12 @@ services:
       - "3308:3306"
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_AUTHENTICATION_PLUGIN: caching_sha2_password
       # Projects will create their databases via migration
     volumes:
       - mysql_8_4_shared_data:/var/lib/mysql
     networks:
       - phpharbor-proxy
-    command: --default-authentication-plugin=mysql_native_password
     profiles:
       - shared-services
 
@@ -237,25 +236,19 @@ services:
       - shared-services
 
 volumes:
-  # Legacy volumes (backward compatibility)
-  mysql_shared_data:
-    name: mysql_8_0_shared_data  # MySQL 8.0 uses the old volume name
-    external: true
-  redis_shared_data:
-    name: redis_7_shared_data  # Redis 7 uses the old volume name
-    external: true
-  
-  # Versioned volumes
+  # Shared service volumes - consistent naming pattern
   mysql_5_7_shared_data:
     name: mysql_5_7_shared_data
   mysql_8_0_shared_data:
     name: mysql_8_0_shared_data
+    external: true
   mysql_8_4_shared_data:
     name: mysql_8_4_shared_data
   redis_6_shared_data:
     name: redis_6_shared_data
   redis_7_shared_data:
     name: redis_7_shared_data
+    external: true
 
 networks:
   phpharbor-proxy:

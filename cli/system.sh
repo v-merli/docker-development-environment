@@ -85,27 +85,43 @@ cmd_info() {
     echo -e "${CYAN}Shared Services:${NC}"
     local shared_count=0
     
-    if docker ps | grep -q mysql-shared; then
-        echo "  ✓ Shared MySQL (port $MYSQL_SHARED_PORT)"
-        ((shared_count++))
+    # Check MySQL versions
+    local mysql_containers=$(docker ps --format "{{.Names}}" | grep "mysql-.*-shared" 2>/dev/null || true)
+    if [ -n "$mysql_containers" ]; then
+        while IFS= read -r container; do
+            if [[ "$container" =~ mysql-([0-9.]+)-shared ]]; then
+                local ver="${BASH_REMATCH[1]}"
+                local port=$(docker port "$container" 3306 2>/dev/null | cut -d: -f2 || echo "N/A")
+                echo "  ✓ Shared MySQL $ver (port $port)"
+                shared_count=$((shared_count + 1))
+            fi
+        done <<< "$mysql_containers"
     fi
     
-    if docker ps | grep -q redis-shared; then
-        echo "  ✓ Shared Redis (port $REDIS_SHARED_PORT)"
-        ((shared_count++))
+    # Check Redis versions
+    local redis_containers=$(docker ps --format "{{.Names}}" | grep "redis-.*-shared" 2>/dev/null || true)
+    if [ -n "$redis_containers" ]; then
+        while IFS= read -r container; do
+            if [[ "$container" =~ redis-([0-9.]+)-shared ]]; then
+                local ver="${BASH_REMATCH[1]}"
+                local port=$(docker port "$container" 6379 2>/dev/null | cut -d: -f2 || echo "N/A")
+                echo "  ✓ Shared Redis $ver (port $port)"
+                shared_count=$((shared_count + 1))
+            fi
+        done <<< "$redis_containers"
     fi
     
-    local php_shared=$(docker ps --format "{{.Names}}" | grep "php-.*-shared" | wc -l | tr -d ' ')
+    local php_shared=$(docker ps --format "{{.Names}}" | grep "php-.*-shared" 2>/dev/null | wc -l | tr -d ' ')
     if [ "$php_shared" -gt 0 ]; then
         echo "  ✓ Shared PHP-FPM: $php_shared active versions"
-        docker ps --format "    - {{.Names}}" | grep "php-.*-shared"
+        docker ps --format "    - {{.Names}}" | grep "php-.*-shared" 2>/dev/null || true
         shared_count=$((shared_count + php_shared))
     fi
     
     if [ "$shared_count" -eq 0 ]; then
         echo "  ✗ No shared services active"
         echo "    Start them with: ./phpharbor shared start"
-        echo "    Configured ports: MySQL=$MYSQL_SHARED_PORT, Redis=$REDIS_SHARED_PORT"
+        echo "    Available: MySQL 5.7, 8.0, 8.4 | Redis 6, 7"
     fi
     
     echo ""

@@ -196,9 +196,10 @@ cmd_mysql() {
         db_name=$(grep "^MYSQL_DATABASE=" ".env" 2>/dev/null | cut -d'=' -f2)
         db_pass=$(grep "^MYSQL_ROOT_PASSWORD=" ".env" 2>/dev/null | cut -d'=' -f2)
         
-        if [ "$db_host" = "mysql-shared" ]; then
-            print_info "Connecting to shared MySQL (database: $db_name)..."
-            docker exec -it mysql-shared mysql -uroot -p$db_pass $db_name
+        # Check if it's a shared MySQL (format: mysql-X.X-shared)
+        if [[ "$db_host" =~ ^mysql-.*-shared$ ]]; then
+            print_info "Connecting to shared MySQL $db_host (database: $db_name)..."
+            docker exec -it "$db_host" mysql -uroot -p$db_pass $db_name
             return
         fi
     fi

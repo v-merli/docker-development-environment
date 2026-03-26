@@ -83,6 +83,18 @@ interactive_create() {
             "Shared")
                 INCLUDE_DB=true
                 USE_SHARED_DB=true
+                
+                # MySQL version for shared
+                print_info "MySQL version:"
+                PS3="$(echo -e "${CYAN}Choose (1-3):${NC} ")"
+                select mysql in "8.0 (default port 3306)" "5.7 (port 3307)" "8.4 (port 3308)"; do
+                    case $mysql in
+                        "8.0"*) MYSQL_VERSION="8.0"; break;;
+                        "5.7"*) MYSQL_VERSION="5.7"; break;;
+                        "8.4"*) MYSQL_VERSION="8.4"; break;;
+                        *) echo "Invalid choice";;
+                    esac
+                done
                 break
                 ;;
             "None")
@@ -107,6 +119,17 @@ interactive_create() {
             "Shared")
                 INCLUDE_REDIS=true
                 USE_SHARED_REDIS=true
+                
+                # Redis version for shared
+                print_info "Redis version:"
+                PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
+                select redis_ver in "7 (default port 6379)" "6 (port 6380)"; do
+                    case $redis_ver in
+                        "7"*) REDIS_VERSION="7"; break;;
+                        "6"*) REDIS_VERSION="6"; break;;
+                        *) echo "Invalid choice";;
+                    esac
+                done
                 break
                 ;;
             "None")
@@ -164,6 +187,7 @@ interactive_create() {
     [ -n "$PHP_VERSION" ] && cmd_args+=(--php "$PHP_VERSION")
     [ -n "$NODE_VERSION" ] && cmd_args+=(--node "$NODE_VERSION")
     [ -n "$MYSQL_VERSION" ] && cmd_args+=(--mysql "$MYSQL_VERSION")
+    [ -n "$REDIS_VERSION" ] && cmd_args+=(--redis "$REDIS_VERSION")
     [ "$USE_SHARED_DB" == true ] && cmd_args+=(--shared-db)
     [ "$USE_SHARED_REDIS" == true ] && cmd_args+=(--shared-redis)
     [ "$USE_SHARED_PHP" == true ] && cmd_args+=(--shared-php)
@@ -190,6 +214,7 @@ cmd_create() {
     local PHP_VERSION="8.3"
     local NODE_VERSION="20"
     local MYSQL_VERSION="8.0"
+    local REDIS_VERSION="7"
     local INCLUDE_DB=true
     local INCLUDE_REDIS=true
     local USE_SHARED_DB=false
@@ -238,6 +263,14 @@ cmd_create() {
                 ;;
             --mysql)
                 MYSQL_VERSION="$2"
+                shift 2
+                ;;
+            --redis=*)
+                REDIS_VERSION="${1#*=}"
+                shift
+                ;;
+            --redis)
+                REDIS_VERSION="$2"
                 shift 2
                 ;;
             --no-db)
@@ -327,16 +360,16 @@ cmd_create() {
     fi
     if [[ "$INCLUDE_DB" == true ]]; then
         if [[ "$USE_SHARED_DB" == true ]]; then
-            echo "MySQL:     Shared"
+            echo "MySQL:     Shared $MYSQL_VERSION"
         else
             echo "MySQL:     Dedicated $MYSQL_VERSION"
         fi
     fi
     if [[ "$INCLUDE_REDIS" == true ]]; then
         if [[ "$USE_SHARED_REDIS" == true ]]; then
-            echo "Redis:     Shared"
+            echo "Redis:     Shared $REDIS_VERSION"
         else
-            echo "Redis:     Dedicated"
+            echo "Redis:     Dedicated $REDIS_VERSION"
         fi
     fi
     echo ""
@@ -392,7 +425,7 @@ cmd_create() {
     # Create .env with unified configuration
     create_unified_env_file "$PROJECT_PATH" "$PROJECT_SLUG" "$PROJECT_TYPE" "$DOMAIN" "$NGINX_CONF" \
                     "$PHP_VERSION" "$NODE_VERSION" "$MYSQL_VERSION" \
-                    "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP"
+                    "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$REDIS_VERSION"
     
     print_success "Project structure created"
     
@@ -408,7 +441,7 @@ cmd_create() {
     fi
     
     # Start shared services
-    start_shared_if_needed "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$PHP_VERSION"
+    start_shared_if_needed "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$PHP_VERSION" "$MYSQL_VERSION" "$REDIS_VERSION"
     
     # Start project containers
     print_info "Starting containers..."
@@ -497,7 +530,7 @@ show_create_usage() {
 create_unified_env_file() {
     local path=$1 slug=$2 type=$3 domain=$4 nginx_conf=$5
     local php_ver=$6 node_ver=$7 mysql_ver=$8
-    local inc_db=$9 inc_redis=${10} shared_db=${11} shared_redis=${12} shared_php=${13}
+    local inc_db=$9 inc_redis=${10} shared_db=${11} shared_redis=${12} shared_php=${13} redis_ver=${14}
     
     # Determine services and configuration
     local db_service="mysql"
@@ -509,15 +542,15 @@ create_unified_env_file() {
     local profiles="app"
     
     if [[ "$shared_db" == true ]]; then
-        db_service="mysql-shared"
-        db_host="mysql-shared"
+        db_service="mysql-$mysql_ver-shared"
+        db_host="mysql-$mysql_ver-shared"
     elif [[ "$inc_db" == true ]]; then
         profiles="$profiles mysql-dedicated"
     fi
     
     if [[ "$shared_redis" == true ]]; then
-        redis_service="redis-shared"
-        redis_host="redis-shared"
+        redis_service="redis-$redis_ver-shared"
+        redis_host="redis-$redis_ver-shared"
     elif [[ "$inc_redis" == true ]]; then
         profiles="$profiles redis-dedicated"
     fi
@@ -577,6 +610,17 @@ EOF
     if [[ "$inc_db" == true ]]; then
         cat >> "$path/.env" << EOF
 MYSQL_VERSION=$mysql_ver
+EOF
+    fi
+    
+    if [[ "$inc_redis" == true ]]; then
+        cat >> "$path/.env" << EOF
+REDIS_VERSION=$redis_ver
+EOF
+    fi
+    
+    if [[ "$inc_db" == true ]]; then
+        cat >> "$path/.env" << EOF
 
 # ============================================
 # DATABASE CONFIGURATION
@@ -663,7 +707,7 @@ EOF
 create_env_file() {
     local path=$1 slug=$2 type=$3 domain=$4 nginx_conf=$5
     local php_ver=$6 node_ver=$7 mysql_ver=$8
-    local inc_db=$9 inc_redis=${10} shared_db=${11} shared_redis=${12}
+    local inc_db=$9 inc_redis=${10} shared_db=${11} shared_redis=${12} redis_ver=${13}
     
     cat > "$path/.env" << EOF
 PROJECT_NAME=$slug
@@ -686,12 +730,13 @@ EOF
             cat >> "$path/.env" << EOF
 
 # MySQL (SHARED)
-DB_HOST=mysql-shared
+DB_HOST=mysql-$mysql_ver-shared
 DB_PORT=3306
 MYSQL_DATABASE=${slug//-/_}_db
 MYSQL_ROOT_PASSWORD=rootpassword
 MYSQL_USER=root
 MYSQL_PASSWORD=rootpassword
+MYSQL_VERSION=$mysql_ver
 EOF
         else
             local port=$((13306 + $(echo -n "$slug" | sum | cut -d' ' -f1) % 1000))
@@ -713,14 +758,16 @@ EOF
             cat >> "$path/.env" << EOF
 
 # Redis (SHARED)
-REDIS_HOST=redis-shared
+REDIS_HOST=redis-$redis_ver-shared
 REDIS_PORT=6379
+REDIS_VERSION=$redis_ver
 EOF
         else
             cat >> "$path/.env" << EOF
 
 # Redis (DEDICATED)
 REDIS_PORT=6379
+REDIS_VERSION=$redis_ver
 EOF
         fi
     fi
@@ -737,7 +784,7 @@ EOF
 }
 
 start_shared_if_needed() {
-    local use_db=$1 use_redis=$2 use_php=$3 php_ver=$4
+    local use_db=$1 use_redis=$2 use_php=$3 php_ver=$4 mysql_ver=$5 redis_ver=$6
     
     if [[ "$use_db" == false ]] && [[ "$use_redis" == false ]] && [[ "$use_php" == false ]]; then
         return
@@ -746,16 +793,22 @@ start_shared_if_needed() {
     print_info "Checking shared services..."
     cd "$SCRIPT_DIR/proxy"
     
-    if [[ "$use_db" == true ]] && ! docker ps | grep -q mysql-shared; then
-        print_info "Starting shared MySQL..."
-        $DOCKER_COMPOSE --profile shared-services up -d mysql-shared
-        sleep 3
+    if [[ "$use_db" == true ]]; then
+        local mysql_container="mysql-$mysql_ver-shared"
+        if ! docker ps | grep -q "$mysql_container"; then
+            print_info "Starting shared MySQL $mysql_ver..."
+            $DOCKER_COMPOSE --profile shared-services up -d "$mysql_container"
+            sleep 3
+        fi
     fi
     
-    if [[ "$use_redis" == true ]] && ! docker ps | grep -q redis-shared; then
-        print_info "Starting shared Redis..."
-        $DOCKER_COMPOSE --profile shared-services up -d redis-shared
-        sleep 2
+    if [[ "$use_redis" == true ]]; then
+        local redis_container="redis-$redis_ver-shared"
+        if ! docker ps | grep -q "$redis_container"; then
+            print_info "Starting shared Redis $redis_ver..."
+            $DOCKER_COMPOSE --profile shared-services up -d "$redis_container"
+            sleep 2
+        fi
     fi
     
     if [[ "$use_php" == true ]]; then
