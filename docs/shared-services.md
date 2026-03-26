@@ -228,7 +228,7 @@ docker-compose --profile shared-services up -d
 
 ### Connection error from container
 
-Verify the project is on the `proxy` network:
+Verify the project is on the `phpharbor-proxy` network:
 
 ```bash
 docker inspect <container-name> | grep proxy

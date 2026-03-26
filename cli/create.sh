@@ -397,7 +397,7 @@ cmd_create() {
     print_success "Project structure created"
     
     # Check proxy network
-    if ! docker network inspect proxy &> /dev/null; then
+    if ! docker network inspect phpharbor-proxy &> /dev/null; then
         print_info "Starting reverse proxy..."
         cd "$SCRIPT_DIR/proxy"
         $DOCKER_COMPOSE up -d nginx-proxy acme-companion

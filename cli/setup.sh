@@ -459,7 +459,7 @@ setup_proxy() {
     if docker ps | grep -q nginx-proxy; then
         print_success "Proxy started!"
         echo ""
-        echo -e "${CYAN}Network:${NC} proxy (bridge)"
+        echo -e "${CYAN}Network:${NC} phpharbor-proxy (bridge)"
         echo -e "${CYAN}Port:${NC} 80 (HTTP), 443 (HTTPS)"
         echo ""
         echo "The proxy automatically manages SSL certificates and routing"

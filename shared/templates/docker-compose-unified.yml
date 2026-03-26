@@ -30,7 +30,7 @@ services:
       # They should be configured in the Laravel .env file instead
       # This allows full control of database/cache configuration in the app
     networks:
-      - proxy
+      - phpharbor-proxy
       - backend
     profiles:
       - app
@@ -53,7 +53,7 @@ services:
     depends_on:
       - app
     networks:
-      - proxy
+      - phpharbor-proxy
       - backend
     profiles:
       - app
@@ -140,13 +140,13 @@ services:
       REDIS_HOST: ${REDIS_HOST:-}
     networks:
       - backend
-      - proxy
+      - phpharbor-proxy
     command: sh -c "until [ -f artisan ] && [ -f vendor/autoload.php ]; do echo 'Waiting for Laravel installation...' && sleep 2; done && php artisan queue:work --tries=3"
     profiles:
       - queue
 
 networks:
-  proxy:
+  phpharbor-proxy:
     external: true
   backend:
     driver: bridge

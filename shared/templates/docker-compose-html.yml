@@ -12,8 +12,8 @@ services:
       LETSENCRYPT_HOST: ${DOMAIN}
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
     networks:
-      - proxy
+      - phpharbor-proxy
 
 networks:
-  proxy:
+  phpharbor-proxy:
     external: true

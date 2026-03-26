@@ -68,7 +68,7 @@
 
 ## Docker Networks
 
-### `proxy` Network (bridge, external)
+### `phpharbor-proxy` Network (bridge, external)
 All containers that must be reachable from the outside:
 - `nginx-proxy`
 - `mysql-shared` (if used)
@@ -101,7 +101,7 @@ Only for projects with dedicated services:
    ↓
 6. Finds container with VIRTUAL_HOST=shop.test
    ↓
-7. Forward → shop-nginx:80 (via proxy network)
+7. Forward → shop-nginx:80 (via phpharbor-proxy network)
    ↓
 8. shop-nginx → FastCGI → shop-app:9000
    ↓

@@ -1,3 +1,5 @@
+name: phpharbor-proxy
+
 services:
   # Reverse proxy with SSL support
   # Automatically routes traffic to project containers based on VIRTUAL_HOST
@@ -21,7 +23,7 @@ services:
     labels:
       - com.github.nginx-proxy.nginx
     networks:
-      - proxy
+      - phpharbor-proxy
 
   # Let's Encrypt companion for automatic SSL certificates
   # Note: Not used for .test domains (they're not publicly routable)
@@ -48,7 +50,7 @@ services:
       # Using staging to avoid rate limits during development
       - ACME_CA_URI=https://acme-staging-v02.api.letsencrypt.org/directory
     networks:
-      - proxy
+      - phpharbor-proxy
 
   # Shared services (optional)
   # Projects can use these services instead of having a dedicated one
@@ -64,7 +66,7 @@ services:
     volumes:
       - mysql_shared_data:/var/lib/mysql
     networks:
-      - proxy
+      - phpharbor-proxy
     command: --default-authentication-plugin=mysql_native_password
     profiles:
       - shared-services
@@ -78,7 +80,7 @@ services:
     volumes:
       - redis_shared_data:/data
     networks:
-      - proxy
+      - phpharbor-proxy
     command: redis-server --appendonly yes
     profiles:
       - shared-services
@@ -95,7 +97,7 @@ services:
     volumes:
       - ../projects:/var/www/projects
     networks:
-      - proxy
+      - phpharbor-proxy
     profiles:
       - shared-services
 
@@ -109,7 +111,7 @@ services:
     volumes:
       - ../projects:/var/www/projects
     networks:
-      - proxy
+      - phpharbor-proxy
     profiles:
       - shared-services
 
@@ -123,7 +125,7 @@ services:
     volumes:
       - ../projects:/var/www/projects
     networks:
-      - proxy
+      - phpharbor-proxy
     profiles:
       - shared-services
 
@@ -137,7 +139,7 @@ services:
     volumes:
       - ../projects:/var/www/projects
     networks:
-      - proxy
+      - phpharbor-proxy
     profiles:
       - shared-services
 
@@ -151,7 +153,7 @@ services:
     volumes:
       - ../projects:/var/www/projects
     networks:
-      - proxy
+      - phpharbor-proxy
     profiles:
       - shared-services
 
@@ -165,7 +167,7 @@ services:
     volumes:
       - ../projects:/var/www/projects
     networks:
-      - proxy
+      - phpharbor-proxy
     profiles:
       - shared-services
 
@@ -179,7 +181,7 @@ services:
     volumes:
       - ../projects:/var/www/projects
     networks:
-      - proxy
+      - phpharbor-proxy
     profiles:
       - shared-services
 
@@ -190,5 +192,5 @@ volumes:
     name: redis_shared_data
 
 networks:
-  proxy:
-    name: proxy
+  phpharbor-proxy:
+    name: phpharbor-proxy

@@ -25,7 +25,7 @@ cmd_stats() {
     
     echo ""
     echo -e "${CYAN}Networks:${NC}"
-    docker network ls | grep -E "proxy|backend"
+    docker network ls | grep -E "phpharbor-proxy|backend"
 }
 
 cmd_info() {
