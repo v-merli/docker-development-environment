@@ -1,42 +1,42 @@
-# Compatibilità Cross-Platform
+# Cross-Platform Compatibility
 
-PHPHarbor è completamente compatibile con macOS, Linux e Windows (via WSL2).
+PHPHarbor is fully compatible with macOS, Linux and Windows (via WSL2).
 
-## Sistema di Rilevamento OS
+## OS Detection System
 
-Lo script principale include una funzione `detect_os()` che rileva automaticamente:
+The main script includes a `detect_os()` function that automatically detects:
 
 - **macOS** (`darwin`)
-- **Linux** nativo (`linux-gnu`)
-- **WSL2** (Linux con kernel Microsoft)
+- **Native Linux** (`linux-gnu`)
+- **WSL2** (Linux with Microsoft kernel)
 
-## Differenze per Piattaforma
+## Platform Differences
 
 ### DNS (dnsmasq)
 
 #### macOS
 ```bash
-# Installazione via Homebrew
+# Installation via Homebrew
 brew install dnsmasq
 
-# Configurazione
+# Configuration
 /usr/local/etc/dnsmasq.conf
 /etc/resolver/test
 
-# Servizio
+# Service
 brew services start dnsmasq
 ```
 
 #### Linux
 ```bash
-# Installazione via apt
+# Installation via apt
 sudo apt-get install -y dnsmasq
 
-# Configurazione
+# Configuration
 /etc/dnsmasq.d/phpharbor-test.conf
 /etc/systemd/resolved.conf.d/
 
-# Servizio
+# Service
 sudo systemctl enable dnsmasq
 sudo systemctl start dnsmasq
 ```
@@ -45,95 +45,95 @@ sudo systemctl start dnsmasq
 
 #### macOS
 ```bash
-# Installazione
+# Installation
 brew install mkcert
 
-# CA installata in
+# CA installed in
 /Library/Keychains/System.keychain
 ```
 
 #### Linux
 ```bash
-# Installazione da source
+# Installation from source
 curl -JLO https://dl.filippo.io/mkcert/latest?for=linux/amd64
 chmod +x mkcert-v*-linux-amd64
 sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
 
-# CA installata in
+# CA installed in
 ~/.pki/nssdb/
 /usr/local/share/ca-certificates/
 ```
 
-### Comandi Shell
+### Shell Commands
 
 #### sed
 ```bash
-# macOS: richiede estensione backup
+# macOS: requires backup extension
 sed -i.bak 's/old/new/' file
 
-# Linux: nessuna estensione
+# Linux: no extension
 sed -i 's/old/new/' file
 ```
 
-Questo è gestito automaticamente dallo script `install.sh`.
+This is automatically handled by the `install.sh` script.
 
-## File Modificati per Cross-Platform
+## Files Modified for Cross-Platform
 
 ### Core
-- `phpharbor - Funzione `detect_os()` per rilevamento OS
-- `install.sh` - Gestione `sed` specifico per OS
+- `phpharbor` - `detect_os()` function for OS detection
+- `install.sh` - OS-specific `sed` handling
 
-### Moduli CLI
-- `cli/setup.sh` - Setup DNS e verifiche sistema
-- `cli/ssl.sh` - Installazione mkcert e gestione CA
-- `cli/create.sh` - Suggerimenti installazione mkcert
+### CLI Modules
+- `cli/setup.sh` - DNS setup and system checks
+- `cli/ssl.sh` - mkcert installation and CA management
+- `cli/create.sh` - mkcert installation suggestions
 
-## Test Cross-Platform
+## Cross-Platform Testing
 
-Per testare su Linux da macOS:
+To test on Linux from macOS:
 
 ```bash
-# Script automatico con Multipass
+# Automatic script with Multipass
 ./test-linux.sh
 
-# Test manuale
+# Manual test
 multipass launch --name test-vm 22.04
 multipass shell test-vm
 ```
 
-## Compatibilità Windows
+## Windows Compatibility
 
-PHPHarbor funziona su Windows tramite WSL2:
+PHPHarbor works on Windows via WSL2:
 
-1. Installare WSL2 con Ubuntu
-2. Installare Docker Desktop con backend WSL2
-3. Clonare/installare il tool dentro WSL2
+1. Install WSL2 with Ubuntu
+2. Install Docker Desktop with WSL2 backend
+3. Clone/install the tool inside WSL2
 
-Vedi [docs/windows-setup.md](windows-setup.md) per la guida completa.
+See [docs/windows-setup.md](windows-setup.md) for complete guide.
 
-## Comandi Specifici per Piattaforma
+## Platform-Specific Commands
 
-Tutti i comandi che usano tool specifici di una piattaforma rilevano automaticamente l'OS e adattano il comportamento:
+All commands that use platform-specific tools automatically detect the OS and adapt behavior:
 
-- ✅ Installazione pacchetti (brew vs apt-get)
-- ✅ Gestione servizi (brew services vs systemctl)
-- ✅ Gestione certificati (keychain vs NSS)
-- ✅ Configurazione DNS (resolver vs resolved)
+- ✅ Package installation (brew vs apt-get)
+- ✅ Service management (brew services vs systemctl)
+- ✅ Certificate management (keychain vs NSS)
+- ✅ DNS configuration (resolver vs resolved)
 
-## Verifica Compatibilità
+## Compatibility Verification
 
-Per verificare che tutto funzioni sulla tua piattaforma:
+To verify everything works on your platform:
 
 ```bash
-# Info sistema
+# System info
 ./phpharbor info
 
 # Test setup
 ./phpharbor setup init
 
-# Verifica DNS (se configurato)
+# Verify DNS (if configured)
 ping test.test
 
-# Verifica SSL (se configurato)
-./phpharborssl verify
+# Verify SSL (if configured)
+./phpharbor ssl verify
 ```

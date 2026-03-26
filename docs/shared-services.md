@@ -1,64 +1,64 @@
-# 🔄 Guida ai Servizi Condivisi
+# 🔄 Shared Services Guide
 
-## Perché Usare Servizi Condivisi?
+## Why Use Shared Services?
 
-### Problema
-Con molti progetti attivi, ogni progetto con PHP, MySQL e Redis dedicati consuma:
+### Problem
+With many active projects, each project with dedicated PHP, MySQL and Redis consumes:
 - PHP-FPM: ~100-150 MB RAM
 - MySQL: ~200-400 MB RAM
 - Redis: ~50-100 MB RAM
 
-**Con 10 progetti = ~5 GB di RAM solo per i servizi!** 😰
+**With 10 projects = ~5 GB of RAM just for services!** 😰
 
-### Soluzione: Servizi Condivisi
-Singole istanze condivise di PHP, MySQL e Redis per tutti i progetti:
-- PHP-FPM condiviso per versione: ~150 MB (tutte le versioni attive: ~900 MB)
-- MySQL condiviso: ~400 MB (indipendentemente dal numero di progetti)
-- Redis condiviso: ~100 MB (indipendentemente dal numero di progetti)
+### Solution: Shared Services
+Single shared instances of PHP, MySQL and Redis for all projects:
+- Shared PHP-FPM per version: ~150 MB (all active versions: ~900 MB)
+- Shared MySQL: ~400 MB (regardless of number of projects)
+- Shared Redis: ~100 MB (regardless of number of projects)
 
-**Risparmio: fino al 90% di RAM con 5+ progetti!**
+**Savings: up to 90% RAM with 5+ projects!**
 
 ## Quick Start
 
-### 1. Avvia i Servizi Condivisi
+### 1. Start Shared Services
 
 ```bash
 ./start-shared-services.sh
 ```
 
-### 2. Crea Progetti con Servizi Condivisi
+### 2. Create Projects with Shared Services
 
 ```bash
-# Solo DB condivisi (MySQL + Redis)
+# Only shared DBs (MySQL + Redis)
 ./new-project.sh shop --shared
 
-# Solo MySQL condiviso
+# Only shared MySQL
 ./new-project.sh blog --shared-db
 
-# Solo Redis condiviso
+# Only shared Redis
 ./new-project.sh api --shared-redis
 
-# Solo PHP condiviso (nuovo!)
+# Only shared PHP (new!)
 ./new-project.sh test1 --shared-php --php 8.3
 
-# Tutto condiviso (massimo risparmio!)
+# Everything shared (maximum savings!)
 ./new-project.sh test2 --fully-shared --php 8.3
 ```
 
-### 3. Crea il Database per il Progetto
+### 3. Create Database for Project
 
 ```bash
-# Accedi a MySQL condiviso
+# Access shared MySQL
 ./manage-projects.sh shared-mysql
 
-# Crea il database
+# Create database
 CREATE DATABASE shop_db;
 EXIT;
 ```
 
-### 4. Configura il Progetto
+### 4. Configure Project
 
-Il file `.env` del progetto è già configurato automaticamente:
+The project's `.env` file is already configured automatically:
 
 ```env
 DB_HOST=mysql-shared
@@ -71,57 +71,57 @@ REDIS_HOST=redis-shared
 REDIS_PORT=6379
 ```
 
-### 5. Esegui le Migration
+### 5. Run Migrations
 
 ```bash
 ./manage-projects.sh artisan shop migrate
 ```
 
-## Gestione Quotidiana
+## Daily Management
 
-### Controllare lo Stato
+### Check Status
 
 ```bash
 ./manage-projects.sh shared-status
 
-# Output mostra:
-# - Database e Cache (MySQL, Redis)
-# - PHP-FPM Condivisi (per versione)
+# Output shows:
+# - Database and Cache (MySQL, Redis)
+# - Shared PHP-FPM (per version)
 ```
 
-### Avviare PHP Condiviso Specifico
+### Start Specific Shared PHP
 
 ```bash
-# Avvia PHP 8.3 condiviso
+# Start PHP 8.3 shared
 ./manage-projects.sh shared-php 8.3
 
-# Avvia PHP 8.1 condiviso
+# Start PHP 8.1 shared
 ./manage-projects.sh shared-php 8.1
 ```
 
-### Vedere i Log
+### View Logs
 
 ```bash
-# Log di tutti i servizi condivisi
+# Logs of all shared services
 ./manage-projects.sh shared-logs
 
-# Log di PHP specifico
+# Specific PHP logs
 ./manage-projects.sh shared-php-logs 8.3
 ```
 
-### Fermare i Servizi (per risparmiare RAM quando non in uso)
+### Stop Services (to save RAM when not in use)
 
 ```bash
 ./manage-projects.sh shared-stop
 ```
 
-### Riavviare i Servizi
+### Restart Services
 
 ```bash
 ./manage-projects.sh shared-start
 ```
 
-## Accesso ai Database
+## Database Access
 
 ### Via CLI
 
@@ -133,7 +133,7 @@ REDIS_PORT=6379
 docker exec -it redis-shared redis-cli
 ```
 
-### Via Applicazioni GUI
+### Via GUI Applications
 
 **MySQL:**
 - Host: `localhost`
@@ -147,143 +147,143 @@ docker exec -it redis-shared redis-cli
 
 ## Best Practices
 
-### ✅ Quando Usare Servizi Condivisi
+### ✅ When to Use Shared Services
 
-#### Database Condivisi (--shared, --shared-db, --shared-redis)
-- Progetti in sviluppo locale
-- Hai 3+ progetti contemporaneamente attivi
-- RAM limitata sul Mac (8-16 GB)
-- Database di piccole dimensioni (<1 GB)
-- Non servono configurazioni MySQL particolari
+#### Shared Databases (--shared, --shared-db, --shared-redis)
+- Projects in local development
+- You have 3+ projects active simultaneously
+- Limited RAM on Mac (8-16 GB)
+- Small databases (<1 GB)
+- No special MySQL configurations needed
 
-#### PHP Condiviso (--shared-php, --fully-shared)
-- **Tutti i progetti usano la stessa versione PHP**
-- Progetti semplici senza dipendenze di sistema particolari
-- Massimo risparmio RAM (10+ progetti con poca memoria)
-- Tutti i progetti Laravel/WordPress con stessa versione PHP
-- Ambiente di test/staging con risorse limitate
+#### Shared PHP (--shared-php, --fully-shared)
+- **All projects use the same PHP version**
+- Simple projects without special system dependencies
+- Maximum RAM savings (10+ projects with low memory)
+- All Laravel/WordPress projects with same PHP version
+- Test/staging environment with limited resources
 
-### ❌ Quando Usare Servizi Dedicati
+### ❌ When to Use Dedicated Services
 
-#### Database Dedicati
-- Progetti di produzione
-- Serve MySQL 5.7 per un progetto e 8.0 per un altro
-- Database molto grandi o query intensive
-- Configurazioni MySQL custom necessarie
-- Solo 1-2 progetti attivi
+#### Dedicated Databases
+- Production projects
+- Need MySQL 5.7 for one project and 8.0 for another
+- Very large databases or intensive queries
+- Custom MySQL configurations needed
+- Only 1-2 active projects
 
-#### PHP Dedicato
-- **Progetti che richiedono versioni PHP diverse**
-- Estensioni PHP personalizzate
-- Configurazioni php.ini specifiche
-- Progetti critici che richiedono isolamento
-- Performance ottimali richieste
+#### Dedicated PHP
+- **Projects requiring different PHP versions**
+- Custom PHP extensions
+- Specific php.ini configurations
+- Critical projects requiring isolation
+- Optimal performance required
 
-## Architettura Ibrida (Consigliata)
+## Hybrid Architecture (Recommended)
 
-Puoi mescolare! Esempio:
+You can mix! Example:
 
 ```bash
-# Progetto principale: tutto dedicato
+# Main project: all dedicated
 ./new-project.sh main-app --mysql 8.0
 
-# Progetti secondari: solo DB condivisi
+# Secondary projects: only shared DBs
 ./new-project.sh test1 --shared --php 8.3
 ./new-project.sh test2 --shared --php 8.1
 
-# Progetti leggeri: tutto condiviso
+# Lightweight projects: all shared
 ./new-project.sh demo1 --fully-shared --php 8.3
 ./new-project.sh demo2 --fully-shared --php 8.3
 ./new-project.sh demo3 --fully-shared --php 8.3
 ```
 
-**Consumo RAM:**
-- main-app: ~500 MB (tutto dedicato)
-- test1: ~250 MB (PHP dedicato, DB condivisi)
-- test2: ~250 MB (PHP dedicato, DB condivisi)
-- demo1-3: ~30 MB (solo Nginx, resto condiviso)
-- **Totale: ~1.1 GB** vs **~3 GB** se tutti dedicati
+**RAM Consumption:**
+- main-app: ~500 MB (all dedicated)
+- test1: ~250 MB (dedicated PHP, shared DBs)
+- test2: ~250 MB (dedicated PHP, shared DBs)
+- demo1-3: ~30 MB (only Nginx, rest shared)
+- **Total: ~1.1 GB** vs **~3 GB** if all dedicated
 
-### Strategia Ottimale
+### Optimal Strategy
 
-1. **Progetti produzione/critici**: tutto dedicato
-2. **Progetti sviluppo attivo**: DB condivisi, PHP dedicato (per versioni diverse)
-3. **Progetti demo/test**: tutto condiviso (massimo risparmio)
+1. **Production/critical projects**: all dedicated
+2. **Active development projects**: shared DBs, dedicated PHP (for different versions)
+3. **Demo/test projects**: all shared (maximum savings)
 
 ## Troubleshooting
 
-### I servizi condivisi non partono
+### Shared services won't start
 
 ```bash
-# Verifica che il proxy sia attivo
+# Verify proxy is active
 docker ps | grep nginx-proxy
 
-# Se non è attivo
+# If not active
 cd proxy
 docker-compose up -d
 
-# Poi avvia i servizi
+# Then start services
 docker-compose --profile shared-services up -d
 ```
 
-### Errore di connessione da container
+### Connection error from container
 
-Verifica che il progetto sia sulla rete `proxy`:
+Verify the project is on the `proxy` network:
 
 ```bash
 docker inspect <container-name> | grep proxy
 ```
 
-### Database non trovato
+### Database not found
 
 ```bash
-# Lista database
+# List databases
 ./manage-projects.sh shared-mysql
 SHOW DATABASES;
 
-# Crea se mancante
+# Create if missing
 CREATE DATABASE myproject_db;
 ```
 
-## Migrazione da Dedicato a Condiviso
+## Migration from Dedicated to Shared
 
-### 1. Esporta il Database
+### 1. Export Database
 
 ```bash
 cd projects/myproject
 docker-compose exec mysql mysqldump -uroot -proot myproject_db > backup.sql
 ```
 
-### 2. Ferma e Rimuovi Container Dedicati
+### 2. Stop and Remove Dedicated Containers
 
 ```bash
 docker-compose down -v
 ```
 
-### 3. Modifica docker-compose.yml
+### 3. Modify docker-compose.yml
 
-Usa il template `shared/templates/docker-compose-shared.yml`
+Use template `shared/templates/docker-compose-shared.yml`
 
-### 4. Aggiorna .env
+### 4. Update .env
 
 ```env
 DB_HOST=mysql-shared
 MYSQL_ROOT_PASSWORD=rootpassword
 ```
 
-### 5. Importa il Database
+### 5. Import Database
 
 ```bash
-# Crea database
+# Create database
 ./manage-projects.sh shared-mysql
 CREATE DATABASE myproject_db;
 EXIT;
 
-# Importa
+# Import
 cat backup.sql | docker exec -i mysql-shared mysql -uroot -prootpassword myproject_db
 ```
 
-### 6. Riavvia il Progetto
+### 6. Restart Project
 
 ```bash
 docker-compose up -d
@@ -291,26 +291,26 @@ docker-compose up -d
 
 ## FAQ
 
-**Q: Posso usare versioni MySQL diverse con servizi condivisi?**
-A: No, tutti i progetti condivideranno la stessa versione (MySQL 8.0 di default).
+**Q: Can I use different MySQL versions with shared services?**
+A: No, all projects will share the same version (MySQL 8.0 by default).
 
-**Q: Posso usare versioni PHP diverse con --fully-shared?**
-A: No, con --fully-shared tutti i progetti devono usare la stessa versione PHP. Usa --shared (solo DB) se hai bisogno di versioni PHP diverse.
+**Q: Can I use different PHP versions with --fully-shared?**
+A: No, with --fully-shared all projects must use the same PHP version. Use --shared (only DBs) if you need different PHP versions.
 
-**Q: Come funziona il PHP condiviso tecnicamente?**
-A: Un container PHP-FPM monta la cartella `projects/` completa. Nginx di ogni progetto punta a `php-X.X-shared:9000` invece di avere il proprio container PHP.
+**Q: How does shared PHP work technically?**
+A: A PHP-FPM container mounts the complete `projects/` folder. Each project's Nginx points to `php-X.X-shared:9000` instead of having its own PHP container.
 
-**Q: I database sono isolati?**
-A: Sì, ogni progetto ha il suo database separato nello stesso server MySQL.
+**Q: Are databases isolated?**
+A: Yes, each project has its own separate database on the same MySQL server.
 
-**Q: Cosa succede se fermo i servizi condivisi?**
-A: Tutti i progetti che usano servizi condivisi smetteranno di funzionare.
+**Q: What happens if I stop shared services?**
+A: All projects using shared services will stop working.
 
-**Q: Posso mixare progetti con servizi dedicati e condivisi?**
-A: Sì! È l'approccio consigliato per ottimizzare le risorse.
+**Q: Can I mix projects with dedicated and shared services?**
+A: Yes! It's the recommended approach to optimize resources.
 
-**Q: Posso avere PHP 8.3 condiviso e PHP 8.1 condiviso contemporaneamente?**
-A: Sì! Puoi avviare multiple versioni PHP condivise. Ogni versione è un container separato.
+**Q: Can I have PHP 8.3 shared and PHP 8.1 shared simultaneously?**
+A: Yes! You can start multiple shared PHP versions. Each version is a separate container.
 
 ```bash
 ./manage-projects.sh shared-php 8.3
@@ -319,29 +319,29 @@ A: Sì! Puoi avviare multiple versioni PHP condivise. Ogni versione è un contai
 ./new-project.sh project2 --shared-php --php 8.1
 ```
 
-**Q: Come faccio backup dei database condivisi?**
+**Q: How do I backup shared databases?**
 A: 
 ```bash
 docker exec mysql-shared mysqldump -uroot -prootpassword --all-databases > backup.sql
 ```
 
-**Q: Redis supporta database multipli?**
-A: Sì, Redis ha 16 database (0-15). Puoi assegnare un numero diverso per progetto nel file `.env`:
+**Q: Does Redis support multiple databases?**
+A: Yes, Redis has 16 databases (0-15). You can assign a different number per project in the `.env` file:
 ```env
-REDIS_DB=1  # progetto 1
-REDIS_DB=2  # progetto 2
+REDIS_DB=1  # project 1
+REDIS_DB=2  # project 2
 ```
 
-## Monitoraggio Risorse
+## Resource Monitoring
 
 ```bash
-# Vedi consumo memoria di tutti i container
+# View memory consumption of all containers
 docker stats
 
-# Solo servizi condivisi
+# Only shared services
 docker stats mysql-shared redis-shared
 ```
 
 ---
 
-**💡 Tip:** Inizia con servizi condivisi. Se un progetto diventa complesso, passa a dedicati facilmente!
+**💡 Tip:** Start with shared services. If a project becomes complex, switch to dedicated easily!

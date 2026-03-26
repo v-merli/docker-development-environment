@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script per generare certificati SSL con mkcert
+# Script to generate SSL certificates with mkcert
 
 set -e
 
@@ -8,65 +8,65 @@ DOMAIN=$1
 CERTS_DIR="$(dirname "$0")/nginx/certs"
 
 if [ -z "$DOMAIN" ]; then
-    echo "Uso: $0 <dominio>"
-    echo "Esempio: $0 ptest.test"
+    echo "Usage: $0 <domain>"
+    echo "Example: $0 ptest.test"
     exit 1
 fi
 
-# Verifica se mkcert è installato
+# Check if mkcert is installed
 if ! command -v mkcert &> /dev/null; then
-    echo "⚠️  mkcert non trovato. Installazione tramite Homebrew..."
+    echo "⚠️  mkcert not found. Installing via Homebrew..."
     if command -v brew &> /dev/null; then
         brew install mkcert
-        echo "✅ mkcert installato"
+        echo "✅ mkcert installed"
     else
-        echo "❌ Homebrew non trovato. Installa mkcert manualmente:"
+        echo "❌ Homebrew not found. Install mkcert manually:"
         echo "   brew install mkcert"
         exit 1
     fi
 fi
 
-# Verifica se la CA è già installata
+# Check if CA is already installed
 CA_ROOT="$(mkcert -CAROOT)"
 if [ ! -f "$CA_ROOT/rootCA.pem" ]; then
-    echo "🔐 Installazione CA locale (richiederà la password di sistema)..."
+    echo "🔐 Installing local CA (will require system password)..."
     mkcert -install
     echo ""
-    echo "✅ CA locale installata"
+    echo "✅ Local CA installed"
     echo ""
-    echo "⚠️  IMPORTANTE: Se il browser mostra ancora l'avviso di sicurezza:"
-    echo "   1. Apri 'Accesso Portachiavi' (Keychain Access)"
-    echo "   2. Cerca 'mkcert' nella sezione 'Sistema'"
-    echo "   3. Fai doppio clic sul certificato 'mkcert'"
-    echo "   4. Espandi 'Fidati' e seleziona 'Fidati sempre' per SSL"
-    echo "   5. Riavvia il browser"
+    echo "⚠️  IMPORTANT: If browser still shows security warning:"
+    echo "   1. Open 'Keychain Access'"
+    echo "   2. Search for 'mkcert' in 'System' section"
+    echo "   3. Double-click the 'mkcert' certificate"
+    echo "   4. Expand 'Trust' and select 'Always Trust' for SSL"
+    echo "   5. Restart browser"
     echo ""
 else
-    echo "✅ CA locale già configurata"
+    echo "✅ Local CA already configured"
 fi
 
-echo "🔐 Generazione certificato SSL per $DOMAIN..."
+echo "🔐 Generating SSL certificate for $DOMAIN..."
 
-# Crea directory certs se non esiste
+# Create certs directory if it doesn't exist
 mkdir -p "$CERTS_DIR"
 
-# Genera certificato con mkcert
+# Generate certificate with mkcert
 mkcert -key-file "$CERTS_DIR/$DOMAIN.key" -cert-file "$CERTS_DIR/$DOMAIN.crt" "$DOMAIN" "*.$DOMAIN" 2>/dev/null
 
-# Verifica i file generati
+# Verify generated files
 CERT_FILE="$CERTS_DIR/$DOMAIN.crt"
 KEY_FILE="$CERTS_DIR/$DOMAIN.key"
 
 if [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ]; then
     cp "$CERT_FILE" "$CERTS_DIR/$DOMAIN.chain.pem"
-    echo "✅ Certificato generato:"
+    echo "✅ Certificate generated:"
     echo "   - $KEY_FILE"
     echo "   - $CERT_FILE"
     echo "   - $CERTS_DIR/$DOMAIN.chain.pem"
     echo ""
-    echo "🔄 Riavvia nginx-proxy per applicare i certificati:"
+    echo "🔄 Restart nginx-proxy to apply certificates:"
     echo "   cd proxy && docker compose restart nginx-proxy"
 else
-    echo "❌ Errore nella generazione del certificato"
+    echo "❌ Error generating certificate"
     exit 1
 fi

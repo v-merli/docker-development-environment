@@ -1,168 +1,168 @@
 # Windows Setup (WSL2)
 
-Guida completa per installare PHPHarbor su Windows utilizzando WSL2.
+Complete guide to install PHPHarbor on Windows using WSL2.
 
-## 🪟 Panoramica
+## 🪟 Overview
 
-PHPHarbor funziona perfettamente su Windows tramite **WSL2** (Windows Subsystem for Linux 2), che offre:
+PHPHarbor works perfectly on Windows via **WSL2** (Windows Subsystem for Linux 2), which offers:
 
-- ✅ Performance native Linux
-- ✅ Piena compatibilità con script bash
-- ✅ Integrazione Docker Desktop
-- ✅ Stesso workflow di macOS/Linux
-- ✅ File system performante
+- ✅ Native Linux performance
+- ✅ Full bash script compatibility
+- ✅ Docker Desktop integration
+- ✅ Same workflow as macOS/Linux
+- ✅ High-performance file system
 
-## 📋 Requisiti
+## 📋 Requirements
 
-- **Windows 10 versione 2004+** (Build 19041+) o **Windows 11**
-- **Virtualizzazione hardware abilitata** nel BIOS
-- **Almeno 8GB RAM** (16GB consigliati per più progetti)
-- **20GB spazio disco** libero
+- **Windows 10 version 2004+** (Build 19041+) or **Windows 11**
+- **Hardware virtualization enabled** in BIOS
+- **At least 8GB RAM** (16GB recommended for multiple projects)
+- **20GB free disk space**
 
-## 🚀 Installazione Passo-Passo
+## 🚀 Step-by-Step Installation
 
-### Step 1: Installa WSL2
+### Step 1: Install WSL2
 
-Apri **PowerShell** come Amministratore e esegui:
+Open **PowerShell** as Administrator and run:
 
 ```powershell
-# Installa WSL2 con Ubuntu (default)
+# Install WSL2 with Ubuntu (default)
 wsl --install
 
-# Riavvia il computer quando richiesto
+# Restart computer when prompted
 ```
 
-**Dopo il riavvio**, Ubuntu si aprirà automaticamente e ti chiederà:
-- Username (es: `tuo-nome`)
+**After reboot**, Ubuntu will open automatically and ask you for:
+- Username (e.g.: `your-name`)
 - Password
 
-> 💡 **Nota**: La password non verrà visualizzata mentre digiti (è normale!)
+> 💡 **Note**: Password won't be displayed while typing (this is normal!)
 
-### Step 2: Verifica WSL2
+### Step 2: Verify WSL2
 
-Verifica che WSL2 sia installato correttamente:
+Verify that WSL2 is installed correctly:
 
 ```powershell
-# Da PowerShell
+# From PowerShell
 wsl --list --verbose
 ```
 
-Output atteso:
+Expected output:
 ```
   NAME      STATE           VERSION
 * Ubuntu    Running         2
 ```
 
-Se vedi `VERSION 1`, aggiorna a WSL2:
+If you see `VERSION 1`, upgrade to WSL2:
 ```powershell
 wsl --set-version Ubuntu 2
 ```
 
-### Step 3: Installa Docker Desktop
+### Step 3: Install Docker Desktop
 
-1. **Download**: [Docker Desktop per Windows](https://www.docker.com/products/docker-desktop)
+1. **Download**: [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop)
 
-2. **Installa** il file scaricato
+2. **Install** the downloaded file
 
-3. **Abilita integrazione WSL2**:
-   - Apri Docker Desktop
-   - Vai in **Settings** (⚙️)
+3. **Enable WSL2 integration**:
+   - Open Docker Desktop
+   - Go to **Settings** (⚙️)
    - **Resources** → **WSL Integration**
-   - ✅ Abilita "Enable integration with my default WSL distro"
-   - ✅ Abilita "Ubuntu"
+   - ✅ Enable "Enable integration with my default WSL distro"
+   - ✅ Enable "Ubuntu"
    - Click **Apply & Restart**
 
-4. **Verifica** da Ubuntu:
+4. **Verify** from Ubuntu:
    ```bash
    wsl
    docker --version
    docker compose version
    ```
 
-### Step 4: Installa Docker Dev Environment
+### Step 4: Install PHPHarbor
 
-Apri **Ubuntu** (dal menu Start) e esegui:
+Open **Ubuntu** (from Start menu) and run:
 
 ```bash
-# Installa con un solo comando
+# Install with a single command
 bash <(curl -fsSL https://raw.githubusercontent.com/your-username/php-harbor/main/install.sh)
 ```
 
-Lo script:
-- ✅ Rileva automaticamente che sei su WSL2
-- ✅ Verifica Docker e prerequisiti
-- ✅ Installa e configura tutto
+The script:
+- ✅ Automatically detects you're on WSL2
+- ✅ Verifies Docker and prerequisites
+- ✅ Installs and configures everything
 
-### Step 5: Primo Progetto
+### Step 5: First Project
 
 ```bash
-# Setup iniziale
+# Initial setup
 phpharbor setup init
 
-# Crea progetto
+# Create project
 phpharbor create myapp --type laravel --php 8.3
 
-# Accedi al progetto
-# Da Windows: http://myapp.test
-# Oppure usa l'IP WSL
+# Access the project
+# From Windows: http://myapp.test
+# Or use WSL IP
 ```
 
 ---
 
-## 🔧 Configurazione Ottimale
+## 🔧 Optimal Configuration
 
-### File System: Usa WSL2, Non Windows
+### File System: Use WSL2, Not Windows
 
-**❌ NON fare questo:**
+**❌ DON'T do this:**
 ```bash
-cd /mnt/c/Users/TuoNome/Projects  # File system Windows (LENTO!)
+cd /mnt/c/Users/YourName/Projects  # Windows file system (SLOW!)
 ```
 
-**✅ Fai questo:**
+**✅ Do this:**
 ```bash
-cd ~/projects  # File system WSL2 (VELOCE!)
+cd ~/projects  # WSL2 file system (FAST!)
 ```
 
-**Perché?**
-- `/mnt/c/` accede ai file Windows → **10-100x più lento**
-- `~` (home WSL) usa file system nativo Linux → **performance ottimali**
+**Why?**
+- `/mnt/c/` accesses Windows files → **10-100x slower**
+- `~` (WSL home) uses native Linux file system → **optimal performance**
 
-### Accedere ai File WSL da Windows
+### Access WSL Files from Windows
 
-I file WSL sono accessibili da Esplora File Windows:
+WSL files are accessible from Windows File Explorer:
 
 ```
-\\wsl$\Ubuntu\home\tuo-username\.phpharbor\projects
+\\wsl$\Ubuntu\home\your-username\.phpharbor\projects
 ```
 
-Oppure da terminale Ubuntu:
+Or from Ubuntu terminal:
 ```bash
 explorer.exe .
 ```
 
-Questo apre la cartella corrente in Esplora File Windows!
+This opens the current folder in Windows File Explorer!
 
-### Editor: VS Code con WSL Extension
+### Editor: VS Code with WSL Extension
 
-**Setup consigliato:**
+**Recommended setup:**
 
-1. Installa **VS Code** su Windows
-2. Installa l'estensione **WSL** (Microsoft)
-3. Da Ubuntu, apri il progetto:
+1. Install **VS Code** on Windows
+2. Install the **WSL** extension (Microsoft)
+3. From Ubuntu, open the project:
    ```bash
    cd ~/.phpharbor/projects/myapp
    code .
    ```
 
-VS Code si aprirà su Windows ma **lavorerà direttamente su WSL2** (performance native).
+VS Code will open on Windows but **work directly on WSL2** (native performance).
 
 ---
 
-## 🌐 DNS e Accesso Progetti
+## 🌐 DNS and Project Access
 
-### Opzione 1: File hosts (Manuale)
+### Option 1: hosts File (Manual)
 
-Aggiungi al file `C:\Windows\System32\drivers\etc\hosts` (come Amministratore):
+Add to `C:\Windows\System32\drivers\etc\hosts` (as Administrator):
 
 ```
 127.0.0.1  myapp.test
@@ -170,20 +170,20 @@ Aggiungi al file `C:\Windows\System32\drivers\etc\hosts` (come Amministratore):
 127.0.0.1  shop.test
 ```
 
-### Opzione 2: Accesso via IP
+### Option 2: Access via IP
 
-Trova l'IP di WSL:
+Find WSL IP:
 ```bash
-# Da Ubuntu
+# From Ubuntu
 hostname -I
 ```
 
-Accedi via IP: `http://172.x.x.x:8080`
+Access via IP: `http://172.x.x.x:8080`
 
-### Opzione 3: Porta Forward (Automatico con Docker Desktop)
+### Option 3: Port Forward (Automatic with Docker Desktop)
 
-Docker Desktop inoltra automaticamente le porte, quindi:
-- `http://localhost:8080` → funziona direttamente!
+Docker Desktop automatically forwards ports, so:
+- `http://localhost:8080` → works directly!
 
 ---
 
@@ -191,48 +191,48 @@ Docker Desktop inoltra automaticamente le porte, quindi:
 
 ### "Docker command not found"
 
-**Soluzione**: Docker Desktop non integrato con WSL2
+**Solution**: Docker Desktop not integrated with WSL2
 
-1. Apri Docker Desktop
+1. Open Docker Desktop
 2. Settings → Resources → WSL Integration
-3. ✅ Abilita Ubuntu
-4. Riavvia Ubuntu: `wsl --shutdown` poi riapri
+3. ✅ Enable Ubuntu
+4. Restart Ubuntu: `wsl --shutdown` then reopen
 
 ### "Cannot connect to Docker daemon"
 
-**Soluzione**: Docker Desktop non in esecuzione
+**Solution**: Docker Desktop not running
 
-1. Avvia Docker Desktop su Windows
-2. Attendi che sia completamente avviato (icona Docker nella system tray)
-3. Riprova in Ubuntu
+1. Start Docker Desktop on Windows
+2. Wait until it's fully started (Docker icon in system tray)
+3. Retry in Ubuntu
 
-### Performance Lente
+### Slow Performance
 
-**Causa**: Stai usando file su `/mnt/c/` (Windows)
+**Cause**: You're using files on `/mnt/c/` (Windows)
 
-**Soluzione**: Sposta tutto in WSL2
+**Solution**: Move everything to WSL2
 ```bash
-# Clona/sposta progetti in home WSL
+# Clone/move projects to WSL home
 cd ~
 git clone ...
 ```
 
-### Port già in uso (8080, 8443)
+### Port already in use (8080, 8443)
 
-**Soluzione 1**: Ferma altri servizi Windows che usano quelle porte
+**Solution 1**: Stop other Windows services using those ports
 
-**Soluzione 2**: Cambia porte proxy
+**Solution 2**: Change proxy ports
 ```bash
-# Modifica proxy/docker-compose.yml
-# Cambia 8080:80 in 8090:80
-# Cambia 8443:443 in 8444:443
+# Modify proxy/docker-compose.yml
+# Change 8080:80 to 8090:80
+# Change 8443:443 to 8444:443
 ```
 
-### WSL2 usa troppa RAM
+### WSL2 uses too much RAM
 
-**Soluzione**: Limita memoria WSL2
+**Solution**: Limit WSL2 memory
 
-Crea `C:\Users\TuoNome\.wslconfig`:
+Create `C:\Users\YouName\.wslconfig`:
 ```ini
 [wsl2]
 memory=8GB
@@ -240,133 +240,133 @@ processors=4
 swap=2GB
 ```
 
-Riavvia WSL:
+Restart WSL:
 ```powershell
 wsl --shutdown
 ```
 
-### Certificati SSL non fidati
+### SSL certificates not trusted
 
-Su Windows, devi installare la CA di mkcert:
+On Windows, you need to install the mkcert CA:
 
 ```bash
 # In Ubuntu
 mkcert -install
 
-# Copia il certificato CA su Windows
-cp "$(mkcert -CAROOT)/rootCA.pem" /mnt/c/Users/TuoNome/Desktop/
+# Copy CA certificate to Windows
+cp "$(mkcert -CAROOT)/rootCA.pem" /mnt/c/Users/YourName/Desktop/
 
-# Su Windows, double-click rootCA.pem
-# Installa in "Autorità di certificazione radice attendibili"
+# On Windows, double-click rootCA.pem
+# Install in "Trusted Root Certification Authorities"
 ```
 
 ---
 
 ## 💡 Tips & Tricks
 
-### Alias Utili
+### Useful Aliases
 
-Aggiungi a `~/.bashrc` in Ubuntu:
+Add to `~/.bashrc` in Ubuntu:
 
 ```bash
-# Apri file/cartelle in Windows
+# Open files/folders in Windows
 alias open='explorer.exe'
 
-# Shortcut phpharbor
-alias dd='phpharbor
+# phpharbor shortcuts
+alias dd='phpharbor'
 alias ddl='phpharbor project list'
 alias ddc='phpharbor create'
 ```
 
-### Terminal Windows Moderno
+### Modern Windows Terminal
 
-Usa **Windows Terminal** invece di cmd/PowerShell tradizionale:
+Use **Windows Terminal** instead of traditional cmd/PowerShell:
 
-1. Installa da Microsoft Store
-2. Ubuntu sarà integrato nel menu dropdown
-3. Supporta tabs, temi, font custom
+1. Install from Microsoft Store
+2. Ubuntu will be integrated in the dropdown menu
+3. Supports tabs, themes, custom fonts
 
-### Backup Progetti
+### Project Backup
 
-I progetti in WSL2 non sono automaticamente backuppati da Windows Backup!
+Projects in WSL2 are not automatically backed up by Windows Backup!
 
 ```bash
-# Backup progetti
+# Backup projects
 tar -czf ~/projects-backup.tar.gz ~/.phpharbor/projects
 
-# Copia su Windows
-cp ~/projects-backup.tar.gz /mnt/c/Users/TuoNome/Backup/
+# Copy to Windows
+cp ~/projects-backup.tar.gz /mnt/c/Users/YourName/Backup/
 ```
 
-### Network tra Windows e WSL2
+### Network between Windows and WSL2
 
-Puoi collegarti da Windows ai servizi WSL:
+You can connect from Windows to WSL services:
 
 ```bash
-# Trova IP WSL
+# Find WSL IP
 ip addr show eth0 | grep inet
 
-# Da browser Windows: http://172.x.x.x:PORT
+# From Windows browser: http://172.x.x.x:PORT
 ```
 
-E viceversa:
+And vice versa:
 ```bash
-# Da Ubuntu, accedi a servizi Windows su localhost
+# From Ubuntu, access Windows services on localhost
 curl http://localhost:PORT
 ```
 
 ---
 
-## 🔄 Aggiornamento
+## 🔄 Update
 
-Per aggiornare Docker Dev Environment:
+To update PHPHarbor:
 
 ```bash
-# Riesegui l'installer (rileva installazione esistente)
+# Re-run the installer (detects existing installation)
 bash <(curl -fsSL https://raw.githubusercontent.com/your-username/php-harbor/main/install.sh)
 
-# Oppure manualmente
+# Or manually
 cd ~/.phpharbor
 git pull origin main
 ```
 
 ---
 
-## 📊 Confronto Performance
+## 📊 Performance Comparison
 
 | Scenario | Windows Native | WSL2 |
 |----------|----------------|------|
-| Docker build | - | ⚡⚡⚡ Veloce |
-| File I/O | - | ⚡⚡⚡ Nativo |
-| Composer install | - | ⚡⚡⚡ Ottimale |
-| Vite HMR | - | ⚡⚡⚡ Reattivo |
-| Laravel Artisan | - | ⚡⚡⚡ Istantaneo |
+| Docker build | - | ⚡⚡⚡ Fast |
+| File I/O | - | ⚡⚡⚡ Native |
+| Composer install | - | ⚡⚡⚡ Optimal |
+| Vite HMR | - | ⚡⚡⚡ Responsive |
+| Laravel Artisan | - | ⚡⚡⚡ Instant |
 
-**Conclusione**: WSL2 offre performance quasi identiche a Linux nativo!
+**Conclusion**: WSL2 offers nearly identical performance to native Linux!
 
 ---
 
-## 🆘 Supporto
+## 🆘 Support
 
-**Problemi specifici Windows/WSL2?**
+**Windows/WSL2 specific issues?**
 - [GitHub Issues](https://github.com/your-username/php-harbor/issues)
-- Tag: `windows` o `wsl2`
+- Tag: `windows` or `wsl2`
 
-**Risorse WSL2:**
-- [Documentazione WSL2](https://docs.microsoft.com/windows/wsl/)
+**WSL2 Resources:**
+- [WSL2 Documentation](https://docs.microsoft.com/windows/wsl/)
 - [Docker Desktop WSL2](https://docs.docker.com/desktop/windows/wsl/)
 
 ---
 
-## ✅ Checklist Post-Installazione
+## ✅ Post-Installation Checklist
 
-- [ ] WSL2 installato e aggiornato
-- [ ] Docker Desktop in esecuzione e integrato
-- [ ] phpharbor installato e funzionante
-- [ ] Primo progetto creato con successo
-- [ ] Progetti salvati in `~` (non in `/mnt/c/`)
-- [ ] VS Code con WSL extension configurato
-- [ ] Certificati SSL installati (opzionale)
-- [ ] File hosts configurato (opzionale)
+- [ ] WSL2 installed and updated
+- [ ] Docker Desktop running and integrated
+- [ ] phpharbor installed and working
+- [ ] First project created successfully
+- [ ] Projects saved in `~` (not in `/mnt/c/`)
+- [ ] VS Code with WSL extension configured
+- [ ] SSL certificates installed (optional)
+- [ ] hosts file configured (optional)
 
-**Tutto OK? Buon sviluppo! 🚀**
+**All OK? Happy coding! 🚀**

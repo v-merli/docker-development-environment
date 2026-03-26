@@ -1,33 +1,33 @@
 #!/bin/bash
 
 # Module: Project Management
-# Comandi: list, start, stop, restart, remove, logs
+# Commands: list, start, stop, restart, remove, logs
 
 show_project_help() {
-    echo "Uso: ./phpharbor <comando> [progetto]"
+    echo "Usage: ./phpharbor <command> [project]"
     echo ""
-    echo "Comandi:"
-    echo "  list                  Elenca tutti i progetti"
-    echo "  start <progetto>      Avvia un progetto"
-    echo "  stop <progetto>       Ferma un progetto"
-    echo "  restart <progetto>    Riavvia un progetto"
-    echo "  remove <progetto>     Rimuovi un progetto"
-    echo "  logs <progetto> [-f]  Mostra log"
+    echo "Commands:"
+    echo "  list                  List all projects"
+    echo "  start <project>       Start a project"
+    echo "  stop <project>        Stop a project"
+    echo "  restart <project>     Restart a project"
+    echo "  remove <project>      Remove a project"
+    echo "  logs <project> [-f]   Show logs"
 }
 
 cmd_list() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "Uso: ./phpharbor list"
+        echo "Usage: ./phpharbor list"
         echo ""
-        echo "Elenca tutti i progetti con stato (running/stopped), tipo e versione PHP."
+        echo "List all projects with status (running/stopped), type and PHP version."
         exit 0
     fi
     
-    print_title "Progetti Disponibili"
+    print_title "Available Projects"
     echo ""
     
     if [ ! -d "$PROJECTS_DIR" ] || [ -z "$(ls -A $PROJECTS_DIR 2>/dev/null)" ]; then
-        echo "Nessun progetto trovato"
+        echo "No projects found"
         return
     fi
     
@@ -41,7 +41,7 @@ cmd_list() {
                 php_version=$(grep "^PHP_VERSION=" "$env_file" 2>/dev/null | cut -d'=' -f2)
                 project_type=$(grep "^PROJECT_TYPE=" "$env_file" 2>/dev/null | cut -d'=' -f2)
                 
-                # Verifica se i container sono in esecuzione
+                # Check if containers are running
                 cd "$dir"
                 if $DOCKER_COMPOSE ps 2>/dev/null | grep -q "Up"; then
                     status="${GREEN}●${NC} Running"
@@ -61,15 +61,15 @@ cmd_list() {
 
 cmd_start() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "Uso: ./phpharbor start <progetto>"
+        echo "Usage: ./phpharbor start <project>"
         echo ""
-        echo "Avvia tutti i container di un progetto."
+        echo "Start all containers of a project."
         exit 0
     fi
     
     if [ -z "$1" ]; then
-        print_error "Specifica il nome del progetto"
-        echo "Uso: ./phpharbor start <progetto>"
+        print_error "Specify the project name"
+        echo "Usage: ./phpharbor start <project>"
         exit 1
     fi
     
@@ -77,16 +77,16 @@ cmd_start() {
     local project_path="$PROJECTS_DIR/$project"
     
     if [ ! -d "$project_path" ]; then
-        print_error "Progetto '$project' non trovato"
+        print_error "Project '$project' not found"
         exit 1
     fi
     
-    print_info "Avvio progetto $project..."
+    print_info "Starting project $project..."
     cd "$project_path"
     $DOCKER_COMPOSE up -d
-    print_success "Progetto $project avviato"
+    print_success "Project $project started"
     
-    # Mostra URL
+    # Show URL
     if [ -f ".env" ]; then
         domain=$(grep "^DOMAIN=" ".env" 2>/dev/null | cut -d'=' -f2)
         [ -n "$domain" ] && echo -e "\n${CYAN}→ http://$domain:8080${NC}"
@@ -95,8 +95,8 @@ cmd_start() {
 
 cmd_stop() {
     if [ -z "$1" ]; then
-        print_error "Specifica il nome del progetto"
-        echo "Uso: ./phpharbor stop <progetto>"
+        print_error "Specify the project name"
+        echo "Usage: ./phpharbor stop <project>"
         exit 1
     fi
     
@@ -104,20 +104,20 @@ cmd_stop() {
     local project_path="$PROJECTS_DIR/$project"
     
     if [ ! -d "$project_path" ]; then
-        print_error "Progetto '$project' non trovato"
+        print_error "Project '$project' not found"
         exit 1
     fi
     
-    print_info "Arresto progetto $project..."
+    print_info "Stopping project $project..."
     cd "$project_path"
     $DOCKER_COMPOSE down
-    print_success "Progetto $project fermato"
+    print_success "Project $project stopped"
 }
 
 cmd_restart() {
     if [ -z "$1" ]; then
-        print_error "Specifica il nome del progetto"
-        echo "Uso: ./phpharbor restart <progetto>"
+        print_error "Specify the project name"
+        echo "Usage: ./phpharbor restart <project>"
         exit 1
     fi
     
@@ -125,20 +125,20 @@ cmd_restart() {
     local project_path="$PROJECTS_DIR/$project"
     
     if [ ! -d "$project_path" ]; then
-        print_error "Progetto '$project' non trovato"
+        print_error "Project '$project' not found"
         exit 1
     fi
     
-    print_info "Riavvio progetto $project..."
+    print_info "Restarting project $project..."
     cd "$project_path"
     $DOCKER_COMPOSE restart
-    print_success "Progetto $project riavviato"
+    print_success "Project $project restarted"
 }
 
 cmd_remove() {
     if [ -z "$1" ]; then
-        print_error "Specifica il nome del progetto"
-        echo "Uso: ./phpharbor remove <progetto>"
+        print_error "Specify the project name"
+        echo "Usage: ./phpharbor remove <project>"
         exit 1
     fi
     
@@ -146,19 +146,19 @@ cmd_remove() {
     local project_path="$PROJECTS_DIR/$project"
     
     if [ ! -d "$project_path" ]; then
-        print_error "Progetto '$project' non trovato"
+        print_error "Project '$project' not found"
         exit 1
     fi
     
-    print_warning "Sei sicuro di voler rimuovere il progetto '$project'?"
-    echo "Questa operazione rimuoverà i container e i volumi (database incluso)"
-    read -p "Digita 'yes' per confermare: " confirm
+    print_warning "Are you sure you want to remove project '$project'?"
+    echo "This operation will remove containers and volumes (including database)"
+    read -p "Type 'yes' to confirm: " confirm
     
     if [ "$confirm" = "yes" ]; then
         cd "$project_path"
         
-        # Trova tutti i container del progetto (anche con profili)
-        print_info "Fermando container..."
+        # Find all project containers (including those with profiles)
+        print_info "Stopping containers..."
         local containers=$(docker ps -aq --filter "name=^${project}-")
         
         if [ -n "$containers" ]; then
@@ -166,29 +166,29 @@ cmd_remove() {
             echo "$containers" | xargs docker rm 2>/dev/null || true
         fi
         
-        # Rimuovi volumi del progetto
-        print_info "Rimozione volumi..."
+        # Remove project volumes
+        print_info "Removing volumes..."
         local volumes=$(docker volume ls -q --filter "name=^${project}_")
         if [ -n "$volumes" ]; then
             echo "$volumes" | xargs docker volume rm 2>/dev/null || true
         fi
         
-        # Rimuovi network
+        # Remove network
         local network="${project}_backend"
         docker network rm "$network" 2>/dev/null || true
         
         cd "$SCRIPT_DIR"
         rm -rf "$project_path"
-        print_success "Progetto $project rimosso"
+        print_success "Project $project removed"
     else
-        echo "Operazione annullata"
+        echo "Operation cancelled"
     fi
 }
 
 cmd_logs() {
     if [ -z "$1" ]; then
-        print_error "Specifica il nome del progetto"
-        echo "Uso: ./phpharbor logs <progetto> [-f]"
+        print_error "Specify the project name"
+        echo "Usage: ./phpharbor logs <project> [-f]"
         exit 1
     fi
     
@@ -197,7 +197,7 @@ cmd_logs() {
     local project_path="$PROJECTS_DIR/$project"
     
     if [ ! -d "$project_path" ]; then
-        print_error "Progetto '$project' non trovato"
+        print_error "Project '$project' not found"
         exit 1
     fi
     

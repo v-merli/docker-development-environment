@@ -1,60 +1,60 @@
-## 📝 Descrizione
+## 📝 Description
 
-<!-- Descrivi le modifiche apportate in questa PR -->
+<!-- Describe the changes made in this PR -->
 
-## 🔗 Issue Correlate
+## 🔗 Related Issues
 
-<!-- Link alle issue risolte da questa PR -->
+<!-- Link to issues solved by this PR -->
 Fixes #(issue number)
 
-## 🎯 Tipo di Modifica
+## 🎯 Type of Change
 
-<!-- Metti una X nelle caselle pertinenti -->
+<!-- Put an X in the relevant boxes -->
 
-- [ ] 🐛 Bug fix (non-breaking change che risolve un problema)
-- [ ] ✨ Nuova feature (non-breaking change che aggiunge funzionalità)
-- [ ] 💥 Breaking change (fix o feature che causerebbe malfunzionamenti in codice esistente)
-- [ ] 📝 Documentazione (aggiornamenti o aggiunte alla documentazione)
-- [ ] 🔧 Refactoring (miglioramenti al codice senza cambiare comportamento)
-- [ ] 🧪 Test (aggiunta o correzione di test)
+- [ ] 🐛 Bug fix (non-breaking change that resolves a problem)
+- [ ] ✨ New feature (non-breaking change that adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause malfunctions in existing code)
+- [ ] 📝 Documentation (updates or additions to documentation)
+- [ ] 🔧 Refactoring (code improvements without changing behavior)
+- [ ] 🧪 Test (adding or fixing tests)
 
 ## ✅ Checklist
 
-<!-- Metti una X quando completato -->
+<!-- Put an X when completed -->
 
-- [ ] Ho testato le modifiche localmente
-- [ ] Ho aggiornato la documentazione di conseguenza
-- [ ] I commit messages seguono le convenzioni del progetto
-- [ ] Non ho committato file sensibili o inutili (.env, logs, ecc)
-- [ ] Ho testato con più versioni PHP (se applicabile)
-- [ ] Ho testato sia con servizi dedicati che condivisi
+- [ ] I tested the changes locally
+- [ ] I updated the documentation accordingly
+- [ ] Commit messages follow project conventions
+- [ ] I haven't committed sensitive or unnecessary files (.env, logs, etc)
+- [ ] I tested with multiple PHP versions (if applicable)
+- [ ] I tested with both dedicated and shared services
 
-## 🧪 Testing Eseguito
+## 🧪 Testing Performed
 
-<!-- Descrivi i test effettuati -->
+<!-- Describe the tests performed -->
 
 ```bash
-# Comandi usati per testare
+# Commands used for testing
 ./phpharbor create test-project --type laravel --php 8.3
 # ...
 ```
 
-**Configurazioni testate**:
-- [ ] Laravel con DB dedicato
-- [ ] Laravel con servizi condivisi (--fully-shared)
+**Configurations tested**:
+- [ ] Laravel with dedicated DB
+- [ ] Laravel with shared services (--fully-shared)
 - [ ] WordPress
-- [ ] HTML statico
-- [ ] PHP versione: ___
-- [ ] Node versione: ___
+- [ ] Static HTML
+- [ ] PHP version: ___
+- [ ] Node version: ___
 
 ## 📸 Screenshots/Logs
 
-<!-- Se pertinente, aggiungi screenshot o output di comandi -->
+<!-- If relevant, add screenshots or command output -->
 
 ```
-# Logs o output rilevanti
+# Relevant logs or output
 ```
 
-## 📚 Note Aggiuntive
+## 📚 Additional Notes
 
-<!-- Qualsiasi altra informazione utile per i reviewer -->
+<!-- Any other useful information for reviewers -->

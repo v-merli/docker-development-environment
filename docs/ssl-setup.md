@@ -1,46 +1,46 @@
-# 🔐 Guida: Certificati SSL per Sviluppo Locale
+# 🔐 Guide: SSL Certificates for Local Development
 
-## ✅ Stato Attuale
+## ✅ Current Status
 
-Il sistema è configurato con **mkcert** per generare certificati SSL fidati localmente.
+The system is configured with **mkcert** to generate locally trusted SSL certificates.
 
-- ✅ CA locale installata
-- ✅ Certificati auto-firmati generati automaticamente
-- ✅ CA presente nel keychain di sistema
+- ✅ Local CA installed
+- ✅ Self-signed certificates automatically generated
+- ✅ CA present in system keychain
 
-## 🔧 Se il Browser Mostra Ancora Avvisi di Sicurezza
+## 🔧 If Browser Still Shows Security Warnings
 
-### 1. Riavvia TUTTI i Browser
+### 1. Restart ALL Browsers
 
-**È fondamentale!** I browser caricano i certificati all'avvio.
+**This is essential!** Browser load certificates at startup.
 
 ```bash
-# Chiudi completamente tutti i browser aperti
-# Poi riaprili
+# Completely close all open browsers
+# Then reopen them
 ```
 
-### 2. Verifica nel Keychain (macOS)
+### 2. Verify in Keychain (macOS)
 
-1. Apri **"Accesso Portachiavi"** (Keychain Access)
-2. Nella barra laterale, seleziona **"Sistema"** (System)
-3. Cerca **"mkcert"**
-4. Dovresti vedere: `mkcert vincenzo@MERVIN-MAC (Vincenzo)`
+1. Open **"Keychain Access"**
+2. In sidebar, select **"System"**
+3. Search for **"mkcert"**
+4. You should see: `mkcert vincenzo@MERVIN-MAC (Vincenzo)`
 
-#### Se il certificato non è fidato:
+#### If certificate is not trusted:
 
-1. Fai **doppio clic** sul certificato mkcert
-2. Espandi la sezione **"Fidati"** (Trust)
-3. Per **"SSL (Secure Sockets Layer)"** seleziona: **"Fidati sempre"**
-4. Chiudi la finestra (ti chiederà la password)
-5. **Riavvia il browser**
+1. **Double-click** on the mkcert certificate
+2. Expand the **"Trust"** section
+3. For **"SSL (Secure Sockets Layer)"** select: **"Always Trust"**
+4. Close the window (will ask for password)
+5. **Restart browser**
 
-### 3. Test Certificato
+### 3. Test Certificate
 
 ```bash
-# Verifica che il certificato sia presente
-./phpharborssl verify
+# Verify certificate is present
+./phpharbor ssl verify
 
-# Testa l'accesso HTTPS
+# Test HTTPS access
 open https://ptest.test:8443
 ```
 
@@ -48,110 +48,110 @@ open https://ptest.test:8443
 
 ### Chrome / Safari / Edge
 
-Usano il keychain di sistema macOS. Se hai seguito i passi sopra, dovrebbero funzionare.
+Use macOS system keychain. If you followed the steps above, they should work.
 
-**Se Chrome mostra ancora l'avviso:**
-1. Vai alla pagina con l'avviso
-2. Clicca su un punto vuoto della pagina
-3. Digita: `thisisunsafe` (letteralmente, senza spazi)
-4. La pagina si ricaricherà e bypasser l'avviso
+**If Chrome still shows warning:**
+1. Go to page with warning
+2. Click on an empty spot on the page
+3. Type: `thisisunsafe` (literally, no spaces)
+4. Page will reload and bypass warning
 
 ### Firefox
 
-Firefox usa il **proprio archivio certificati**, separato dal sistema.
+Firefox uses its **own certificate store**, separate from the system.
 
-**Metodo 1: Installa nss (raccomandato)**
+**Method 1: Install nss (recommended)**
 ```bash
 brew install nss
-./phpharborssl install
+./phpharbor ssl install
 ```
 
-**Metodo 2: Importa manualmente**
-1. In Firefox, vai a `about:preferences#privacy`
-2. Scorri fino a **"Certificati"**
-3. Clicca **"Visualizza certificati..."**
-4. Tab **"Autorità"**
-5. Clicca **"Importa..."**
-6. Seleziona: `/Users/vincenzo/Library/Application Support/mkcert/rootCA.pem`
-7. Spunta: **"Considera attendibile questa CA per identificare i siti web"**
-8. Clicca **"OK"**
-9. Riavvia Firefox
+**Method 2: Import manually**
+1. In Firefox, go to `about:preferences#privacy`
+2. Scroll to **"Certificates"**
+3. Click **"View Certificates..."**
+4. **"Authorities"** tab
+5. Click **"Import..."**
+6. Select: `/Users/vincenzo/Library/Application Support/mkcert/rootCA.pem`
+7. Check: **"Trust this CA to identify websites"**
+8. Click **"OK"**
+9. Restart Firefox
 
-## 🛠️ Comandi Utili
+## 🛠️ Useful Commands
 
 ```bash
-# Verifica configurazione SSL
-./phpharborssl verify
+# Verify SSL configuration
+./phpharbor ssl verify
 
-# Genera certificato per nuovo dominio
-./phpharborssl generate miodominio.test
+# Generate certificate for new domain
+./phpharbor ssl generate mydomain.test
 
-# Reinstalla CA (se necessario)
-./phpharborssl install
+# Reinstall CA (if needed)
+./phpharbor ssl install
 
-# Setup completo (prima volta)
-./phpharborssl setup
+# Complete setup (first time)
+./phpharbor ssl setup
 ```
 
-## 🔄 Rigenerare Tutti i Certificati
+## 🔄 Regenerate All Certificates
 
-Se hai problemi persistenti:
+If you have persistent issues:
 
 ```bash
-# 1. Reinstalla la CA
-./phpharborssl install
+# 1. Reinstall CA
+./phpharbor ssl install
 
-# 2. Rigenera i certificati per i tuoi progetti
-./phpharborssl generate ptest.test
-./phpharborssl generate test-ssl.test
+# 2. Regenerate certificates for your projects
+./phpharbor ssl generate ptest.test
+./phpharbor ssl generate test-ssl.test
 
-# 3. Riavvia nginx-proxy
+# 3. Restart nginx-proxy
 cd proxy && docker compose restart nginx-proxy
 
-# 4. Chiudi e riavvia TUTTI i browser
+# 4. Close and restart ALL browsers
 ```
 
-## ❓ Verifica Manuale
+## ❓ Manual Verification
 
-Per verificare che il certificato sia fidato:
+To verify the certificate is trusted:
 
 ```bash
-# Visualizza il certificato
+# Display certificate
 security find-certificate -c "mkcert" -p /Library/Keychains/System.keychain | \
   openssl x509 -noout -text
 
-# Verifica la fiducia
+# Verify trust
 security dump-trust-settings -d | grep -A 5 mkcert
 ```
 
-## 📝 Note
+## 📝 Notes
 
-- I certificati mkcert sono **validi solo localmente**
-- Non funzioneranno in produzione
-- Sono perfetti per sviluppo locale con domini `.test`, `.local`, etc.
-- Il certificato CA è valido fino al **2036**
+- mkcert certificates are **valid only locally**
+- Won't work in production
+- Perfect for local development with `.test`, `.local` domains, etc.
+- CA certificate is valid until **2036**
 
 ## 🆘 Troubleshooting
 
 ### "NET::ERR_CERT_AUTHORITY_INVALID"
 
-La CA non è fidata dal browser:
-1. Esegui: `./phpharborssl install`
-2. Apri Keychain Access e marca come "Fidati sempre"
-3. Riavvia il browser
+CA is not trusted by browser:
+1. Run: `./phpharbor ssl install`
+2. Open Keychain Access and mark as "Always Trust"
+3. Restart browser
 
 ### "NET::ERR_CERT_COMMON_NAME_INVALID"
 
-Il certificato non copre il dominio:
+Certificate doesn't cover the domain:
 ```bash
-# Rigenera il certificato
-./phpharborssl generate nome-progetto.test
+# Regenerate certificate
+./phpharbor ssl generate project-name.test
 ```
 
-### Funziona su Chrome ma non su Firefox
+### Works on Chrome but not Firefox
 
-Firefox usa il proprio archivio:
+Firefox uses its own store:
 ```bash
 brew install nss
-./phpharborssl setup
+./phpharbor ssl setup
 ```

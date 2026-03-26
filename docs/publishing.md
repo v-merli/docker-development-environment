@@ -1,81 +1,81 @@
 # Publishing Guide
 
-Guida per pubblicare PHPHarbor su GitHub e renderlo disponibile pubblicamente.
+Guide for publishing PHPHarbor on GitHub and making it publicly available.
 
-## 📋 Pre-Pubblicazione Checklist
+## 📋 Pre-Publication Checklist
 
 ### 1. Repository Setup
 
-- [ ] Crea repository GitHub: `php-harbor`
-- [ ] Imposta visibilità: **Public**
-- [ ] Aggiungi descrizione: "🚀 Flexible Docker development environment for Laravel, WordPress, and PHP projects with cherry-picking of shared services"
-- [ ] Aggiungi topics: `docker`, `laravel`, `php`, `wordpress`, `development-environment`, `docker-compose`
-- [ ] Abilita Issues
-- [ ] Abilita Discussions (opzionale)
+- [ ] Create GitHub repository: `php-harbor`
+- [ ] Set visibility: **Public**
+- [ ] Add description: "🚀 Flexible Docker development environment for Laravel, WordPress, and PHP projects with cherry-picking of shared services"
+- [ ] Add topics: `docker`, `laravel`, `php`, `wordpress`, `development-environment`, `docker-compose`
+- [ ] Enable Issues
+- [ ] Enable Discussions (optional)
 
-### 2. File da Verificare
+### 2. Files to Verify
 
-Prima del push, controlla che NON ci siano:
+Before pushing, check that there are NO:
 
 ```bash
-# Verifica file sensibili
+# Check for sensitive files
 git status
 git diff
 
-# Controlla .gitignore
+# Check .gitignore
 cat .gitignore
 
-# Verifica permessi file eseguibili (IMPORTANTE!)
+# Verify executable file permissions (IMPORTANT!)
 ls -lh phpharbor install.sh uninstall.sh
 ```
 
-**Permessi Eseguibili** (critico per il funzionamento):
+**Executable Permissions** (critical for functionality):
 ```bash
-# Assicurati che questi file abbiano permessi eseguibili
+# Ensure these files have executable permissions
 chmod +x phpharbor install.sh uninstall.sh
 
-# Git preserva i permessi eseguibili quando committa
-# Verifica che siano committati correttamente
+# Git preserves executable permissions when committing
+# Verify they're committed correctly
 git ls-files -s phpharbor install.sh uninstall.sh
-# Dovrebbe mostrare 100755 (eseguibile) non 100644 (normale)
+# Should show 100755 (executable) not 100644 (normal)
 ```
 
-**Non committare**:
-- [ ] File `.env` con credenziali reali
-- [ ] Certificati SSL privati
-- [ ] Logs personali
-- [ ] Directory `projects/` con progetti personali
+**Do NOT commit**:
+- [ ] `.env` files with real credentials
+- [ ] Private SSL certificates
+- [ ] Personal logs
+- [ ] `projects/` directory with personal projects
 
-**Assicurati di includere**:
-- [x] `install.sh` e `uninstall.sh` **eseguibili** (chmod +x)
-- [x] `phpharbor **eseguibile** (chmod +x)
-- [x] Tutti i file `.md` di documentazione
-- [x] Template `.github/`
+**Make sure to include**:
+- [x] `install.sh` and `uninstall.sh` **executable** (chmod +x)
+- [x] `phpharbor` **executable** (chmod +x)
+- [x] All `.md` documentation files
+- [x] `.github/` templates
 - [x] `LICENSE`
-- [x] `.gitignore` appropriato
+- [x] Appropriate `.gitignore`
 
-### 3. Documentazione
+### 3. Documentation
 
-- [x] README.md completo con overview
-- [x] INSTALLATION.md con guida dettagliata
-- [x] CONTRIBUTING.md con linee guida contributori
-- [x] CLI-README.md con documentazione comandi
-- [x] QUICK-START.md con tutorial
-- [x] ARCHITECTURE.md con dettagli tecnici
+- [x] Complete README.md with overview
+- [x] INSTALLATION.md with detailed guide
+- [x] CONTRIBUTING.md with contributor guidelines
+- [x] CLI-README.md with command documentation
+- [x] QUICK-START.md with tutorial
+- [x] ARCHITECTURE.md with technical details
 - [x] LICENSE (MIT)
 
-### 4. Testing Finale
+### 4. Final Testing
 
-Prima di pubblicare, testa l'installatore:
+Before publishing, test the installer:
 
 ```bash
-# Simula installazione da GitHub (usa il tuo username temporaneamente)
-bash <(curl -fsSL https://raw.githubusercontent.com/TUO-USERNAME/php-harbor/main/install.sh)
+# Simulate installation from GitHub (use your username temporarily)
+bash <(curl -fsSL https://raw.githubusercontent.com/YOUR-USERNAME/php-harbor/main/install.sh)
 
-# Oppure testa localmente
+# Or test locally
 ./install.sh
 
-# Verifica che funzioni
+# Verify it works
 phpharbor version
 phpharbor help
 phpharbor create test --type laravel --php 8.3
@@ -83,83 +83,83 @@ phpharbor create test --type laravel --php 8.3
 
 ---
 
-## 🚀 Pubblicazione
+## 🚀 Publication
 
-### Step 1: Primo Push
+### Step 1: First Push
 
 ```bash
-# Aggiungi remote origin (se non già fatto)
-git remote add origin https://github.com/TUO-USERNAME/php-harbor.git
+# Add remote origin (if not already done)
+git remote add origin https://github.com/YOUR-USERNAME/php-harbor.git
 
-# Verifica branch
+# Verify branch
 git branch -M main
 
-# Push iniziale
+# Initial push
 git push -u origin main
 ```
 
-### Step 2: Crea Release Package
+### Step 2: Create Release Package
 
-Prima di creare la release su GitHub, genera il tarball pulito:
+Before creating the GitHub release, generate the clean tarball:
 
 ```bash
-# Genera tarball per release v1.0.0
+# Generate tarball for release v1.0.0
 ./create-release.sh 1.0.0
 
 # Output: releases/phpharbor-1.0.0.tar.gz
 ```
 
-Lo script:
-- ✅ Esclude file di sviluppo (archive/, .github/, legacy/, .git/)
-- ✅ Crea tarball ottimizzato per distribuzione
-- ✅ Genera checksum SHA256
-- ✅ Mostra dimensione e contenuto
+The script:
+- ✅ Excludes development files (archive/, .github/, legacy/, .git/)
+- ✅ Creates optimized tarball for distribution
+- ✅ Generates SHA256 checksum
+- ✅ Shows size and contents
 
-**Testa il tarball localmente:**
+**Test the tarball locally:**
 ```bash
-# Estrai in directory temporanea
+# Extract to temporary directory
 mkdir -p /tmp/test-release
 tar -xzf releases/phpharbor-1.0.0.tar.gz -C /tmp/test-release
 
-# Verifica contenuto
+# Verify contents
 ls -la /tmp/test-release
 
-# Testa installazione
+# Test installation
 cd /tmp/test-release
-./install.sh  # Dovrebbe fallire (nessuna release su GitHub ancora)
+./install.sh  # Should fail (no GitHub release yet)
 ```
 
-### Step 3: Crea GitHub Release
+### Step 3: Create GitHub Release
 
-**⚠️ IMPORTANTE**: Il tarball caricato su GitHub **deve** chiamarsi esattamente `phpharbor.tar.gz` (senza versione) perché l'installer usa quell'URL fisso: `releases/latest/download/php-phpharbor.gz`
+**⚠️ IMPORTANT**: The tarball uploaded to GitHub **must** be named exactly `phpharbor.tar.gz` (without version) because the installer uses that fixed URL: `releases/latest/download/php-phpharbor.gz`
 
-1. Vai su **Releases** → **Create a new release** o usa la CLI:
+1. Go to **Releases** → **Create a new release** or use the CLI:
 
-#### Opzione A: Via Web (Consigliata)
+#### Option A: Via Web (Recommended)
 
-1. Vai su: `https://github.com/TUO-USERNAME/php-harbor/releases/new`
+1. Go to: `https://github.com/YOUR-USERNAME/php-harbor/releases/new`
 2. Tag: `v1.0.0`
 3. Target: `main` branch
 4. Title: `🚀 v1.0.0 - Initial Release`
-5. Description: (vedi template sotto)
+5. Description: (see template below)
 6. **📎 Attach binaries**: Drag & drop `releases/phpharbor-1.0.0.tar.gz`
-7. **⚠️ CRITICO**: Dopo il caricamento, clicca sulla matita (✏️) e rinomina il file in: `phpharbor.tar.gz`
-   - ❌ Errore: `phpharbor-1.0.0.tar.gz`
-   - ✅ Corretto: `phpharbor.tar.gz`
+7. **⚠️ CRITICAL**: After upload, click the pencil (✏️) and rename the file to: `phpharbor.tar.gz`
+   - ❌ Wrong: `phpharbor-1.0.0.tar.gz`
+   - ✅ Correct: `phpharbor.tar.gz`
 8. ✅ Set as latest release
 9. **Publish release**
 
-#### Opzione B: Via GitHub CLI
+#### Option B: Via GitHub CLI
 
 ```bash
-# Installa gh CLI se non presente
+# Install gh CLI if not present
 brew install gh  # macOS
-# oppure: https://cli.github.com/
+# or: https://cli.github.com/
 
-# Autenticati
+# Authenticate
 gh auth login
 
-# Crea release e carica tarball
+# Create release and upload tarball
 gh release create v1.0.0 \
   releases/phpharbor-1.0.0.tar.gz#php-phpharbor.gz \
   --title "🚀 v1.0.0 - Initial Release" \
@@ -171,21 +171,21 @@ gh release create v1.0.0 \
 ```markdown
 ## 🎉 First Public Release
 
-PHPHarbor è ora disponibile pubblicamente!
+PHPHarbor is now publicly available!
 
 ### ✨ Features
 
-- 🎯 Supporto Laravel, WordPress, HTML statico, PHP generico
-- 🐘 PHP multi-versione (7.3 - 8.5)
-- 💾 Cherry-picking servizi condivisi (MySQL, Redis, PHP-FPM)
-- 🌐 Nginx reverse proxy con SSL automatico
-- 🎨 Modalità interattiva per creazione progetti
-- ⚡ CLI completo con autocompletamento bash/zsh
+- 🎯 Laravel, WordPress, static HTML, generic PHP support
+- 🐘 Multi-version PHP (7.3 - 8.5)
+- 💾 Cherry-picking of shared services (MySQL, Redis, PHP-FPM)
+- 🌐 Nginx reverse proxy with automatic SSL
+- 🎨 Interactive mode for project creation
+- ⚡ Complete CLI with bash/zsh autocompletion
 
 ### 📦 Installation
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/TUO-USERNAME/php-harbor/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/YOUR-USERNAME/php-harbor/main/install.sh)
 ```
 
 ### 📚 Documentation
@@ -202,22 +202,22 @@ Thanks to all who contributed to this initial release!
 
 5. **Publish release**
 
-### Step 4: Verifica Installazione Pubblica
+### Step 4: Verify Public Installation
 
-Testa che l'installer funzioni da GitHub:
+Test that the installer works from GitHub:
 
 ```bash
-# Su una macchina pulita o VM
-bash <(curl -fsSL https://raw.githubusercontent.com/TUO-USERNAME/php-harbor/main/install.sh)
+# On a clean machine or VM
+bash <(curl -fsSL https://raw.githubusercontent.com/YOUR-USERNAME/php-harbor/main/install.sh)
 ```
 
 ---
 
-## 📣 Promozione
+## 📣 Promotion
 
 ### Social Media
 
-Condividi il progetto su:
+Share the project on:
 - Twitter/X
 - Reddit (r/laravel, r/docker, r/php)
 - Dev.to
@@ -233,7 +233,7 @@ Flexible Docker setup for Laravel/WordPress/PHP with:
 ✅ Interactive project creation
 ✅ One-line installation
 
-https://github.com/TUO-USERNAME/php-harbor
+https://github.com/YOUR-USERNAME/php-harbor
 
 #Laravel #Docker #PHP #DevOps
 ```
@@ -246,15 +246,15 @@ https://github.com/TUO-USERNAME/php-harbor
 
 ### SEO
 
-Aggiungi al README:
+Add to README:
 - Status badges (build, license, version)
 - GIF/video demo
 - FAQ section
-- Comparison con altri tool
+- Comparison with other tools
 
 ---
 
-## 🔄 Manutenzione
+## 🔄 Maintenance
 
 ### Branch Strategy
 
@@ -267,30 +267,30 @@ hotfix/*      - Quick fixes
 
 ### Release Workflow
 
-1. Sviluppa in `feature/` branches
-2. Merge in `develop`
-3. Test completi su `develop`
-4. Merge in `main` per release
+1. Develop in `feature/` branches
+2. Merge into `develop`
+3. Complete testing on `develop`
+4. Merge into `main` for release
 5. Tag release `vX.Y.Z`
 6. Update changelog
 
 ### Issue Management
 
-**Labels da creare**:
-- `bug` - Qualcosa non funziona
-- `enhancement` - Nuova feature
-- `documentation` - Miglioramenti doc
-- `good first issue` - Facili per newcomers
-- `help wanted` - Serve aiuto
-- `question` - Domande
-- `wontfix` - Non sarà risolto
-- `duplicate` - Issue duplicata
+**Labels to create**:
+- `bug` - Something isn't working
+- `enhancement` - New feature
+- `documentation` - Documentation improvements
+- `good first issue` - Easy for newcomers
+- `help wanted` - Help needed
+- `question` - Questions
+- `wontfix` - Won't be fixed
+- `duplicate` - Duplicate issue
 
 ---
 
-## 📊 Analytics (Opzionale)
+## 📊 Analytics (Optional)
 
-Traccia l'utilizzo con:
+Track usage with:
 
 **GitHub Insights**:
 - Stars, forks, watchers
@@ -298,18 +298,18 @@ Traccia l'utilizzo con:
 - Popular content
 
 **Optional Analytics**:
-- Google Analytics su docs (se usi GitHub Pages)
-- Download counter per releases
+- Google Analytics on docs (if using GitHub Pages)
+- Download counter for releases
 
 ---
 
-## 🎯 Roadmap Futura
+## 🎯 Future Roadmap
 
-Aggiungi un `ROADMAP.md` con piani futuri:
+Add a `ROADMAP.md` with future plans:
 
 **v1.1**:
-- Supporto Linux
-- Dashboard web
+- Linux support
+- Web dashboard
 - Auto-update
 
 **v2.0**:
@@ -321,17 +321,17 @@ Aggiungi un `ROADMAP.md` con piani futuri:
 
 ## ✅ Final Checklist
 
-Prima di annunciare pubblicamente:
+Before announcing publicly:
 
-- [ ] Repository pubblico su GitHub
-- [ ] Release v1.0.0 creata
-- [ ] Installer testato da GitHub raw
-- [ ] Documentazione completa e accurata
-- [ ] README con screenshot/demo
-- [ ] CONTRIBUTING.md per nuovi contributori
-- [ ] Issue templates funzionanti
-- [ ] URL aggiornati con username corretto
-- [ ] LICENSE file presente
-- [ ] .gitignore appropriato
+- [ ] Public repository on GitHub
+- [ ] Release v1.0.0 created
+- [ ] Installer tested from GitHub raw
+- [ ] Complete and accurate documentation
+- [ ] README with screenshot/demo
+- [ ] CONTRIBUTING.md for new contributors
+- [ ] Working issue templates
+- [ ] URLs updated with correct username
+- [ ] LICENSE file present
+- [ ] Appropriate .gitignore
 
-**🎉 Sei pronto per pubblicare!**
+**🎉 You're ready to publish!**

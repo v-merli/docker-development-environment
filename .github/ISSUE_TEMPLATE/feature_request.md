@@ -1,83 +1,83 @@
 ---
 name: Feature Request
-about: Suggerisci una nuova funzionalità
+about: Suggest a new feature
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''
 ---
 
-## ✨ Descrizione Feature
+## ✨ Feature Description
 
-<!-- Descrizione chiara e concisa della funzionalità desiderata -->
+<!-- Clear and concise description of the desired feature -->
 
-## 🎯 Problema/Bisogno
+## 🎯 Problem/Need
 
-<!-- Quale problema risolverebbe questa feature? -->
-<!-- Esempio: È frustrante quando [...] perché [...] -->
+<!-- What problem would this feature solve? -->
+<!-- Example: It's frustrating when [...] because [...] -->
 
-## 💡 Soluzione Proposta
+## 💡 Proposed Solution
 
-<!-- Come immagini che funzioni questa feature? -->
+<!-- How do you imagine this feature would work? -->
 
-## 🔀 Alternative Considerate
+## 🔀 Considered Alternatives
 
-<!-- Hai considerato soluzioni alternative? Quali? -->
+<!-- Have you considered alternative solutions? Which ones? -->
 
-## 📝 Esempio d'Uso
+## 📝 Usage Example
 
 ```bash
-# Esempio di come userai questa feature
+# Example of how you'll use this feature
 phpharbor create myapp --new-feature
 ```
 
-**Caso d'uso specifico:**
-1. Io come [utente/sviluppatore]
-2. Voglio [funzionalità]
-3. Così che [beneficio]
+**Specific use case:**
+1. I as [user/developer]
+2. Want [feature]
+3. So that [benefit]
 
 ## 🎨 Mockup/Design
 
-<!-- Se applicabile, aggiungi mockup, diagrammi o esempi di output -->
+<!-- If applicable, add mockups, diagrams or output examples -->
 
 ```
-# Esempio di output desiderato
-✅ Feature completata
+# Desired output example
+✅ Feature completed
    • Step 1
    • Step 2
 ```
 
-## 🔧 Complessità Percepita
+## 🔧 Perceived Complexity
 
-<!-- Quanto pensi sia complesso implementare questa feature? -->
+<!-- How complex do you think it is to implement this feature? -->
 
-- [ ] Facile (modifiche minori)
-- [ ] Media (richiede alcune modifiche)
-- [ ] Complessa (cambiamenti significativi)
-- [ ] Non so
+- [ ] Easy (minor changes)
+- [ ] Medium (requires some changes)
+- [ ] Complex (significant changes)
+- [ ] Don't know
 
-## 🚀 Priorità Percepita
+## 🚀 Perceived Priority
 
-<!-- Quanto è importante per te? -->
+<!-- How important is it for you? -->
 
-- [ ] Alta - Ne ho bisogno subito
-- [ ] Media - Sarebbe molto utile
-- [ ] Bassa - Nice to have
+- [ ] High - I need it right away
+- [ ] Medium - It would be very useful
+- [ ] Low - Nice to have
 
-## 🤝 Disponibilità a Contribuire
+## 🤝 Willingness to Contribute
 
-<!-- Saresti disposto a contribuire all'implementazione? -->
+<!-- Would you be willing to contribute to the implementation? -->
 
-- [ ] Posso implementarla io (con guida)
-- [ ] Posso aiutare con testing/documentazione
-- [ ] Posso solo suggerire l'idea
+- [ ] I can implement it myself (with guidance)
+- [ ] I can help with testing/documentation
+- [ ] I can only suggest the idea
 
-## 📚 Risorse/Riferimenti
+## 📚 Resources/References
 
-<!-- Link a documentazione, esempi, altre implementazioni simili -->
+<!-- Links to documentation, examples, other similar implementations -->
 
-- [Esempio simile in progetto X](link)
-- [Documentazione rilevante](link)
+- [Similar example in project X](link)
+- [Relevant documentation](link)
 
-## 🔍 Informazioni Aggiuntive
+## 🔍 Additional Information
 
-<!-- Qualsiasi altro contesto o informazione utile -->
+<!-- Any other useful context or information -->

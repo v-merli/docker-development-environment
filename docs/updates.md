@@ -1,63 +1,63 @@
-# Sistema di Aggiornamento Automatico
+# Automatic Update System
 
-PHPHarbor include un sistema di aggiornamento automatico che permette di:
-- Verificare se sono disponibili nuove versioni
-- Installare aggiornamenti con un comando
-- Preservare tutte le configurazioni e i progetti esistenti
+PHPHarbor includes an automatic update system that allows you to:
+- Check if new versions are available
+- Install updates with a single command
+- Preserve all existing configurations and projects
 
-## Comandi Disponibili
+## Available Commands
 
-### Verifica Aggiornamenti
+### Check for Updates
 
-Controlla se è disponibile una nuova versione su GitHub:
+Check if a new version is available on GitHub:
 
 ```bash
 ./phpharbor update check
 ```
 
-Questo comando:
-- ✅ Confronta la versione locale con l'ultima release su GitHub
-- ✅ Mostra le note di rilascio (changelog)
-- ✅ Offre di installare immediatamente l'aggiornamento
+This command:
+- ✅ Compares local version with the latest release on GitHub
+- ✅ Shows release notes (changelog)
+- ✅ Offers to install the update immediately
 
-### Installa Aggiornamento
+### Install Update
 
-Installa l'ultima versione disponibile o una versione specifica:
+Install the latest available version or a specific version:
 
 ```bash
-# Installa ultima versione
+# Install latest version
 ./phpharbor update install
 
-# Installa versione specifica
+# Install specific version
 ./phpharbor update install 1.8.0
 ./phpharbor update install v1.8.0
 
-# Downgrade a versione precedente
+# Downgrade to previous version
 ./phpharbor update install 1.5.0
 ```
 
-Il processo di aggiornamento:
-1. Scarica l'ultima versione da GitHub
-2. Crea backup delle configurazioni
-3. Sostituisce i file di sistema
-4. Ripristina configurazioni e certificati
-5. Riavvia i servizi se erano in esecuzione
+The update process:
+1. Downloads the latest version from GitHub
+2. Creates backups of configurations
+3. Replaces system files
+4. Restores configurations and certificates
+5. Restarts services if they were running
 
-**Cosa viene preservato:**
-- ✓ File `.config` (directory progetti, porte)
-- ✓ File `proxy/.env` (configurazione proxy)
-- ✓ Directory `projects/` (tutti i progetti)
-- ✓ Certificati SSL in `proxy/nginx/certs/`
-- ✓ Dati ACME in `proxy/nginx/acme/`
-- ✓ Container e volumi Docker
+**What is preserved:**
+- ✓ `.config` file (project directories, ports)
+- ✓ `proxy/.env` file (proxy configuration)
+- ✓ `projects/` directory (all projects)
+- ✓ SSL certificates in `proxy/nginx/certs/`
+- ✓ ACME data in `proxy/nginx/acme/`
+- ✓ Docker containers and volumes
 
-**Cosa viene aggiornato:**
-- ✓ Script principale `phpharbor
-- ✓ Moduli CLI in `cli/`
-- ✓ Template in `shared/templates/`
-- ✓ Dockerfile in `shared/dockerfiles/`
-- ✓ Configurazioni condivise in `shared/`
-- ✓ Documentazione in `docs/`
+**What is updated:**
+- ✓ Main `phpharbor` script
+- ✓ CLI modules in `cli/`
+- ✓ Templates in `shared/templates/`
+- ✓ Dockerfiles in `shared/dockerfiles/`
+- ✓ Shared configurations in `shared/`
+- ✓ Documentation in `docs/`
 
 ### Elenca Versioni Disponibili
 
@@ -67,35 +67,35 @@ Mostra tutte le versioni pubblicate su GitHub:
 ./phpharbor update list
 ```
 
-Output esempio:
+Example output:
 ```
-Versione corrente: 2.0.0
+Current version: 2.0.0
 
-Versioni disponibili:
+Available versions:
 
-  ✓ v2.0.0 - 2026-03-24 - Release 2.0.0 (installata)
+  ✓ v2.0.0 - 2026-03-24 - Release 2.0.0 (installed)
     v1.9.0 - 2026-03-15 - Release 1.9.0
     v1.8.2 - 2026-03-10 - Bugfix release
     v1.8.0 - 2026-03-01 - Feature release
 ```
 
-### Visualizza Changelog
+### View Changelog
 
-Mostra le novità dell'ultima versione o di una versione specifica:
+Show what's new in the latest version or a specific version:
 
 ```bash
-# Changelog ultima versione
+# Latest version changelog
 ./phpharbor update changelog
 
-# Changelog versione specifica
+# Specific version changelog
 ./phpharbor update changelog 1.8.0
 ```
 
-## Configurazione Repository
+## Repository Configuration
 
-Dopo aver pubblicato il progetto su GitHub, configura il repository:
+After publishing the project on GitHub, configure the repository:
 
-### Metodo 1: Variabile d'ambiente
+### Method 1: Environment variable
 
 ```bash
 export PHPHARBOR_GITHUB_REPO="tuo-username/pphpharbor
@@ -116,27 +116,27 @@ con:
 GITHUB_REPO="${PHPHARBOR_GITHUB_REPO:-tuo-username/pphpharbor"
 ```
 
-## Workflow di Release
+## Release Workflow
 
-Per pubblicare una nuova versione:
+To publish a new version:
 
-### 1. Aggiorna Versione
+### 1. Update Version
 
-Modifica il numero di versione in `phpharbor:
+Modify the version number in `phpharbor`:
 
 ```bash
 VERSION="2.1.0"
 ```
 
-### 2. Crea Release Package
+### 2. Create Release Package
 
 ```bash
 ./create-release.sh 2.1.0
 ```
 
-Questo genera `releases/phpharbor-2.1.0.tar.gz`.
+This generates `releases/phpharbor-2.1.0.tar.gz`.
 
-### 3. Crea GitHub Release
+### 3. Create GitHub Release
 
 ```bash
 # Via GitHub CLI
@@ -145,144 +145,144 @@ gh release create v2.1.0 \
   --title "Release 2.1.0" \
   --notes "Changelog..."
 
-# Oppure manualmente su GitHub:
-# 1. Vai su https://github.com/username/repo/releases/new
+# Or manually on GitHub:
+# 1. Go to https://github.com/username/repo/releases/new
 # 2. Tag: v2.1.0
 # 3. Title: Release 2.1.0
-# 4. Upload: phpharbor-2.1.0.tar.gz rinominato in php-phpharbor.gz
-# 5. Pubblica
+# 4. Upload: phpharbor-2.1.0.tar.gz renamed to php-phpharbor.gz
+# 5. Publish
 ```
 
-### 4. Test Aggiornamento
+### 4. Test Update
 
 ```bash
-# Su un'installazione esistente
+# On an existing installation
 ./phpharbor update check
 ./phpharbor update install
 ```
 
-## API GitHub
+## GitHub API
 
-Il sistema usa GitHub Releases API:
+The system uses the GitHub Releases API:
 
 ```bash
-# Endpoint usato
+# Used endpoint
 https://api.github.com/repos/username/repo/releases/latest
 
 # Download tarball
 https://github.com/username/repo/releases/latest/download/phpharbor.tar.gz
 ```
 
-**Nota:** L'API di GitHub ha rate limit:
-- 60 richieste/ora per IP non autenticati
-- 5000 richieste/ora per utenti autenticati
+**Note:** GitHub API has rate limits:
+- 60 requests/hour for unauthenticated IPs
+- 5000 requests/hour for authenticated users
 
-## Sicurezza
+## Security
 
-### Verifiche durante l'aggiornamento
+### Checks during update
 
-1. **Controllo connessione**: Verifica che GitHub sia raggiungibile
-2. **Validazione versione**: Controlla che la release esista
-3. **Conferma utente**: Richiede conferma prima di procedere
-4. **Backup automatico**: Salva configurazioni prima dell'aggiornamento
-5. **Rollback manuale**: In caso di problemi, ripristina dal backup
+1. **Connection check**: Verifies GitHub is reachable
+2. **Version validation**: Checks that the release exists
+3. **User confirmation**: Requires confirmation before proceeding
+4. **Automatic backup**: Saves configurations before update
+5. **Manual rollback**: In case of problems, restore from backup
 
-### In caso di problemi
+### If there are problems
 
-Se l'aggiornamento fallisce:
+If the update fails:
 
 ```bash
-# Le configurazioni sono in una directory temporanea
-# Il percorso viene mostrato durante l'aggiornamento
+# Configurations are in a temporary directory
+# The path is shown during the update
 
-# Ripristino manuale
+# Manual restore
 cp /tmp/backup-XXXX/.config .
 cp /tmp/backup-XXXX/.env proxy/
 
-# Oppure re-installa da zero
+# Or reinstall from scratch
 curl -fsSL https://raw.githubusercontent.com/username/repo/main/install.sh | bash
 ```
 
-## Aggiornamenti Automatici Futuri
+## Future Automatic Updates
 
-Possibili miglioramenti:
+Possible improvements:
 
-### Check automatico all'avvio
+### Automatic check at startup
 
-Aggiungi in `phpharbor:
+Add to `phpharbor`:
 
 ```bash
-# Check aggiornamenti ogni 7 giorni
+# Check updates every 7 days
 check_updates_periodically() {
     local last_check_file="$SCRIPT_DIR/.last_update_check"
     if [ ! -f "$last_check_file" ] || [ $(( $(date +%s) - $(stat -f %m "$last_check_file" 2>/dev/null || echo 0) )) -gt 604800 ]; then
-        print_info "Verifico aggiornamenti..."
+        print_info "Checking for updates..."
         update_check_silent
         touch "$last_check_file"
     fi
 }
 ```
 
-### Notifiche desktop
+### Desktop notifications
 
-Su macOS:
+On macOS:
 
 ```bash
-osascript -e 'display notification "Nuova versione disponibile!" with title "Docker Dev Env"'
+osascript -e 'display notification "New version available!" with title "PHPHarbor"'
 ```
 
-Su Linux:
+On Linux:
 
 ```bash
-notify-send "Docker Dev Env" "Nuova versione disponibile!"
+notify-send "PHPHarbor" "New version available!"
 ```
 
 ## Testing
 
-Test completo del sistema update:
+Complete test of the update system:
 
 ```bash
-# 1. Simula versione vecchia
+# 1. Simulate old version
 sed -i.bak 's/VERSION=".*"/VERSION="1.0.0"/' phpharbor
 
-# 2. Verifica check
+# 2. Verify check
 ./phpharbor update check
 
-# 3. Verifica changelog
+# 3. Verify changelog
 ./phpharbor update changelog
 
-# 4. Test install (se hai una release)
+# 4. Test install (if you have a release)
 ./phpharbor update install
 
-# 5. Verifica versione aggiornata
+# 5. Verify updated version
 ./phpharbor version
 ```
 
 ## FAQ
 
-### L'aggiornamento cancella i miei progetti?
+### Will the update delete my projects?
 
-No. I progetti in `projects/` sono completamente preservati. Anche se hai progetti in una directory personalizzata (configurata con `setup config`), quella directory non viene toccata.
+No. Projects in `projects/` are completely preserved. Even if you have projects in a custom directory (configured with `setup config`), that directory is not touched.
 
-### Devo riavviare i container?
+### Do I need to restart the containers?
 
-No. I container rimangono in esecuzione. L'aggiornamento riguarda solo gli script e i file di configurazione.
+No. Containers remain running. The update only affects scripts and configuration files.
 
-### Posso fare downgrade a una versione precedente?
+### Can I downgrade to a previous version?
 
-Sì, ma manualmente:
+Yes, but manually:
 
 ```bash
-# Download versione specifica
+# Download specific version
 curl -fsSL https://github.com/username/repo/releases/download/v2.0.0/phpharbor.tar.gz | tar -xz
 ```
 
-### L'aggiornamento funziona offline?
+### Does the update work offline?
 
-No. Serve connessione internet per scaricare da GitHub.
+No. Internet connection is required to download from GitHub.
 
-## Link Utili
+## Useful Links
 
 - GitHub Releases: `https://github.com/username/repo/releases`
-- API GitHub: `https://docs.github.com/en/rest/releases`
+- GitHub API: `https://docs.github.com/en/rest/releases`
 - Semantic Versioning: `https://semver.org`

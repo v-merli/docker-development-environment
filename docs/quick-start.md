@@ -1,89 +1,114 @@
-# Quick Reference - Comandi Essenziali
+# Quick Reference - Essential Commands
 
-## 🚀 Setup Iniziale (una volta sola)
+## 🚀 Initial Setup (one time only)
 
 ```bash
-# 1. Avvia il proxy
-cd proxy && docker-compose up -d && cd ..
+# 1. Initialize environment
+phpharbor setup init
 
-# 2. Configura DNS locale
-./setup-dnsmasq.sh
+# This will:
+# - Configure projects directory
+# - Start reverse proxy
+# - Setup DNS (optional)
+# - Configure SSL (optional)
 ```
 
-## ➕ Creare Nuovo Progetto
+## ➕ Create New Project
 
 ```bash
+# Interactive mode (recommended for beginners)
+phpharbor create
+
 # Laravel (default)
-./new-project.sh my-shop --type laravel --php 8.3
+phpharbor create my-shop --type laravel --php 8.3
 
 # WordPress
-./new-project.sh blog --type wordpress --php 8.2
+phpharbor create blog --type wordpress --php 8.2
 
-# Progetto PHP generico
-./new-project.sh api --type php --php 8.1 --no-redis
+# Generic PHP project
+phpharbor create api --type php --php 8.1 --no-redis
 
-# Sito HTML statico
-./new-project.sh landing --type html
+# Static HTML site
+phpharbor create landing --type html
 
-# Progetto legacy
-./new-project.sh old-app --type php --php 7.4 --node 18
+# Legacy project
+phpharbor create old-app --type php --php 7.4 --node 18
 ```
 
-## 📋 Gestione Quotidiana
+## 📋 Daily Management
 
 ```bash
-# Lista progetti
-./manage-projects.sh list
+# List projects
+phpharbor list
 
-# Avvia/Ferma
-./manage-projects.sh start nome-progetto
-./manage-projects.sh stop nome-progetto
+# Start/Stop
+phpharbor start project-name
+phpharbor stop project-name
+phpharbor restart project-name
 
-# Shell nel container
-./manage-projects.sh shell nome-progetto
+# Shell in container
+phpharbor shell project-name
 
 # Artisan
-./manage-projects.sh artisan nome-progetto migrate
-./manage-projects.sh artisan nome-progetto make:model Product
+phpharbor artisan project-name migrate
+phpharbor artisan project-name make:model Product
 
 # Composer
-./manage-projects.sh composer nome-progetto require package/name
+phpharbor composer project-name require package/name
 
 # NPM
-./manage-projects.sh npm nome-progetto install
-./manage-projects.sh npm nome-progetto run build
+phpharbor npm project-name install
+phpharbor npm project-name run build
+
+# MySQL CLI
+phpharbor mysql project-name
 ```
 
-## 🔧 Comandi Docker Diretti
+## 🔧 Direct Docker Commands
 
-Dentro la cartella di un progetto (`cd projects/nome-progetto`):
+Inside a project folder (`cd projects/project-name`):
 
 ```bash
-docker-compose ps              # Stato container
-docker-compose logs -f         # Log live
-docker-compose exec app bash   # Shell PHP
-docker-compose restart         # Riavvia tutto
-docker-compose down           # Ferma tutto
+docker-compose ps              # Container status
+docker-compose logs -f         # Live logs
+docker-compose exec app bash   # PHP shell
+docker-compose restart         # Restart everything
+docker-compose down           # Stop everything
 ```
 
-## 🐛 Problemi Comuni
+## 🐛 Common Issues
 
 ```bash
-# DNS non funziona
+# DNS not working
 sudo brew services restart dnsmasq
 
-# Ricostruire container
-cd projects/nome-progetto
+# Rebuild containers
+cd projects/project-name
 docker-compose up -d --build
 
-# Reset completo proxy
-cd proxy
-docker-compose down -v
-docker-compose up -d
+# Complete proxy reset
+phpharbor setup proxy
+
+# Check system status
+phpharbor stats
+phpharbor info project-name
 ```
 
-## 📖 Accesso
+## 📖 Access
 
-- **URL:** `http://nome-progetto.test`
-- **HTTPS:** `https://nome-progetto.test`
-- **MySQL CLI:** `./manage-projects.sh mysql nome-progetto`
+- **URL:** `http://project-name.test`
+- **HTTPS:** `https://project-name.test`
+- **MySQL CLI:** `phpharbor mysql project-name`
+
+## 🔄 Updates
+
+```bash
+# Check for updates
+phpharbor update check
+
+# Install latest version
+phpharbor update install
+
+# View changelog
+phpharbor update changelog
+```

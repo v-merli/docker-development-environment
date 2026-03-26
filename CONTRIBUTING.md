@@ -1,8 +1,8 @@
 # Contributing to PHPHarbor
 
-Grazie per il tuo interesse nel contribuire! Questo documento spiega il workflow di sviluppo e come contribuire al progetto.
+Thank you for your interest in contributing! This document explains the development workflow and how to contribute to the project.
 
-## 📋 Tabella dei Contenuti
+## 📋 Table of Contents
 
 - [Git Workflow](#git-workflow)
 - [Branch Strategy](#branch-strategy)
@@ -12,27 +12,27 @@ Grazie per il tuo interesse nel contribuire! Questo documento spiega il workflow
 
 ## 🌳 Git Workflow
 
-Questo progetto usa **Git Flow** semplificato con due branch principali:
+This project uses simplified **Git Flow** with two main branches:
 
-### Branch Principali
+### Main Branches
 
-#### `main` - Branch di Produzione (Congelato)
-- ⭐ Contiene **solo** codice rilasciato ufficialmente
-- 🏷️ Ogni commit è taggato con una versione (v1.0.0, v1.1.0, etc.)
-- 🔒 **Non si lavora direttamente qui**
-- ✅ Sempre stabile e pronto per essere deployato
-- 📦 Da qui si generano le release GitHub
+#### `main` - Production Branch (Frozen)
+- ⭐ Contains **only** officially released code
+- 🏷️ Every commit is tagged with a version (v1.0.0, v1.1.0, etc.)
+- 🔒 **Never work directly here**
+- ✅ Always stable and ready to be deployed
+- 📦 GitHub releases are generated from here
 
-#### `develop` - Branch di Sviluppo (Vivo)
-- 🚀 Branch di integrazione continua
-- 💻 Qui avviene tutto il lavoro quotidiano
-- 🔄 Riceve merge da feature/fix branches
-- 🧪 Codice testato ma non ancora rilasciato
-- 📝 Default branch per pull requests
+#### `develop` - Development Branch (Active)
+- 🚀 Continuous integration branch
+- 💻 All daily work happens here
+- 🔄 Receives merges from feature/fix branches
+- 🧪 Tested code but not yet released
+- 📝 Default branch for pull requests
 
-### Branch Feature e Fix
+### Feature and Fix Branches
 
-Per ogni nuova feature o bugfix, crea un branch da `develop`:
+For each new feature or bugfix, create a branch from `develop`:
 
 ```bash
 # Feature branch
@@ -45,86 +45,86 @@ git checkout develop
 git pull
 git checkout -b fix/nome-bug
 
-# Hotfix urgente (da main)
+# Urgent hotfix (from main)
 git checkout main
 git pull
-git checkout -b hotfix/nome-fix
+git checkout -b hotfix/fix-name
 ```
 
 ### Naming Convention
 
-- `feature/*` - Nuove funzionalità
-- `fix/*` - Bugfix normali
-- `hotfix/*` - Fix urgenti su main
-- `chore/*` - Manutenzione, refactoring
-- `docs/*` - Documentazione
+- `feature/*` - New features
+- `fix/*` - Regular bugfixes
+- `hotfix/*` - Urgent fixes on main
+- `chore/*` - Maintenance, refactoring
+- `docs/*` - Documentation
 
-Esempi:
+Examples:
 - `feature/add-postgres-support`
 - `fix/port-conflict-detection`
 - `hotfix/critical-ssl-bug`
 - `docs/update-installation-guide`
 
-## 🔄 Workflow Sviluppo Quotidiano
+## 🔄 Daily Development Workflow
 
 ```bash
-# 1. Parti da develop aggiornato
+# 1. Start from updated develop
 git checkout develop
 git pull origin develop
 
-# 2. Crea feature branch
+# 2. Create feature branch
 git checkout -b feature/awesome-feature
 
-# 3. Lavora e committa
+# 3. Work and commit
 git add .
 git commit -m "feat: add awesome feature"
 
-# 4. Push del branch
+# 4. Push branch
 git push origin feature/awesome-feature
 
-# 5. Apri Pull Request su GitHub (target: develop)
+# 5. Open Pull Request on GitHub (target: develop)
 
-# 6. Dopo merge, pulisci
+# 6. After merge, clean up
 git checkout develop
 git pull
 git branch -d feature/awesome-feature
 ```
 
-## 📦 Workflow Release
+## 📦 Release Workflow
 
-Quando `develop` è pronto per il rilascio:
+When `develop` is ready for release:
 
 ```bash
-# 1. Verifica develop
+# 1. Verify develop
 git checkout develop
 git pull origin develop
 
-# 2. Aggiorna versione in phpharbor
-# Modifica: VERSION="1.1.0"
+# 2. Update version in phpharbor
+# Modify: VERSION="1.1.0"
 git add phpharbor
 git commit -m "chore: bump version to 1.1.0"
 
-# 3. Merge in main
+# 3. Merge into main
 git checkout main
 git pull origin main
 git merge develop --no-ff -m "Release v1.1.0"
 
-# 4. Crea tag
+# 4. Create tag
 git tag -a v1.1.0 -m "Release 1.1.0"
 git push origin main v1.1.0
 
-# 5. Genera release
+# 5. Generate release
 ./create-release.sh 1.1.0
 
-# 6. Pubblica su GitHub releases
+# 6. Publish on GitHub releases
 
-# 7. Torna su develop
+# 7. Return to develop
 git checkout develop
 ```
 
 ## 📝 Commit Guidelines
 
-Usa [Conventional Commits](https://www.conventionalcommits.org/):
+Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Format
 ```
@@ -134,14 +134,14 @@ Usa [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 ### Types
-- `feat:` - Nuova feature
+- `feat:` - New feature
 - `fix:` - Bug fix
-- `docs:` - Documentazione
-- `chore:` - Manutenzione, release
+- `docs:` - Documentation
+- `chore:` - Maintenance, release
 - `refactor:` - Refactoring
-- `test:` - Test
+- `test:` - Tests
 
-### Esempi
+### Examples
 ```bash
 feat(ssl): add automatic certificate renewal
 fix(proxy): resolve port conflict
@@ -151,13 +151,13 @@ chore: bump version to 1.2.0
 
 ## 🏷️ Versioning
 
-Seguiamo [Semantic Versioning](https://semver.org/):
+We follow [Semantic Versioning](https://semver.org/):
 
 ```
 MAJOR.MINOR.PATCH
   │     │     │
   │     │     └─ Bug fixes (1.0.0 → 1.0.1)
-  │     └─────── Nuove feature (1.0.0 → 1.1.0)
+  │     └─────── New features (1.0.0 → 1.1.0)
   └───────────── Breaking changes (1.0.0 → 2.0.0)
 ```
 
@@ -177,14 +177,14 @@ git checkout develop
 
 ## 🤝 Pull Request
 
-1. Fork il repository
-2. Crea branch da `develop`
-3. Committa seguendo le convenzioni
-4. Testa le modifiche
-5. Push e apri PR verso `develop`
-6. Descrivi cosa fa la PR
-7. Attendi review
+1. Fork the repository
+2. Create branch from `develop`
+3. Commit following conventions
+4. Test your changes
+5. Push and open PR to `develop`
+6. Describe what the PR does
+7. Wait for review
 
 ---
 
-Grazie per contribuire! 🙏
+Thank you for contributing! 🙏

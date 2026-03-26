@@ -1,115 +1,115 @@
-# Documentazione
+# Documentation
 
-Documentazione completa per PHPHarbor.
+Complete documentation for PHPHarbor.
 
-## 📚 Indice
+## 📚 Index
 
-### 🚀 Per Iniziare
+### 🚀 Getting Started
 
-- **[Installazione](installation.md)** - Guida completa all'installazione
-  - Requisiti di sistema
-  - Installazione automatica o manuale
-  - Setup post-installazione
-  - Troubleshooting installazione
+- **[Installation](installation.md)** - Complete installation guide
+  - System requirements
+  - Automatic or manual installation
+  - Post-installation setup
+  - Installation troubleshooting
 
-- **[Windows Setup](windows-setup.md)** - Guida specifica per Windows/WSL2
-  - Installazione WSL2
-  - Configurazione Docker Desktop
-  - Performance e best practices
-  - Troubleshooting Windows
+- **[Windows Setup](windows-setup.md)** - Windows/WSL2 specific guide
+  - WSL2 installation
+  - Docker Desktop configuration
+  - Performance and best practices
+  - Windows troubleshooting
 
-- **[Quick Start](quick-start.md)** - Tutorial passo-passo
-  - Primo progetto
-  - Comandi base
-  - Esempi pratici
+- **[Quick Start](quick-start.md)** - Step-by-step tutorial
+  - First project
+  - Basic commands
+  - Practical examples
 
-### 📖 Riferimenti
+### 📖 Reference
 
-- **[CLI Reference](cli-reference.md)** - Documentazione completa dei comandi
-  - `phpharbor create` - Creazione progetti
-  - `phpharbor project` - Gestione progetti
-  - `phpharbor dev` - Comandi sviluppo
-  - `phpharbor shared` - Servizi condivisi
-  - `phpharbor setup` - Configurazione sistema
-  - `phpharborssl` - Gestione certificati
+- **[CLI Reference](cli-reference.md)** - Complete command documentation
+  - `phpharbor create` - Project creation
+  - `phpharbor project` - Project management
+  - `phpharbor dev` - Development commands
+  - `phpharbor shared` - Shared services
+  - `phpharbor setup` - System configuration
+  - `phpharbor ssl` - Certificate management
 
-### 🔧 Guide Tecniche
+### 🔧 Technical Guides
 
-- **[Architecture](architecture.md)** - Architettura del sistema
-  - Come funziona il reverse proxy
+- **[Architecture](architecture.md)** - System architecture
+  - How the reverse proxy works
   - Docker Compose profiles
-  - Gestione porte e networking
-  - Build delle immagini
+  - Port and networking management
+  - Image building
 
-- **[Shared Services](shared-services.md)** - Servizi condivisi
-  - MySQL condiviso
-  - Redis condiviso
-  - PHP-FPM condiviso
-  - Quando usarli
+- **[Shared Services](shared-services.md)** - Shared services
+  - Shared MySQL
+  - Shared Redis
+  - Shared PHP-FPM
+  - When to use them
 
-- **[SSL Setup](ssl-setup.md)** - Certificati HTTPS locali
-  - Configurazione mkcert
-  - Setup CA locale
-  - Risoluzione problemi SSL
+- **[SSL Setup](ssl-setup.md)** - Local HTTPS certificates
+  - mkcert configuration
+  - Local CA setup
+  - SSL troubleshooting
 
 - **[Vite Setup](vite-setup.md)** - Hot Module Replacement
-  - Configurazione Vite in Docker
+  - Vite configuration in Docker
   - HMR troubleshooting
-  - Gestione porte
+  - Port management
 
-- **[Workers Guide](workers-guide.md)** - Laravel workers e scheduler
-  - Configurazione queue workers
-  - Setup scheduler/cron
+- **[Workers Guide](workers-guide.md)** - Laravel workers and scheduler
+  - Queue workers configuration
+  - Scheduler/cron setup
   - Supervisor configuration
-  - Debugging workers
+  - Workers debugging
 
-- **[Utilities](utilities.md)** - Utility e helper
-  - Script utility
-  - Funzioni helper
+- **[Utilities](utilities.md)** - Utilities and helpers
+  - Utility scripts
+  - Helper functions
   - Tips & tricks
 
-### 👥 Per Contributori
+### 👥 For Contributors
 
-- **[Publishing](publishing.md)** - Guida pubblicazione (maintainer)
-  - Setup repository GitHub
-  - Processo release
-  - Checklist pubblicazione
+- **[Publishing](publishing.md)** - Publishing guide (maintainers)
+  - GitHub repository setup
+  - Release process
+  - Publishing checklist
 
 ---
 
-## 🔍 Cerca per Caso d'Uso
+## 🔍 Search by Use Case
 
-**Voglio installare Docker Dev Environment:**
-→ [Installazione](installation.md)
+**I want to install PHPHarbor:**
+→ [Installation](installation.md)
 
-**Voglio creare il mio primo progetto:**
+**I want to create my first project:**
 → [Quick Start](quick-start.md)
 
-**Voglio capire tutti i comandi disponibili:**
+**I want to understand all available commands:**
 → [CLI Reference](cli-reference.md)
 
-**Ho problemi con HTTPS locale:**
+**I have problems with local HTTPS:**
 → [SSL Setup](ssl-setup.md)
 
-**Vite HMR non funziona:**
+**Vite HMR doesn't work:**
 → [Vite Setup](vite-setup.md)
 
-**I queue workers non processano jobs:**
+**Queue workers don't process jobs:**
 → [Workers Guide](workers-guide.md)
 
-**Voglio risparmiare RAM usando servizi condivisi:**
+**I want to save RAM using shared services:**
 → [Shared Services](shared-services.md)
 
-**Voglio capire come funziona internamente:**
+**I want to understand how it works internally:**
 → [Architecture](architecture.md)
 
-**Voglio contribuire al progetto:**
+**I want to contribute to the project:**
 → [../CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
 
-## 💬 Serve Aiuto?
+## 💬 Need Help?
 
-- **Issue su GitHub**: [Issues](https://github.com/your-username/php-harbor/issues)
-- **Discussioni**: [Discussions](https://github.com/your-username/php-harbor/discussions)
-- **README principale**: [../README.md](../README.md)
+- **GitHub Issues**: [Issues](https://github.com/your-username/php-harbor/issues)
+- **Discussions**: [Discussions](https://github.com/your-username/php-harbor/discussions)
+- **Main README**: [../README.md](../README.md)

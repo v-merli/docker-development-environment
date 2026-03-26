@@ -1,6 +1,6 @@
-# 🏗️ Architettura PHPHarbor
+# 🏗️ PHPHarbor Architecture
 
-## Panoramica Architettura Ibrida
+## Hybrid Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -30,63 +30,63 @@
         ┌─────────────────┴─────────────────┐
         ↓                                   ↓
 ┌──────────────────────┐         ┌──────────────────────┐
-│  SERVIZI CONDIVISI   │         │   PROGETTI (N)       │
-│  (Opzionali)         │         │                      │
+│  SHARED SERVICES     │         │   PROJECTS (N)       │
+│  (Optional)          │         │                      │
 │                      │         │ ┌──────────────────┐ │
-│ ┌─────────────────┐ │         │ │ Progetto 1       │ │
+│ ┌─────────────────┐ │         │ │ Project 1        │ │
 │ │ mysql-shared    │ │         │ │ (shop)           │ │
 │ │ MySQL 8.0       │◄────┐     │ │                  │ │
 │ │ 3306:3306       │ │   │     │ │ shop-nginx:80    │ │
 │ └─────────────────┘ │   │     │ │ shop-app (PHP)   │ │
 │                      │   │     │ │      ↓           │ │
 │ ┌─────────────────┐ │   │     │ │ ┌──────────────┐ │ │
-│ │ redis-shared    │ │   └─────┼─┤ │ Condivisi    │ │ │
+│ │ redis-shared    │ │   └─────┼─┤ │ Shared       │ │ │
 │ │ Redis:alpine    │◄────┐     │ │ │ mysql-shared │ │ │
 │ │ 6379:6379       │ │   │     │ │ │ redis-shared │ │ │
 │ └─────────────────┘ │   │     │ │ └──────────────┘ │ │
 │                      │   │     │ └──────────────────┘ │
-│ Database multipli:   │   │     │                      │
+│ Multiple databases:  │   │     │                      │
 │ • shop_db            │   │     │ ┌──────────────────┐ │
-│ • blog_db            │   │     │ │ Progetto 2       │ │
+│ • blog_db            │   │     │ │ Project 2        │ │
 │ • api_db             │   │     │ │ (blog)           │ │
 │                      │   │     │ │                  │ │
 └──────────────────────┘   │     │ │ blog-nginx:80    │ │
                            │     │ │ blog-app (PHP)   │ │
                            │     │ │      ↓           │ │
                            │     │ │ ┌──────────────┐ │ │
-                           └─────┼─┤ │ Dedicati     │ │ │
+                           └─────┼─┤ │ Dedicated    │ │ │
                                  │ │ │ blog-mysql   │ │ │
                                  │ │ │ blog-redis   │ │ │
                                  │ │ └──────────────┘ │ │
                                  │ └──────────────────┘ │
                                  │                      │
                                  │ ┌──────────────────┐ │
-                                 │ │ Progetto N...    │ │
+                                 │ │ Project N...     │ │
                                  │ └──────────────────┘ │
                                  └──────────────────────┘
 ```
 
-## Reti Docker
+## Docker Networks
 
-### Rete `proxy` (bridge, esterna)
-Tutti i container che devono essere raggiungibili dall'esterno:
+### `proxy` Network (bridge, external)
+All containers that must be reachable from the outside:
 - `nginx-proxy`
-- `mysql-shared` (se usato)
-- `redis-shared` (se usato)
-- `{progetto}-nginx` (per ogni progetto)
-- `{progetto}-app` (per ogni progetto)
+- `mysql-shared` (if used)
+- `redis-shared` (if used)
+- `{project}-nginx` (for each project)
+- `{project}-app` (for each project)
 
-### Rete `backend` (bridge, per progetto)
-Solo per progetti con servizi dedicati:
-- `{progetto}-app`
-- `{progetto}-nginx`
-- `{progetto}-mysql`
-- `{progetto}-redis`
-- `{progetto}-scheduler`
+### `backend` Network (bridge, per project)
+Only for projects with dedicated services:
+- `{project}-app`
+- `{project}-nginx`
+- `{project}-mysql`
+- `{project}-redis`
+- `{project}-scheduler`
 
-## Flusso di una Richiesta HTTP
+## HTTP Request Flow
 
-### Con Servizi Condivisi
+### With Shared Services
 
 ```
 1. Browser
@@ -97,11 +97,11 @@ Solo per progetti con servizi dedicati:
    ↓
 4. nginx-proxy (container)
    ↓
-5. Legge header Host: shop.test
+5. Reads Host header: shop.test
    ↓
-6. Trova container con VIRTUAL_HOST=shop.test
+6. Finds container with VIRTUAL_HOST=shop.test
    ↓
-7. Forward → shop-nginx:80 (via rete proxy)
+7. Forward → shop-nginx:80 (via proxy network)
    ↓
 8. shop-nginx → FastCGI → shop-app:9000
    ↓
@@ -111,108 +111,108 @@ Solo per progetti con servizi dedicati:
    └─→ redis-shared:6379
 ```
 
-### Con Servizi Dedicati
+### With Dedicated Services
 
 ```
-1-7. [Come sopra]
+1-7. [As above]
    ↓
 8. shop-nginx → FastCGI → shop-app:9000
    ↓
 9. shop-app (PHP-FPM)
    |
-   ├─→ shop-mysql:3306 (rete backend)
-   └─→ shop-redis:6379 (rete backend)
+   ├─→ shop-mysql:3306 (backend network)
+   └─→ shop-redis:6379 (backend network)
 ```
 
-## Confronto Architetture
+## Architecture Comparison
 
-### Architettura Dedicata (Default)
+### Dedicated Architecture (Default)
 
 ```
-Progetto 1           Progetto 2           Progetto 3
+Project 1            Project 2            Project 3
 ├─ nginx            ├─ nginx            ├─ nginx
 ├─ php-fpm          ├─ php-fpm          ├─ php-fpm
 ├─ mysql (400MB)    ├─ mysql (400MB)    ├─ mysql (400MB)
 └─ redis (100MB)    └─ redis (100MB)    └─ redis (100MB)
 
-Totale RAM: ~1.5 GB
+Total RAM: ~1.5 GB
 ```
 
-**Vantaggi:**
-- ✅ Isolamento completo
-- ✅ Configurazioni personalizzate
-- ✅ Versioni MySQL diverse per progetto
+**Advantages:**
+- ✅ Complete isolation
+- ✅ Customized configurations
+- ✅ Different MySQL versions per project
 
-**Svantaggi:**
-- ❌ Alto consumo RAM
-- ❌ Più container da gestire
+**Disadvantages:**
+- ❌ High RAM consumption
+- ❌ More containers to manage
 
-### Architettura Condivisa
-
-```
-                    ┌─── Progetto 1 (nginx + php-fpm)
-mysql-shared (400MB)├─── Progetto 2 (nginx + php-fpm)
-redis-shared (100MB)├─── Progetto 3 (nginx + php-fpm)
-                    └─── Progetto N...
-
-Totale RAM: ~700 MB
-```
-
-**Vantaggi:**
-- ✅ Risparmio RAM ~70%
-- ✅ Gestione centralizzata
-- ✅ Backup più semplici
-
-**Svantaggi:**
-- ❌ Tutti i progetti stessa versione MySQL
-- ❌ Meno isolamento
-
-### Architettura Ibrida (Consigliata)
+### Shared Architecture
 
 ```
-Progetto MAIN        Altri Progetti
-├─ nginx            ┌─── Progetto 2 (nginx + php)
-├─ php-fpm          ├─── Progetto 3 (nginx + php)
-├─ mysql (dedicato) │
-└─ redis (dedicato) └─→ mysql-shared
+                    ┌─── Project 1 (nginx + php-fpm)
+mysql-shared (400MB)├─── Project 2 (nginx + php-fpm)
+redis-shared (100MB)├─── Project 3 (nginx + php-fpm)
+                    └─── Project N...
+
+Total RAM: ~700 MB
+```
+
+**Advantages:**
+- ✅ ~70% RAM savings
+- ✅ Centralized management
+- ✅ Simpler backups
+
+**Disadvantages:**
+- ❌ All projects same MySQL version
+- ❌ Less isolation
+
+### Hybrid Architecture (Recommended)
+
+```
+Main PROJECT         Other Projects
+├─ nginx            ┌─── Project 2 (nginx + php)
+├─ php-fpm          ├─── Project 3 (nginx + php)
+├─ mysql (dedicated) │
+└─ redis (dedicated) └─→ mysql-shared
                         redis-shared
 
-Totale RAM: ~1 GB (vs ~1.5 GB tutti dedicati)
+Total RAM: ~1 GB (vs ~1.5 GB all dedicated)
 ```
 
 **Best of both worlds:**
-- ✅ Progetti critici: servizi dedicati
-- ✅ Progetti test: servizi condivisi
-- ✅ Flessibilità massima
+- ✅ Critical projects: dedicated services
+- ✅ Test projects: shared services
+- ✅ Maximum flexibility
 
-## Componenti Chiave
+## Key Components
 
 ### nginxproxy/nginx-proxy
-- Reverse proxy automatico
-- Monitora Docker socket
-- Genera configurazioni dinamiche
+- Automatic reverse proxy
+- Monitors Docker socket
+- Generates dynamic configurations
 - SSL termination
 
 ### nginxproxy/acme-companion
-- Certificati SSL automatici
+- Automatic SSL certificates
 - Let's Encrypt/staging
-- Rinnovo automatico
+- Automatic renewal
 
-### Container App (PHP-FPM)
-- Versioni PHP: 7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5
+### App Container (PHP-FPM)
+- PHP versions: 7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5
 - Node.js: 18, 20, 21
-- Composer, NPM preinstallati
+- Composer, NPM preinstalled
 
-### Container Nginx (per progetto)
-- Configurazioni specifiche:
+### Nginx Container (per project)
+- Specific configurations:
   - `laravel.conf`
   - `wordpress.conf`
   - `php.conf`
   - `html.conf`
 
-## Variabili d'Ambiente Chiave
+## Key Environment Variables
 
-### Per Routing Automatico
+### For Automatic Routing
 ```yaml
 environment:
   VIRTUAL_HOST: myproject.test
@@ -221,7 +221,7 @@ environment:
   LETSENCRYPT_EMAIL: dev@localhost
 ```
 
-### Per Servizi Condivisi
+### For Shared Services
 ```yaml
 environment:
   DB_HOST: mysql-shared
@@ -230,18 +230,18 @@ environment:
   REDIS_PORT: 6379
 ```
 
-### Per Servizi Dedicati
+### For Dedicated Services
 ```yaml
 environment:
-  DB_HOST: mysql  # Nome servizio nel docker-compose
+  DB_HOST: mysql  # Service name in docker-compose
   DB_PORT: 3306
   REDIS_HOST: redis
   REDIS_PORT: 6379
 ```
 
-## Volumi e Persistenza
+## Volumes and Persistence
 
-### Servizi Condivisi
+### Shared Services
 ```yaml
 volumes:
   mysql_shared_data:
@@ -250,46 +250,46 @@ volumes:
     name: redis_shared_data  # Condiviso tra progetti
 ```
 
-### Servizi Dedicati
+### Dedicated Services
 ```yaml
 volumes:
   mysql_data:
-    driver: local  # Specifico del progetto
+    driver: local  # Project-specific
   redis_data:
-    driver: local  # Specifico del progetto
+    driver: local  # Project-specific
 ```
 
-## Porte Esposte
+## Exposed Ports
 
 ### Host → Container
 - `8080:80` - HTTP (nginx-proxy)
 - `8443:443` - HTTPS (nginx-proxy)
-- `3306:3306` - MySQL condiviso (opzionale)
-- `6379:6379` - Redis condiviso (opzionale)
-- `13306-14305:3306` - MySQL dedicati (range dinamico)
+- `3306:3306` - Shared MySQL (optional)
+- `6379:6379` - Shared Redis (optional)
+- `13306-14305:3306` - Dedicated MySQL (dynamic range)
 
-### Interne (solo Docker network)
-- `80` - Nginx per ogni progetto
-- `9000` - PHP-FPM per ogni progetto
+### Internal (only Docker network)
+- `80` - Nginx for each project
+- `9000` - PHP-FPM for each project
 
-## Scalabilità
+## Scalability
 
-L'architettura supporta:
-- ✅ Decine di progetti simultanei
-- ✅ Mix di tipi progetto (Laravel, WordPress, PHP, HTML)
-- ✅ Versioni PHP diverse per progetto
-- ✅ Servizi dedicati e condivisi contemporaneamente
+The architecture supports:
+- ✅ Dozens of simultaneous projects
+- ✅ Mix of project types (Laravel, WordPress, PHP, HTML)
+- ✅ Different PHP versions per project
+- ✅ Dedicated and shared services simultaneously
 
-Limite pratico: ~20-30 progetti attivi (dipende da RAM disponibile)
+Practical limit: ~20-30 active projects (depends on available RAM)
 
-## Sicurezza
+## Security
 
-- 🔒 Certificati SSL automatici (Let's Encrypt)
-- 🔒 Reti isolate (frontend/backend)
-- 🔒 Password database configurabili
-- 🔒 Container non-root quando possibile
+- 🔒 Automatic SSL certificates (Let's Encrypt)
+- 🔒 Isolated networks (frontend/backend)
+- 🔒 Configurable database passwords
+- 🔒 Non-root containers when possible
 
 ---
 
-**Aggiornato:** Febbraio 2026
-**Versione:** 2.0 (Architettura Ibrida)
+**Updated:** February 2026
+**Version:** 2.0 (Hybrid Architecture)

@@ -1,11 +1,11 @@
 # Docker Compose Unified Template
-# Supporta cherry-picking granulare dei servizi
-# Configurato tramite .env del progetto
+# Supports granular cherry-picking of services
+# Configured via project .env
 
 services:
   # ============================================
-  # APP - Development Container (SEMPRE presente)
-  # PHP + Node.js per composer, artisan, npm, vite
+  # APP - Development Container (ALWAYS present)
+  # PHP + Node.js for composer, artisan, npm, vite
   # ============================================
   app:
     build:
@@ -59,8 +59,8 @@ services:
       - app
 
   # ============================================
-  # MYSQL - Database dedicato (opzionale)
-  # Attivo solo se USE_DEDICATED_MYSQL=true
+  # MYSQL - Dedicated database (optional)
+  # Active only if USE_DEDICATED_MYSQL=true
   # ============================================
   mysql:
     image: mysql:${MYSQL_VERSION:-8.0}
@@ -82,8 +82,8 @@ services:
       - mysql-dedicated
 
   # ============================================
-  # REDIS - Cache dedicato (opzionale)
-  # Attivo solo se USE_DEDICATED_REDIS=true
+  # REDIS - Dedicated cache (optional)
+  # Active only if USE_DEDICATED_REDIS=true
   # ============================================
   redis:
     image: redis:alpine
@@ -101,7 +101,7 @@ services:
 
   # ============================================
   # SCHEDULER - Laravel Scheduler
-  # Usa immagine app (default) o php-shared
+  # Uses app image (default) or php-shared
   # ============================================
   scheduler:
     image: ${SCHEDULER_IMAGE:-${PROJECT_NAME}-app}
@@ -124,7 +124,7 @@ services:
 
   # ============================================
   # QUEUE - Laravel Queue Worker
-  # Usa immagine app (default) o php-shared
+  # Uses app image (default) or php-shared
   # ============================================
   queue:
     image: ${QUEUE_IMAGE:-${PROJECT_NAME}-app}

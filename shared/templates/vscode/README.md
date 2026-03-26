@@ -1,43 +1,43 @@
 # VS Code Templates
 
-Questa directory contiene i template di configurazione per VS Code che vengono automaticamente copiati nei nuovi progetti.
+This directory contains VS Code configuration templates that are automatically copied to new projects.
 
-## File disponibili
+## Available Files
 
 ### launch.json
-Configurazione per il debug con Xdebug 3.x
+Configuration for debugging with Xdebug 3.x
 
-**Funzionalità:**
-- Debug listener su porta 9003
-- Path mapping automatico per Docker (`/var/www/html` → workspace)
-- Supporto debug su file corrente
-- Ottimizzato per PHPHarbor
+**Features:**
+- Debug listener on port 9003
+- Automatic path mapping for Docker (`/var/www/html` → workspace)
+- Support for debugging current file
+- Optimized for PHPHarbor
 
-**Come usare:**
-1. In VS Code, apri il pannello "Run and Debug" (Cmd+Shift+D)
-2. Seleziona "Listen for Xdebug (PHPHarbor)"
-3. Premi F5 per avviare il listener
-4. Nel browser aggiungi `?XDEBUG_TRIGGER=1` alla URL
-5. Usa F10 per navigare riga per riga
+**How to use:**
+1. In VS Code, open the "Run and Debug" panel (Cmd+Shift+D)
+2. Select "Listen for Xdebug (PHPHarbor)"
+3. Press F5 to start the listener
+4. In the browser add `?XDEBUG_TRIGGER=1` to the URL
+5. Use F10 to navigate line by line
 
 ### XDEBUG-GUIDE.md
-Guida completa all'utilizzo di Xdebug con VS Code e PHPHarbor
+Complete guide to using Xdebug with VS Code and PHPHarbor
 
-**Contenuti:**
-- Configurazione VS Code passo-passo
-- Installazione estensione PHP Debug
-- Come mettere breakpoint
-- Controlli di debug (F5, F10, F11, ecc.)
-- Troubleshooting problemi comuni
-- Tutorial ed esempi pratici
-- Link a risorse utili
+**Contents:**
+- Step-by-step VS Code configuration
+- PHP Debug extension installation
+- How to set breakpoints
+- Debug controls (F5, F10, F11, etc.)
+- Common issue troubleshooting
+- Tutorials and practical examples
+- Links to useful resources
 
-**Nota:** Questo file viene copiato nella root del progetto (`app/XDEBUG-GUIDE.md`) per facile accesso.
+**Note:** This file is copied to the project root (`app/XDEBUG-GUIDE.md`) for easy access.
 
-## Aggiungere nuovi template
+## Adding New Templates
 
-Per aggiungere nuove configurazioni VS Code:
+To add new VS Code configurations:
 
-1. Crea il file in `shared/templates/vscode/`
-2. Modifica `cli/create.sh` per copiarlo durante la creazione del progetto
-3. Documenta l'uso in questo README
+1. Create the file in `shared/templates/vscode/`
+2. Modify `cli/create.sh` to copy it during project creation
+3. Document its usage in this README

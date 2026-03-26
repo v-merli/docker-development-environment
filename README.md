@@ -1,123 +1,123 @@
 # � PHPHarbor
 
-Ambiente di sviluppo Docker flessibile per Laravel, WordPress, PHP e HTML con servizi dedicati o condivisi.
+Flexible Docker development environment for Laravel, WordPress, PHP, and HTML with dedicated or shared services.
 
-## 📦 Installazione One-Line
+## 📦 One-Line Installation
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/v-merli/php-harbor/main/install.sh)
 ```
 
-> 🪟 **Windows**: Usa [WSL2](docs/windows-setup.md) | 🐧 **Linux/macOS**: Funziona direttamente
+> 🪟 **Windows**: Use [WSL2](docs/windows-setup.md) | 🐧 **Linux/macOS**: Works directly
 
 ## ⚡ Quick Start
 
 ```bash
-# Setup iniziale
+# Initial setup
 phpharbor setup init
 
-# Crea progetto (modalità interattiva)
+# Create project (interactive mode)
 phpharbor create
 
-# Oppure CLI diretta
+# Or direct CLI
 phpharbor create myapp --type laravel --php 8.3
 
-# Avvia sviluppo
+# Start development
 phpharbor dev myapp
 
-# Accedi al sito
+# Access site
 open https://myapp.test
 ```
 
-> 💡 **Directory Progetti**: Durante il setup, scegli dove salvare i progetti (default: `~/.phpharbor/projects`). Puoi cambiarla in seguito con `phpharbor setup config`
+> 💡 **Projects Directory**: During setup, choose where to save projects (default: `~/.phpharbor/projects`). You can change it later with `phpharbor setup config`
 
 ## ✨ Features
 
-- 🎯 Multi-progetto (Laravel, WordPress, HTML, PHP)
-- 🐘 PHP multi-versione (7.3 → 8.5)
-- 💾 Cherry-pick servizi condivisi (risparmio RAM)
-- 🔒 HTTPS automatico con certificati locali
-- 🌐 DNS wildcard `*.test` locale
-- 🎨 CLI interattivo o modalità comando
+- 🎯 Multi-project (Laravel, WordPress, HTML, PHP)
+- 🐘 Multi-version PHP (7.3 → 8.5)
+- 💾 Cherry-pick shared services (RAM savings)
+- 🔒 Automatic HTTPS with local certificates
+- 🌐 Local wildcard DNS `*.test`
+- 🎨 Interactive CLI or command mode
 
-## 📚 Documentazione
+## 📚 Documentation
 
-**Per iniziare:**
-- 📖 [Installazione completa](docs/installation.md)
-- 🚀 [Tutorial Quick Start](docs/quick-start.md)
-- 💻 [Riferimento CLI](docs/cli-reference.md)
+**Getting started:**
+- 📖 [Complete installation](docs/installation.md)
+- 🚀 [Quick Start tutorial](docs/quick-start.md)
+- 💻 [CLI reference](docs/cli-reference.md)
 
-**Guide tecniche:**
-- ⚙️ [Architettura sistema](docs/architecture.md)
-- 🔧 [Servizi condivisi](docs/shared-services.md)
-- 🔐 [Setup SSL/HTTPS](docs/ssl-setup.md)
+**Technical guides:**
+- ⚙️ [System architecture](docs/architecture.md)
+- 🔧 [Shared services](docs/shared-services.md)
+- 🔐 [SSL/HTTPS setup](docs/ssl-setup.md)
 - ⚡ [Vite HMR in Docker](docs/vite-setup.md)
 - 👷 [Laravel Workers/Scheduler](docs/workers-guide.md)
 
-📂 **[Vedi tutta la documentazione →](docs/)**
+📂 **[View all documentation →](docs/)**
 
-## 🔧 Requisiti
+## 🔧 Requirements
 
 - **Docker**:
   - macOS: Docker Desktop
   - Linux: Docker Engine
   - Windows: Docker Desktop + WSL2
 - Git
-- mkcert (opzionale, per HTTPS)
-- dnsmasq (opzionale, per DNS *.test)
+- mkcert (optional, for HTTPS)
+- dnsmasq (optional, for DNS *.test)
 
-> 💡 **Compatibilità**: macOS, Linux, Windows (via WSL2) → **[Setup Windows](docs/windows-setup.md)**
+> 💡 **Compatibility**: macOS, Linux, Windows (via WSL2) → **[Windows Setup](docs/windows-setup.md)**
 
-## 🎯 Esempi d'Uso
+## 🎯 Usage Examples
 
 ```bash
-# Laravel con tutto dedicato (max performance)
+# Laravel with all dedicated (max performance)
 phpharbor create shop --type laravel --php 8.3
 
-# Laravel con tutto condiviso (min RAM)
+# Laravel with all shared (min RAM)
 phpharbor create api --type laravel --fully-shared
 
-# WordPress con MySQL condiviso
+# WordPress with shared MySQL
 phpharbor create blog --type wordpress --shared-db
 
-# HTML statico con PHP condiviso
+# Static HTML with shared PHP
 phpharbor create landing --type html --shared-php
 
-# Gestione
+# Management
 phpharbor project list
 phpharbor project logs shop
 phpharbor project artisan shop migrate
 phpharbor project composer shop require package
 
-# Servizi
+# Services
 phpharbor shared status
 phpharbor shared php 8.3
 ```
 
-## 🏗️ Architettura
+## 🏗️ Architecture
 
-**Reverse Proxy** → routing automatico dei domini  
-**Servizi dedicati** → container per progetto (max isolamento)  
-**Servizi condivisi** → MySQL/Redis/PHP condivisi tra progetti (min RAM)
+**Reverse Proxy** → automatic domain routing  
+**Dedicated services** → container per project (max isolation)  
+**Shared services** → MySQL/Redis/PHP shared between projects (min RAM)
 
-Scegli il mix ideale per ogni progetto.
+Choose the ideal mix for each project.
 
-📖 **[Documentazione Completa Architettura →](docs/architecture.md)**
+📖 **[Complete Architecture Documentation →](docs/architecture.md)**
 
-## 🤝 Contribuisci
+## 🤝 Contribute
 
-Leggi [CONTRIBUTING.md](CONTRIBUTING.md) per le linee guida.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## 📝 Licenza
+## 📝 License
 
 [MIT License](LICENSE) - Copyright 2026
 
-## 💬 Supporto
+## 💬 Support
 
-- 📖 [Documentazione completa](docs/)
-- 🐛 [Report bug](https://github.com/your-username/php-harbor/issues)
-- 💡 [Richiedi feature](https://github.com/your-username/php-harbor/issues/new)
-- 💬 [Discussioni](https://github.com/your-username/php-harbor/discussions)
+- 📖 [Complete documentation](docs/)
+- 🐛 [Report bugs](https://github.com/your-username/php-harbor/issues)
+- 💡 [Request features](https://github.com/your-username/php-harbor/issues/new)
+- 💬 [Discussions](https://github.com/your-username/php-harbor/discussions)
 
 ---
 

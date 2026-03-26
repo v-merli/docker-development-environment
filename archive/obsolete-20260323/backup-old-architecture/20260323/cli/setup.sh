@@ -112,7 +112,7 @@ setup_proxy() {
 }
 
 setup_init() {
-    print_title "Inizializzazione Ambiente Docker Dev"
+    print_title "Inizializzazione Ambiente PHPHarbor"
     echo ""
     
     # Verifica Docker

@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # PHPHarbor - Uninstaller
-# Rimuove completamente l'ambiente di sviluppo
+# Completely removes the development environment
 
 set -e
 
-# Colori
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -13,14 +13,14 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Funzioni di output
+# Output functions
 print_info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
 print_success() { echo -e "${GREEN}✅ $1${NC}"; }
 print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
 print_error() { echo -e "${RED}❌ $1${NC}"; }
 print_title() { echo -e "${CYAN}━━━ $1 ━━━${NC}"; }
 
-# Rileva sistema operativo
+# Detect operating system
 OS="$(uname -s)"
 case "${OS}" in
     Linux*)     OS_TYPE=Linux;;
@@ -28,104 +28,104 @@ case "${OS}" in
     *)          OS_TYPE="UNKNOWN:${OS}"
 esac
 
-# Directory
+# Directories
 INSTALL_DIR="$HOME/.phpharbor"
 BIN_LINK="/usr/local/bin/phpharbor"
 
-print_title "PHPHarbor - Disinstallazione"
+print_title "PHPHarbor - Uninstallation"
 echo ""
 
-print_warning "ATTENZIONE: Questa operazione rimuoverà:"
-echo "  • Il comando phpharbor"
-echo "  • La directory $INSTALL_DIR"
-echo "  • Autocompletamento shell (da .zshrc/.bashrc)"
+print_warning "WARNING: This operation will remove:"
+echo "  • The phpharbor command"
+echo "  • The directory $INSTALL_DIR"
+echo "  • Shell autocompletion (from .zshrc/.bashrc)"
 echo ""
-echo "Opzionalmente:"
-echo "  • Tutti i progetti esistenti"
-echo "  • Servizi condivisi (proxy, MySQL, Redis, PHP)"
-echo "  • Volumi Docker con dati (DATABASE PERSI!)"
+echo "Optionally:"
+echo "  • All existing projects"
+echo "  • Shared services (proxy, MySQL, Redis, PHP)"
+echo "  • Docker volumes with data (DATABASES LOST!)"
 echo ""
-read -p "$(echo -e "${RED}Continuare con la disinstallazione? (y/n):${NC} ")" -n 1 -r
+read -p "$(echo -e "${RED}Continue with uninstallation? (y/n):${NC} ")" -n 1 -r
 echo ""
 
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Disinstallazione annullata"
+    echo "Uninstallation cancelled"
     exit 0
 fi
 
 # ==================================================
-# PROGETTI
+# PROJECTS
 # ==================================================
 echo ""
-print_info "Gestione progetti esistenti..."
+print_info "Managing existing projects..."
 
 if [ -d "$INSTALL_DIR/projects" ]; then
     PROJECT_COUNT=$(find "$INSTALL_DIR/projects" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
     
     if [ "$PROJECT_COUNT" -gt 0 ]; then
-        print_warning "Trovati $PROJECT_COUNT progetti"
+        print_warning "Found $PROJECT_COUNT projects"
         echo ""
-        read -p "$(echo -e "${CYAN}Rimuovere tutti i progetti? (y/n):${NC} ")" -n 1 -r
+        read -p "$(echo -e "${CYAN}Remove all projects? (y/n):${NC} ")" -n 1 -r
         echo ""
         
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             for project_dir in "$INSTALL_DIR/projects"/*; do
                 if [ -d "$project_dir" ]; then
                     project_name=$(basename "$project_dir")
-                    print_info "Stop e rimozione $project_name..."
+                    print_info "Stopping and removing $project_name..."
                     
-                    # Stop e rimuovi container
+                    # Stop and remove containers
                     docker stop $(docker ps -q --filter "name=^${project_name}-") 2>/dev/null || true
                     docker rm $(docker ps -aq --filter "name=^${project_name}-") 2>/dev/null || true
                     
-                    # Rimuovi volumi
+                    # Remove volumes
                     docker volume rm "${project_name}-mysql-data" 2>/dev/null || true
                     docker volume rm "${project_name}-redis-data" 2>/dev/null || true
                     
-                    # Rimuovi network
+                    # Remove network
                     docker network rm "${project_name}-network" 2>/dev/null || true
                 fi
             done
-            print_success "Progetti rimossi"
+            print_success "Projects removed"
         else
-            print_warning "Progetti mantenuti in $INSTALL_DIR/projects"
+            print_warning "Projects kept in $INSTALL_DIR/projects"
         fi
     fi
 fi
 
 # ==================================================
-# SERVIZI CONDIVISI
+# SHARED SERVICES
 # ==================================================
 echo ""
-print_info "Gestione servizi condivisi..."
+print_info "Managing shared services..."
 echo ""
-read -p "$(echo -e "${CYAN}Rimuovere servizi condivisi (proxy, MySQL, Redis, PHP)? (y/n):${NC} ")" -n 1 -r
+read -p "$(echo -e "${CYAN}Remove shared services (proxy, MySQL, Redis, PHP)? (y/n):${NC} ")" -n 1 -r
 echo ""
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    print_info "Stop servizi condivisi..."
+    print_info "Stopping shared services..."
     
-    # Stop e rimuovi container
+    # Stop and remove containers
     docker stop proxy mysql-shared redis-shared 2>/dev/null || true
     docker rm proxy mysql-shared redis-shared 2>/dev/null || true
     
-    # Stop e rimuovi PHP condivisi
+    # Stop and remove shared PHP
     docker stop $(docker ps -q --filter "name=^proxy-php-") 2>/dev/null || true
     docker rm $(docker ps -aq --filter "name=^proxy-php-") 2>/dev/null || true
     
-    print_success "Servizi condivisi rimossi"
+    print_success "Shared services removed"
     
-    # Volumi
+    # Volumes
     echo ""
-    print_warning "I volumi MySQL e Redis contengono i database"
-    read -p "$(echo -e "${RED}Rimuovere volumi MySQL e Redis (DATI PERSI!)? (y/n):${NC} ")" -n 1 -r
+    print_warning "MySQL and Redis volumes contain databases"
+    read -p "$(echo -e "${RED}Remove MySQL and Redis volumes (DATA LOST!)? (y/n):${NC} ")" -n 1 -r
     echo ""
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         docker volume rm mysql-data redis-data 2>/dev/null || true
-        print_success "Volumi rimossi"
+        print_success "Volumes removed"
     else
-        print_info "Volumi mantenuti (mysql-data, redis-data)"
+        print_info "Volumes kept (mysql-data, redis-data)"
     fi
     
     # Network
@@ -133,32 +133,32 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 # ==================================================
-# SYMLINK E REPOSITORY
+# SYMLINK AND REPOSITORY
 # ==================================================
 echo ""
-print_info "Rimozione installazione..."
+print_info "Removing installation..."
 
 # Symlink
 if [ -L "$BIN_LINK" ] || [ -f "$BIN_LINK" ]; then
     sudo rm -f "$BIN_LINK"
-    print_success "Symlink rimosso: $BIN_LINK"
+    print_success "Symlink removed: $BIN_LINK"
 fi
 
 # Repository
 if [ -d "$INSTALL_DIR" ]; then
     rm -rf "$INSTALL_DIR"
-    print_success "Repository rimosso: $INSTALL_DIR"
+    print_success "Repository removed: $INSTALL_DIR"
 fi
 
 # ==================================================
 # SHELL CONFIGURATION
 # ==================================================
 echo ""
-print_info "Pulizia configurazione shell..."
+print_info "Cleaning shell configuration..."
 
 for shell_rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
     if [ -f "$shell_rc" ]; then
-        # Rimuovi righe phpharbor (compatibile con macOS e Linux)
+        # Remove phpharbor lines (macOS and Linux compatible)
         if [ "$OS_TYPE" = "macOS" ]; then
             sed -i.bak '/phpharbor-completion/d' "$shell_rc" 2>/dev/null || true
             sed -i.bak '/PHPHarbor/d' "$shell_rc" 2>/dev/null || true
@@ -167,25 +167,25 @@ for shell_rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
             sed -i '/phpharbor-completion/d' "$shell_rc" 2>/dev/null || true
             sed -i '/PHPHarbor/d' "$shell_rc" 2>/dev/null || true
         fi
-        print_success "Autocompletamento rimosso da $shell_rc"
+        print_success "Autocompletion removed from $shell_rc"
     fi
 done
 
 # ==================================================
-# COMPLETAMENTO
+# COMPLETION
 # ==================================================
 echo ""
-print_success "Disinstallazione completata!"
+print_success "Uninstallation completed!"
 echo ""
-echo -e "${CYAN}━━━ Pulizia Finale (Opzionale) ━━━${NC}"
+echo -e "${CYAN}━━━ Final Cleanup (Optional) ━━━${NC}"
 echo ""
-echo "Per rimuovere TUTTE le immagini Docker create:"
+echo "To remove ALL created Docker images:"
 echo "  ${YELLOW}docker image prune -a${NC}"
 echo ""
-echo "Per rimuovere TUTTI i volumi Docker orfani:"
+echo "To remove ALL orphaned Docker volumes:"
 echo "  ${YELLOW}docker volume prune${NC}"
 echo ""
-echo "Per ricaricare la shell:"
-echo "  ${GREEN}source ~/.zshrc${NC}  # o ~/.bashrc"
+echo "To reload the shell:"
+echo "  ${GREEN}source ~/.zshrc${NC}  # or ~/.bashrc"
 echo ""
-print_info "Grazie per aver usato PHPHarbor! 👋"
+print_info "Thanks for using PHPHarbor! 👋"

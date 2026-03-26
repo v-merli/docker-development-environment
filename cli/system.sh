@@ -1,67 +1,67 @@
 #!/bin/bash
 
 # Module: System
-# Comandi: stats, info
+# Commands: stats, info
 
 cmd_stats() {
-    print_title "Statistiche Utilizzo Risorse"
+    print_title "Resource Usage Statistics"
     echo ""
     
-    # Mostra statistiche Docker generali
-    echo -e "${CYAN}Container Attivi:${NC}"
+    # Show general Docker statistics
+    echo -e "${CYAN}Active Containers:${NC}"
     docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Size}}" | head -20
     
     echo ""
-    echo -e "${CYAN}Utilizzo Risorse:${NC}"
+    echo -e "${CYAN}Resource Usage:${NC}"
     docker stats --no-stream --format "table {{.Name}}\t{{.CPU}}\t{{.MemUsage}}" | head -20
     
     echo ""
-    echo -e "${CYAN}Immagini:${NC}"
+    echo -e "${CYAN}Images:${NC}"
     docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | grep -E "php-laravel|mysql|redis|nginx-proxy" | head -10
     
     echo ""
-    echo -e "${CYAN}Volumi:${NC}"
-    docker volume ls | grep -E "mysql-data|redis-data" || echo "  Nessun volume persistente trovato"
+    echo -e "${CYAN}Volumes:${NC}"
+    docker volume ls | grep -E "mysql-data|redis-data" || echo "  No persistent volumes found"
     
     echo ""
-    echo -e "${CYAN}Reti:${NC}"
+    echo -e "${CYAN}Networks:${NC}"
     docker network ls | grep -E "proxy|backend"
 }
 
 cmd_info() {
-    print_title "Informazioni Ambiente"
+    print_title "Environment Information"
     echo ""
     
-    # Informazioni Build
-    echo -e "${CYAN}Docker Dev Environment:${NC}"
+    # Build information
+    echo -e "${CYAN}PHPHarbor:${NC}"
     if [ "$BUILD_INFO_LOADED" = "true" ]; then
-        echo "  Versione: $VERSION ($GIT_HASH)"
+        echo "  Version: $VERSION ($GIT_HASH)"
         echo "  Build: $BUILD_DATE"
         if [ -n "$REPOSITORY" ]; then
             echo "  Repository: $REPOSITORY/commit/$GIT_COMMIT"
         fi
     else
         local dev_hash=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-        echo "  Versione: $VERSION ($dev_hash)"
-        echo "  Ambiente: development"
+        echo "  Version: $VERSION ($dev_hash)"
+        echo "  Environment: development"
     fi
     echo ""
     
-    # Versioni
-    echo -e "${CYAN}Versioni Software:${NC}"
+    # Versions
+    echo -e "${CYAN}Software Versions:${NC}"
     echo "  Docker: $(docker --version | cut -d' ' -f3 | tr -d ',')"
     echo "  Docker Compose: $(docker compose version --short)"
     
     if command -v mkcert >/dev/null 2>&1; then
         echo "  mkcert: $(mkcert -version 2>&1 | head -1)"
     else
-        echo "  mkcert: non installato"
+        echo "  mkcert: not installed"
     fi
     
     if command -v dnsmasq >/dev/null 2>&1; then
-        echo "  dnsmasq: installato"
+        echo "  dnsmasq: installed"
     else
-        echo "  dnsmasq: non installato"
+        echo "  dnsmasq: not installed"
     fi
     
     echo ""
@@ -69,58 +69,58 @@ cmd_info() {
     # Proxy status
     echo -e "${CYAN}Reverse Proxy:${NC}"
     if docker ps | grep -q nginx-proxy; then
-        echo "  ✓ nginx-proxy in esecuzione"
+        echo "  ✓ nginx-proxy running"
         echo "    HTTP:  http://localhost:$HTTP_PORT"
         echo "    HTTPS: https://localhost:$HTTPS_PORT"
-        echo "  ✓ acme-companion per SSL"
+        echo "  ✓ acme-companion for SSL"
     else
-        echo "  ✗ Proxy non avviato"
-        echo "    Avvialo con: ./phpharbor setup proxy"
-        echo "    Porte configurate: HTTP=$HTTP_PORT, HTTPS=$HTTPS_PORT"
+        echo "  ✗ Proxy not started"
+        echo "    Start it with: ./phpharbor setup proxy"
+        echo "    Configured ports: HTTP=$HTTP_PORT, HTTPS=$HTTPS_PORT"
     fi
     
     echo ""
     
-    # Servizi condivisi
-    echo -e "${CYAN}Servizi Condivisi:${NC}"
+    # Shared services
+    echo -e "${CYAN}Shared Services:${NC}"
     local shared_count=0
     
     if docker ps | grep -q mysql-shared; then
-        echo "  ✓ MySQL condiviso (porta $MYSQL_SHARED_PORT)"
+        echo "  ✓ Shared MySQL (port $MYSQL_SHARED_PORT)"
         ((shared_count++))
     fi
     
     if docker ps | grep -q redis-shared; then
-        echo "  ✓ Redis condiviso (porta $REDIS_SHARED_PORT)"
+        echo "  ✓ Shared Redis (port $REDIS_SHARED_PORT)"
         ((shared_count++))
     fi
     
     local php_shared=$(docker ps --format "{{.Names}}" | grep "php-.*-shared" | wc -l | tr -d ' ')
     if [ "$php_shared" -gt 0 ]; then
-        echo "  ✓ PHP-FPM condivisi: $php_shared versioni attive"
+        echo "  ✓ Shared PHP-FPM: $php_shared active versions"
         docker ps --format "    - {{.Names}}" | grep "php-.*-shared"
         shared_count=$((shared_count + php_shared))
     fi
     
     if [ "$shared_count" -eq 0 ]; then
-        echo "  ✗ Nessun servizio condiviso attivo"
-        echo "    Avviali con: ./phpharbor shared start"
-        echo "    Porte configurate: MySQL=$MYSQL_SHARED_PORT, Redis=$REDIS_SHARED_PORT"
+        echo "  ✗ No shared services active"
+        echo "    Start them with: ./phpharbor shared start"
+        echo "    Configured ports: MySQL=$MYSQL_SHARED_PORT, Redis=$REDIS_SHARED_PORT"
     fi
     
     echo ""
     
-    # Progetti
-    echo -e "${CYAN}Progetti:${NC}"
+    # Projects
+    echo -e "${CYAN}Projects:${NC}"
     local total=$(ls -d "$PROJECTS_DIR"/*/ 2>/dev/null | wc -l | tr -d ' ')
     local running=$(docker ps --format "{{.Names}}" | grep -E "^(php|nginx|mysql|redis)-" | cut -d'-' -f2 | sort -u | wc -l | tr -d ' ')
     
-    echo "  Totali: $total"
-    echo "  Attivi: $running"
+    echo "  Total: $total"
+    echo "  Active: $running"
     
     if [ "$running" -gt 0 ]; then
         echo ""
-        echo "  Progetti in esecuzione:"
+        echo "  Running projects:"
         docker ps --format "{{.Names}}" | grep -E "^nginx-" | cut -d'-' -f2 | while read proj; do
             echo "    - $proj"
         done
@@ -128,40 +128,40 @@ cmd_info() {
     
     echo ""
     
-    # Architettura
-    echo -e "${CYAN}Architettura:${NC}"
-    echo "  Tipo: Ibrida (dedicati + condivisi)"
-    echo "  Configurazioni disponibili:"
-    echo "    - fully-shared: massimo risparmio (solo nginx per progetto)"
-    echo "    - shared-db: MySQL/Redis condivisi, PHP dedicato"
-    echo "    - shared-php: PHP condiviso, DB dedicato"
-    echo "    - dedicated: tutti i servizi dedicati"
+    # Architecture
+    echo -e "${CYAN}Architecture:${NC}"
+    echo "  Type: Hybrid (dedicated + shared)"
+    echo "  Available configurations:"
+    echo "    - fully-shared: maximum savings (only nginx per project)"
+    echo "    - shared-db: Shared MySQL/Redis, dedicated PHP"
+    echo "    - shared-php: Shared PHP, dedicated DB"
+    echo "    - dedicated: all dedicated services"
     
     echo ""
     
-    # Directory
-    echo -e "${CYAN}Percorsi:${NC}"
-    echo "  Progetti: $PROJECTS_DIR"
+    # Directories
+    echo -e "${CYAN}Paths:${NC}"
+    echo "  Projects: $PROJECTS_DIR"
     
-    # Mostra se config custom
+    # Show if custom config
     if [ -f "$CONFIG_FILE" ]; then
         local default_dir="$SCRIPT_DIR/projects"
         if [ "$PROJECTS_DIR" != "$default_dir" ]; then
-            echo "           ${GREEN}(configurazione personalizzata)${NC}"
-            echo "           Per cambiarla: phpharbor setup config"
+            echo "           ${GREEN}(custom configuration)${NC}"
+            echo "           To change it: phpharbor setup config"
         fi
     else
-        echo "           ${YELLOW}(default - configura con: phpharbor setup config)${NC}"
+        echo "           ${YELLOW}(default - configure with: phpharbor setup config)${NC}"
     fi
     
     echo "  Proxy: $SCRIPT_DIR/proxy"
-    echo "  Condivisi: $SCRIPT_DIR/shared"
+    echo "  Shared: $SCRIPT_DIR/shared"
     echo "  CLI: $SCRIPT_DIR/cli"
     
     echo ""
     
-    # Link utili
-    echo -e "${CYAN}Documentazione:${NC}"
+    # Useful links
+    echo -e "${CYAN}Documentation:${NC}"
     echo "  README: $SCRIPT_DIR/README.md"
     echo "  Docs: $SCRIPT_DIR/docs/"
     echo "  Quick Start: $SCRIPT_DIR/docs/quick-start.md"

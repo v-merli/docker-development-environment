@@ -1,19 +1,19 @@
-# 🔄 Guida Gestione Workers e Scheduler Laravel
+# 🔄 Laravel Workers and Scheduler Management Guide
 
-## Architettura Workers
+## Workers Architecture
 
-Ogni progetto Laravel ha container dedicati per i task in background:
+Each Laravel project has dedicated containers for background tasks:
 
 ### 📅 Scheduler Container
-**Automaticamente attivo** in tutti i progetti Laravel
+**Automatically active** in all Laravel projects
 
 ```bash
-# Container: {progetto}-scheduler
-# Funzione: Esegue php artisan schedule:run ogni 60 secondi
-# Sempre attivo ✅
+# Container: {project}-scheduler
+# Function: Runs php artisan schedule:run every 60 seconds
+# Always active ✅
 ```
 
-Il container scheduler esegue automaticamente i task schedulati in `app/Console/Kernel.php`:
+The scheduler container automatically executes scheduled tasks in `app/Console/Kernel.php`:
 
 ```php
 protected function schedule(Schedule $schedule)
@@ -24,14 +24,14 @@ protected function schedule(Schedule $schedule)
 ```
 
 ### ⚙️ Queue Worker Container
-**Commentato di default** - da abilitare se usi le code
+**Commented by default** - enable it if you use queues
 
-#### Come Abilitare il Queue Worker
+#### How to Enable the Queue Worker
 
-**1. Modifica docker-compose.yml del progetto:**
+**1. Modify the project's docker-compose.yml:**
 
 ```yaml
-# Decommenta questa sezione:
+# Uncomment this section:
   queue:
     build:
       context: ../../shared/dockerfiles
@@ -41,89 +41,89 @@ protected function schedule(Schedule $schedule)
     container_name: ${PROJECT_NAME}-queue
     restart: unless-stopped
     working_dir: /var/www/projects/${PROJECT_NAME}/app  # fully-shared
-    # working_dir: /var/www/html                         # dedicato
+    # working_dir: /var/www/html                         # dedicated
     volumes:
       - ./app:/var/www/projects/${PROJECT_NAME}/app     # fully-shared
-      # - ./app:/var/www/html                            # dedicato
+      # - ./app:/var/www/html                            # dedicated
     networks:
       - proxy  # fully-shared
-      # - backend  # dedicato
+      # - backend  # dedicated
     command: php artisan queue:work --tries=3
 ```
 
-**2. Riavvia il progetto:**
+**2. Restart the project:**
 
 ```bash
-cd projects/{nome-progetto}
+cd projects/{project-name}
 docker compose up -d --build
 ```
 
-**3. Verifica che sia attivo:**
+**3. Verify it's active:**
 
 ```bash
 docker ps | grep queue
 ```
 
-## 📊 Progetti Fully-Shared vs Dedicati
+## 📊 Fully-Shared vs Dedicated Projects
 
-### Fully-Shared (solo nginx + PHP condiviso)
+### Fully-Shared (only nginx + shared PHP)
 
 ```yaml
 services:
   nginx:              # Solo web server
   scheduler:          # ✅ Scheduler sempre attivo
-  # queue:            # ⚠️ Da abilitare se necessario
+  # queue:            # ⚠️ Enable if needed
 ```
 
-**Working Directory:** `/var/www/projects/{nome-progetto}/app`
+**Working Directory:** `/var/www/projects/{project-name}/app`
 
-### Dedicati (tutto locale)
+### Dedicated (everything local)
 
 ```yaml
 services:
-  app:                # Container PHP-FPM principale
+  app:                # Main PHP-FPM container
   nginx:              # Web server
-  mysql:              # Database dedicato
-  redis:              # Cache dedicata  
-  scheduler:          # ✅ Scheduler sempre attivo
-  # queue:            # ⚠️ Da abilitare se necessario
+  mysql:              # Dedicated database
+  redis:              # Dedicated cache  
+  scheduler:          # ✅ Scheduler always active
+  # queue:            # ⚠️ Enable if needed
 ```
 
 **Working Directory:** `/var/www/html`
 
-## 🛠️ Comandi Utili
+## 🛠️ Useful Commands
 
-### Monitorare lo Scheduler
+### Monitor the Scheduler
 
 ```bash
-# Visualizza log scheduler
-docker logs {progetto}-scheduler -f
+# View scheduler logs
+docker logs {project}-scheduler -f
 
-# Esegui manualmente il scheduler
-./phpharborshell {progetto}
+# Manually run the scheduler
+./phpharbor shell {project}
 php artisan schedule:run
 ```
 
-### Gestire Queue Workers
+### Manage Queue Workers
 
 ```bash
-# Visualizza log queue worker
-docker logs {progetto}-queue -f
+# View queue worker logs
+docker logs {project}-queue -f
 
-# Visualizza job in coda
-./phpharborshell {progetto}
-php artisan queue:work --once    # Esegui un solo job
-php artisan queue:restart        # Riavvia tutti i worker
-php artisan queue:failed         # Lista job falliti
-php artisan queue:retry 1        # Riprova job fallito ID 1
+# View queued jobs
+./phpharbor shell {project}
+php artisan queue:work --once    # Execute a single job
+php artisan queue:restart        # Restart all workers
+php artisan queue:failed         # List failed jobs
+php artisan queue:retry 1        # Retry failed job ID 1
 ```
 
-### Testare Scheduler e Queue
+### Test Scheduler and Queue
 
 **Test Scheduler:**
 
 ```php
-// routes/console.php o app/Console/Kernel.php
+// routes/console.php or app/Console/Kernel.php
 $schedule->call(function () {
     \Log::info('Scheduler test: ' . now());
 })->everyMinute();
@@ -139,14 +139,14 @@ Route::get('/test-queue', function () {
 });
 ```
 
-## 🚀 Supervisor (Avanzato)
+## 🚀 Supervisor (Advanced)
 
-Per configurazioni più complesse, puoi usare Supervisor nel container:
+For more complex configurations, you can use Supervisor in the container:
 
-**1. Crea configurazione Supervisor:**
+**1. Create Supervisor configuration:**
 
 ```bash
-# projects/{progetto}/supervisor/laravel-worker.conf
+# projects/{project}/supervisor/laravel-worker.conf
 [program:laravel-worker]
 process_name=%(program_name)s_%(process_num)02d
 command=php /var/www/html/artisan queue:work --tries=3
@@ -161,7 +161,7 @@ stdout_logfile=/var/www/html/storage/logs/worker.log
 stopwaitsecs=3600
 ```
 
-**2. Modifica docker-compose.yml:**
+**2. Modify docker-compose.yml:**
 
 ```yaml
 queue:
@@ -174,72 +174,72 @@ queue:
 
 ## 📈 Scaling Workers
 
-Per progetti con alto carico di code:
+For projects with high queue load:
 
 ```yaml
 queue:
-  # ... configurazione base ...
+  # ... base configuration ...
   command: php artisan queue:work --tries=3 --max-jobs=1000 --max-time=3600
   deploy:
-    replicas: 3  # 3 worker simultanei
+    replicas: 3  # 3 simultaneous workers
 ```
 
-Oppure crea worker separati per code diverse:
+Or create separate workers for different queues:
 
 ```yaml
 queue-emails:
-  # ... configurazione ...
+  # ... configuration ...
   command: php artisan queue:work --queue=emails --tries=3
 
 queue-reports:
-  # ... configurazione ...
+  # ... configuration ...
   command: php artisan queue:work --queue=reports --tries=5
 ```
 
-## ⚠️ Note Importanti
+## ⚠️ Important Notes
 
-1. **Scheduler è sempre attivo** - non serve configurazione
-2. **Queue worker è commentato** - abilitalo solo se usi le code
-3. **Progetti fully-shared** montano in `/var/www/projects/{progetto}/app`
-4. **Progetti dedicati** montano in `/var/www/html`
-5. **Riavvia i container** dopo modifiche a docker-compose.yml
-6. **Log persistenti** in `storage/logs/` del progetto
+1. **Scheduler is always active** - no configuration needed
+2. **Queue worker is commented** - enable it only if you use queues
+3. **Fully-shared projects** mount in `/var/www/projects/{project}/app`
+4. **Dedicated projects** mount in `/var/www/html`
+5. **Restart containers** after changes to docker-compose.yml
+6. **Persistent logs** in project's `storage/logs/`
 
 ## 🐛 Troubleshooting
 
-### Scheduler non esegue i task
+### Scheduler not executing tasks
 
 ```bash
-# Verifica che il container sia attivo
+# Verify the container is active
 docker ps | grep scheduler
 
-# Controlla i log
-docker logs {progetto}-scheduler -f
+# Check logs
+docker logs {project}-scheduler -f
 
-# Test manuale
-./phpharborshell {progetto}
-php artisan schedule:list  # Lista task schedulati
+# Manual test
+./phpharbor shell {project}
+php artisan schedule:list  # List scheduled tasks
 ```
 
-### Queue worker non processa job
+### Queue worker not processing jobs
 
 ```bash
-# Verifica configurazione queue
-cat projects/{progetto}/app/.env | grep QUEUE
+# Check queue configuration
+cat projects/{project}/app/.env | grep QUEUE
 
-# Verifica connessione Redis/Database
-./phpharborshell {progetto}
+# Verify Redis/Database connection
+./phpharbor shell {project}
 php artisan queue:monitor redis:default
 
-# Riavvia worker
-cd projects/{progetto}
+# Restart worker
+cd projects/{project}
 docker compose restart queue
 ```
 
-### Job bloccati in elaborazione
+### Jobs stuck in processing
 
 ```bash
-./phpharborshell {progetto}
-php artisan queue:restart  # Riavvia tutti i worker
-php artisan queue:clear    # Pulisci code (ATTENZIONE!)
+./phpharbor shell {project}
+php artisan queue:restart  # Restart all workers
+php artisan queue:clear    # Clear queues (CAUTION!)
 ```

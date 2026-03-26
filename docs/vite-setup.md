@@ -1,14 +1,14 @@
-# Configurazione Vite per Docker
+# Vite Configuration for Docker
 
-Questa guida spiega come utilizzare Vite (con `npm run dev`) nei progetti Docker per il supporto HMR (Hot Module Replacement).
+This guide explains how to use Vite (with `npm run dev`) in Docker projects for HMR (Hot Module Replacement) support.
 
-## Porta Vite
+## Vite Port
 
-Tutti i template Docker sono configurati per esporre automaticamente la **porta 5173** (porta predefinita di Vite) dal container al tuo host.
+All Docker templates are configured to automatically expose **port 5173** (Vite's default port) from the container to your host.
 
-### Configurazione Docker Compose
+### Docker Compose Configuration
 
-La porta è configurata nei container `app` con:
+The port is configured in the `app` container with:
 
 ```yaml
 services:
@@ -17,15 +17,15 @@ services:
       - "${VITE_PORT:-5173}:5173"
 ```
 
-Puoi personalizzare la porta dell'host tramite la variabile d'ambiente `VITE_PORT` nel file `.env` del progetto, se necessario:
+You can customize the host port via the `VITE_PORT` environment variable in the project's `.env` file if needed:
 
 ```env
-VITE_PORT=5174  # Usa una porta diversa se 5173 è già occupata
+VITE_PORT=5174  # Use a different port if 5173 is already occupied
 ```
 
-## Configurazione Vite
+## Vite Configuration
 
-Per far funzionare Vite correttamente in Docker, devi configurare il file `vite.config.ts` o `vite.config.js` del tuo progetto Laravel:
+To make Vite work correctly in Docker, you need to configure your Laravel project's `vite.config.ts` or `vite.config.js` file:
 
 ```typescript
 import laravel from 'laravel-vite-plugin';
@@ -39,27 +39,27 @@ export default defineConfig({
         }),
     ],
     server: {
-        // Ascolta su tutte le interfacce di rete (necessario per Docker)
+        // Listen on all network interfaces (required for Docker)
         host: '0.0.0.0',
         
-        // Porta Vite (deve corrispondere alla porta esposta in docker-compose)
+        // Vite port (must match the exposed port in docker-compose)
         port: 5173,
         
-        // Fallisce se la porta non è disponibile
+        // Fails if port is not available
         strictPort: true,
         
-        // Configurazione HMR
+        // HMR configuration
         hmr: {
-            // Usa localhost per connettersi direttamente alla porta esposta
-            // Necessario perché accedi all'app via proxy (es: myproject.test:8443)
-            // ma il proxy non espone la porta 5173
+            // Use localhost to connect directly to exposed port
+            // Necessary because you access the app via proxy (e.g., myproject.test:8443)
+            // but the proxy doesn't expose port 5173
             host: 'localhost',
             
-            // Porta su cui il browser si connette (la porta esposta dal container)
+            // Port on which the browser connects (exposed container port)
             clientPort: 5173,
         },
         
-        // Usa polling per il file watching (necessario per Docker su macOS/Windows)
+        // Use polling for file watching (required for Docker on macOS/Windows)
         watch: {
             usePolling: true,
         },
@@ -67,35 +67,35 @@ export default defineConfig({
 });
 ```
 
-### Configurazione .env
+### .env Configuration
 
-Nel file `.env` del progetto Laravel, assicurati che `VITE_DEV_SERVER_URL` punti correttamente a `localhost`:
+In the Laravel project's `.env` file, make sure `VITE_DEV_SERVER_URL` points correctly to `localhost`:
 
 ```env
 VITE_DEV_SERVER_URL=http://localhost:5173
 ```
 
-Questa variabile viene usata da Laravel (lato server PHP) per capire se Vite è in esecuzione in modalità dev. Laravel tenta di connettersi a questo URL per verificare se il dev server è attivo. Dato che Laravel e Vite girano nello stesso container (`app`), usa `localhost`.
+This variable is used by Laravel (server-side PHP) to understand if Vite is running in dev mode. Laravel attempts to connect to this URL to verify if the dev server is active. Since Laravel and Vite run in the same container (`app`), use `localhost`.
 
-**Nota**: Questo valore è anche il default di Laravel Vite Plugin, quindi puoi ometterlo se usi la porta 5173 standard.
+**Note**: This value is also the default of Laravel Vite Plugin, so you can omit it if you use standard port 5173.
 
-### Parametri importanti:
+### Important parameters:
 
-- **`host: '0.0.0.0'`**: Permette a Vite di accettare connessioni dall'esterno del container
-- **`port: 5173`**: Porta su cui Vite ascolta (deve corrispondere a docker-compose)
-- **`strictPort: true`**: Previene fallback su porte diverse se 5173 è occupata
-- **`hmr.host: 'localhost'`**: **IMPORTANTE!** Forza la connessione HMR a `localhost` invece che al dominio del proxy
-- **`hmr.clientPort: 5173`**: La porta su cui il browser si connette (la porta esposta dal container)
-- **`watch.usePolling: true`**: Necessario per Docker su macOS e Windows per rilevare i cambiamenti ai file
+- **`host: '0.0.0.0'`**: Allows Vite to accept connections from outside the container
+- **`port: 5173`**: Port on which Vite listens (must match docker-compose)
+- **`strictPort: true`**: Prevents fallback to different ports if 5173 is occupied
+- **`hmr.host: 'localhost'`**: **IMPORTANT!** Forces HMR connection to `localhost` instead of proxy domain
+- **`hmr.clientPort: 5173`**: Port on which the browser connects (exposed container port)
+- **`watch.usePolling: true`**: Necessary for Docker on macOS and Windows to detect file changes
 
-### Perché serve la configurazione HMR?
+### Why is HMR configuration needed?
 
-Senza la configurazione HMR, Vite userebbe automaticamente `window.location.hostname` per la connessione WebSocket. Ma:
-- Accedi all'app via: `https://myproject.test:8443` (tramite proxy)
-- Vite tenterebbe: `ws://myproject.test:5173`
-- **Problema**: Il proxy non espone la porta 5173
+Without HMR configuration, Vite would automatically use `window.location.hostname` for the WebSocket connection. But:
+- You access the app via: `https://myproject.test:8443` (through proxy)
+- Vite would try: `ws://myproject.test:5173`
+- **Problem**: The proxy doesn't expose port 5173
 
-Quindi forziamo `hmr.host: 'localhost'` per connettersi direttamente alla porta esposta dal container, bypassando il proxy.
+So we force `hmr.host: 'localhost'` to connect directly to the exposed container port, bypassing the proxy.
 
 ## Utilizzo
 
@@ -117,34 +117,34 @@ Quindi forziamo `hmr.host: 'localhost'` per connettersi direttamente alla porta 
 
 ## Risoluzione Problemi
 
-### HMR non funziona
+### HMR not working
 
-1. **Verifica che la porta sia esposta**: Controlla con `docker ps` che il container app esponga la porta 5173:
+1. **Verify port is exposed**: Check with `docker ps` that the app container exposes port 5173:
    ```bash
    docker ps --filter "name=myproject-app"
    ```
-   Dovresti vedere: `0.0.0.0:5173->5173/tcp`
+   You should see: `0.0.0.0:5173->5173/tcp`
 
-2. **Se la porta non è esposta**, ricrea i container (un semplice restart non basta):
+2. **If port is not exposed**, recreate containers (a simple restart isn't enough):
    ```bash
    cd projects/myproject
    docker compose down
    docker compose up -d
    ```
 
-3. **Controlla la console del browser**: Cerca errori WebSocket
-4. **Verifica la configurazione HMR**: Usa `hmr.host: 'localhost'` e `hmr.clientPort: 5173`
+3. **Check browser console**: Look for WebSocket errors
+4. **Verify HMR configuration**: Use `hmr.host: 'localhost'` and `hmr.clientPort: 5173`
 
-### Porta 5173 già in uso
+### Port 5173 already in use
 
-Se hai più progetti che usano Vite contemporaneamente, ogni progetto deve usare una porta diversa:
+If you have multiple projects using Vite simultaneously, each project must use a different port:
 
-1. Aggiungi `VITE_PORT` al file `.env` del progetto con una porta diversa:
+1. Add `VITE_PORT` to the project's `.env` file with a different port:
    ```env
    VITE_PORT=5174
    ```
 
-2. Aggiorna la porta in `vite.config.ts`:
+2. Update the port in `vite.config.ts`:
    ```typescript
    server: {
        port: 5174,
@@ -154,26 +154,26 @@ Se hai più progetti che usano Vite contemporaneamente, ogni progetto deve usare
    }
    ```
 
-3. Ricrea i container:
+3. Recreate containers:
    ```bash
    cd projects/myproject
    docker compose down
    docker compose up -d
    ```
 
-4. Verifica che la nuova porta sia esposta:
+4. Verify the new port is exposed:
    ```bash
    docker ps --filter "name=myproject-app"
-   # Dovresti vedere: 0.0.0.0:5174->5174/tcp
+   # You should see: 0.0.0.0:5174->5174/tcp
    ```
 
-### File watcher non funziona
+### File watcher not working
 
-Se le modifiche ai file non vengono rilevate automaticamente, assicurati di avere `watch.usePolling: true` nella configurazione Vite.
+If file changes are not detected automatically, make sure you have `watch.usePolling: true` in Vite configuration.
 
-## Esempi
+## Examples
 
-Vedi i file `vite.config.ts` nei progetti esistenti per esempi di configurazione funzionanti:
+See the `vite.config.ts` files in existing projects for working configuration examples:
 
 - `projects/fast-labels/app/vite.config.ts`
 - `projects/my-spots-list/app/vite.config.ts`

@@ -1,150 +1,150 @@
 #!/bin/bash
 
 # Module: Create
-# Comando: create - Crea nuovo progetto
+# Command: create - Create new project
 
 # ==================================================
-# MODALITÀ INTERATTIVA
+# INTERACTIVE MODE
 # ==================================================
 interactive_create() {
-    print_title "Creazione Progetto Interattiva"
+    print_title "Interactive Project Creation"
     echo ""
     
-    # Nome progetto
-    read -p "$(echo -e "${CYAN}Nome progetto:${NC} ")" PROJECT_NAME
+    # Project name
+    read -p "$(echo -e "${CYAN}Project name:${NC} ")" PROJECT_NAME
     if [ -z "$PROJECT_NAME" ]; then
-        print_error "Nome progetto obbligatorio"
+        print_error "Project name is required"
         exit 1
     fi
     echo ""
     
-    # Tipo progetto
-    print_info "Tipo progetto:"
-    PS3="$(echo -e "${CYAN}Scegli (1-4):${NC} ")"
+    # Project type
+    print_info "Project type:"
+    PS3="$(echo -e "${CYAN}Choose (1-4):${NC} ")"
     select type in "Laravel" "WordPress" "PHP" "HTML"; do
         case $type in
             Laravel) PROJECT_TYPE="laravel"; break;;
             WordPress) PROJECT_TYPE="wordpress"; break;;
             PHP) PROJECT_TYPE="php"; break;;
             HTML) PROJECT_TYPE="html"; break;;
-            *) echo "Scelta non valida";;
+            *) echo "Invalid choice";;
         esac
     done
     echo ""
     
-    # Versione PHP (solo se non HTML)
+    # PHP version (only if not HTML)
     if [ "$PROJECT_TYPE" != "html" ]; then
-        print_info "Versione PHP:"
-        PS3="$(echo -e "${CYAN}Scegli (1-7):${NC} ")"
+        print_info "PHP version:"
+        PS3="$(echo -e "${CYAN}Choose (1-7):${NC} ")"
         select php in "8.5" "8.4" "8.3" "8.2" "8.1" "7.4" "7.3"; do
             case $php in
                 8.5|8.4|8.3|8.2|8.1|7.4|7.3) PHP_VERSION="$php"; break;;
-                *) echo "Scelta non valida";;
+                *) echo "Invalid choice";;
             esac
         done
         echo ""
     fi
     
-    # Versione Node (solo per Laravel)
+    # Node version (Laravel only)
     if [ "$PROJECT_TYPE" == "laravel" ]; then
-        print_info "Versione Node.js:"
-        PS3="$(echo -e "${CYAN}Scegli (1-3):${NC} ")"
+        print_info "Node.js version:"
+        PS3="$(echo -e "${CYAN}Choose (1-3):${NC} ")"
         select node in "20 (LTS)" "21" "18"; do
             case $node in
                 "20 (LTS)") NODE_VERSION="20"; break;;
                 "21") NODE_VERSION="21"; break;;
                 "18") NODE_VERSION="18"; break;;
-                *) echo "Scelta non valida";;
+                *) echo "Invalid choice";;
             esac
         done
         echo ""
     fi
     
     # Database
-    print_info "Database MySQL:"
-    PS3="$(echo -e "${CYAN}Scegli (1-3):${NC} ")"
-    select db_choice in "Dedicato" "Condiviso" "Nessuno"; do
+    print_info "MySQL Database:"
+    PS3="$(echo -e "${CYAN}Choose (1-3):${NC} ")"
+    select db_choice in "Dedicated" "Shared" "None"; do
         case $db_choice in
-            "Dedicato")
+            "Dedicated")
                 INCLUDE_DB=true
                 USE_SHARED_DB=false
                 
-                # Versione MySQL
-                print_info "Versione MySQL:"
-                PS3="$(echo -e "${CYAN}Scegli (1-2):${NC} ")"
+                # MySQL version
+                print_info "MySQL version:"
+                PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
                 select mysql in "8.0" "5.7"; do
                     case $mysql in
                         8.0|5.7) MYSQL_VERSION="$mysql"; break;;
-                        *) echo "Scelta non valida";;
+                        *) echo "Invalid choice";;
                     esac
                 done
                 break
                 ;;
-            "Condiviso")
+            "Shared")
                 INCLUDE_DB=true
                 USE_SHARED_DB=true
                 break
                 ;;
-            "Nessuno")
+            "None")
                 INCLUDE_DB=false
                 break
                 ;;
-            *) echo "Scelta non valida";;
+            *) echo "Invalid choice";;
         esac
     done
     echo ""
     
     # Redis
-    print_info "Cache Redis:"
-    PS3="$(echo -e "${CYAN}Scegli (1-3):${NC} ")"
-    select redis_choice in "Dedicato" "Condiviso" "Nessuno"; do
+    print_info "Redis Cache:"
+    PS3="$(echo -e "${CYAN}Choose (1-3):${NC} ")"
+    select redis_choice in "Dedicated" "Shared" "None"; do
         case $redis_choice in
-            "Dedicato")
+            "Dedicated")
                 INCLUDE_REDIS=true
                 USE_SHARED_REDIS=false
                 break
                 ;;
-            "Condiviso")
+            "Shared")
                 INCLUDE_REDIS=true
                 USE_SHARED_REDIS=true
                 break
                 ;;
-            "Nessuno")
+            "None")
                 INCLUDE_REDIS=false
                 break
                 ;;
-            *) echo "Scelta non valida";;
+            *) echo "Invalid choice";;
         esac
     done
     echo ""
     
-    # PHP condiviso per scheduler/queue (solo Laravel)
+    # Shared PHP for scheduler/queue (only Laravel)
     if [ "$PROJECT_TYPE" == "laravel" ]; then
-        print_info "PHP per Scheduler/Queue:"
-        PS3="$(echo -e "${CYAN}Scegli (1-2):${NC} ")"
-        select php_choice in "Dedicato (immagine progetto)" "Condiviso (php-shared)"; do
+        print_info "PHP for Scheduler/Queue:"
+        PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
+        select php_choice in "Dedicated (project image)" "Shared (php-shared)"; do
             case $php_choice in
-                "Dedicato"*)
+                "Dedicated"*)
                     USE_SHARED_PHP=false
                     break
                     ;;
-                "Condiviso"*)
+                "Shared"*)
                     USE_SHARED_PHP=true
                     break
                     ;;
-                *) echo "Scelta non valida";;
+                *) echo "Invalid choice";;
             esac
         done
         echo ""
     fi
     
-    # Installare il framework
+    # Install framework
     if [ "$PROJECT_TYPE" == "laravel" ] || [ "$PROJECT_TYPE" == "wordpress" ]; then
-        print_info "Installare $PROJECT_TYPE automaticamente?"
-        PS3="$(echo -e "${CYAN}Scegli (1-2):${NC} ")"
-        select install in "Sì" "No"; do
+        print_info "Install $PROJECT_TYPE automatically?"
+        PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
+        select install in "Yes" "No"; do
             case $install in
-                "Sì")
+                "Yes")
                     INSTALL_FRAMEWORK=true
                     break
                     ;;
@@ -152,13 +152,13 @@ interactive_create() {
                     INSTALL_FRAMEWORK=false
                     break
                     ;;
-                *) echo "Scelta non valida";;
+                *) echo "Invalid choice";;
             esac
         done
         echo ""
     fi
     
-    # Costruisci comando e chiama la funzione di creazione
+    # Build command and call creation function
     local cmd_args=("$PROJECT_NAME")
     [ "$PROJECT_TYPE" != "laravel" ] && cmd_args+=(--type "$PROJECT_TYPE")
     [ -n "$PHP_VERSION" ] && cmd_args+=(--php "$PHP_VERSION")
@@ -171,21 +171,21 @@ interactive_create() {
     [ "$INCLUDE_REDIS" == false ] && cmd_args+=(--no-redis)
     [ "$INSTALL_FRAMEWORK" == false ] && cmd_args+=(--no-install)
     
-    # Chiama la funzione principale con i parametri raccolti
+    # Call main function with collected parameters
     cmd_create "${cmd_args[@]}"
 }
 
 # ==================================================
-# COMANDO CREATE
+# CREATE COMMAND
 # ==================================================
 cmd_create() {
-    # Check per --help
+    # Check for --help
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
         show_create_usage
         exit 0
     fi
     
-    # Valori di default
+    # Default values
     local PROJECT_TYPE="laravel"
     local PHP_VERSION="8.3"
     local NODE_VERSION="20"
@@ -197,7 +197,7 @@ cmd_create() {
     local USE_SHARED_PHP=false
     local INSTALL_FRAMEWORK=true
     
-    # Parse argomenti - se vuoto, modalità interattiva
+    # Parse arguments - if empty, interactive mode
     if [ $# -eq 0 ]; then
         interactive_create
         return
@@ -282,16 +282,16 @@ cmd_create() {
                 shift
                 ;;
             *)
-                print_error "Opzione sconosciuta: $1"
+                print_error "Unknown option: $1"
                 show_create_usage
                 exit 1
                 ;;
         esac
     done
     
-    # Validazione
+    # Validation
     if [[ ! "$PROJECT_TYPE" =~ ^(laravel|wordpress|php|html)$ ]]; then
-        print_error "Tipo progetto non supportato: $PROJECT_TYPE"
+        print_error "Unsupported project type: $PROJECT_TYPE"
         exit 1
     fi
     
@@ -303,56 +303,56 @@ cmd_create() {
     fi
     
     if [[ -n "$PHP_VERSION" ]] && [[ ! "$PHP_VERSION" =~ ^(7.3|7.4|8.1|8.2|8.3|8.4|8.5)$ ]]; then
-        print_error "Versione PHP non supportata: $PHP_VERSION"
+        print_error "Unsupported PHP version: $PHP_VERSION"
         exit 1
     fi
     
-    # Genera nomi e percorsi
+    # Generate names and paths
     local PROJECT_SLUG=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
     local DOMAIN="$PROJECT_SLUG.test"
     local PROJECT_PATH="$PROJECTS_DIR/$PROJECT_SLUG"
     
-    # Mostra riepilogo
-    print_title "Creazione Nuovo Progetto"
+    # Show summary
+    print_title "Creating New Project"
     echo ""
-    echo "Nome:      $PROJECT_NAME"
-    echo "Tipo:      $PROJECT_TYPE"
-    echo "Dominio:   $DOMAIN"
+    echo "Name:      $PROJECT_NAME"
+    echo "Type:      $PROJECT_TYPE"
+    echo "Domain:    $DOMAIN"
     if [[ -n "$PHP_VERSION" ]]; then
         if [[ "$USE_SHARED_PHP" == true ]]; then
-            echo "PHP:       Condiviso $PHP_VERSION"
+            echo "PHP:       Shared $PHP_VERSION"
         else
-            echo "PHP:       Dedicato $PHP_VERSION"
+            echo "PHP:       Dedicated $PHP_VERSION"
         fi
     fi
     if [[ "$INCLUDE_DB" == true ]]; then
         if [[ "$USE_SHARED_DB" == true ]]; then
-            echo "MySQL:     Condiviso"
+            echo "MySQL:     Shared"
         else
-            echo "MySQL:     Dedicato $MYSQL_VERSION"
+            echo "MySQL:     Dedicated $MYSQL_VERSION"
         fi
     fi
     if [[ "$INCLUDE_REDIS" == true ]]; then
         if [[ "$USE_SHARED_REDIS" == true ]]; then
-            echo "Redis:     Condiviso"
+            echo "Redis:     Shared"
         else
-            echo "Redis:     Dedicato"
+            echo "Redis:     Dedicated"
         fi
     fi
     echo ""
     
-    # Verifica esistenza
+    # Check existence
     if [ -d "$PROJECT_PATH" ]; then
-        print_error "Il progetto '$PROJECT_SLUG' esiste già"
+        print_error "Project '$PROJECT_SLUG' already exists"
         exit 1
     fi
     
-    # Crea struttura
-    print_info "Creazione struttura directory..."
+    # Create structure
+    print_info "Creating directory structure..."
     mkdir -p "$PROJECT_PATH/app"
     
-    # Seleziona template docker-compose
-    # Ora usiamo SEMPRE il template unificato
+    # Select docker-compose template
+    # Now we ALWAYS use the unified template
     local NGINX_CONF=""
     
     case $PROJECT_TYPE in
@@ -361,7 +361,7 @@ cmd_create() {
             cp "$SCRIPT_DIR/shared/templates/docker-compose-html.yml" "$PROJECT_PATH/docker-compose.yml"
             ;;
         *)
-            # Laravel, WordPress, PHP usano il template unificato
+            # Laravel, WordPress, PHP use the unified template
             case $PROJECT_TYPE in
                 wordpress) NGINX_CONF="wordpress.conf" ;;
                 php) NGINX_CONF="php.conf" ;;
@@ -371,48 +371,48 @@ cmd_create() {
                     else
                         NGINX_CONF="laravel.conf"
                     fi
-                    ;;
+                    ;;  
             esac
             
-            # Copia template unificato
+            # Copy unified template
             cp "$SCRIPT_DIR/shared/templates/docker-compose-unified.yml" "$PROJECT_PATH/docker-compose.yml"
             
-            # Genera nginx.conf per progetti PHP condiviso
+            # Generate nginx.conf for shared PHP projects
             if [[ "$USE_SHARED_PHP" == true ]]; then
-                print_info "Configurazione Nginx per PHP condiviso..."
+                print_info "Configuring Nginx for shared PHP..."
                 sed -e "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" \
                     -e "s/PHP_VERSION_PLACEHOLDER/php-$PHP_VERSION/g" \
                     "$SCRIPT_DIR/shared/nginx/laravel-shared.conf" > "$PROJECT_PATH/nginx.conf"
-                # Imposta NGINX_CONF per montare il file locale invece del template
+                # Set NGINX_CONF to mount the local file instead of the template
                 NGINX_CONF="./nginx.conf"
             fi
             ;;
     esac
     
-    # Crea .env con configurazione unificata
+    # Create .env with unified configuration
     create_unified_env_file "$PROJECT_PATH" "$PROJECT_SLUG" "$PROJECT_TYPE" "$DOMAIN" "$NGINX_CONF" \
                     "$PHP_VERSION" "$NODE_VERSION" "$MYSQL_VERSION" \
                     "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP"
     
-    print_success "Struttura progetto creata"
+    print_success "Project structure created"
     
-    # Verifica rete proxy
+    # Check proxy network
     if ! docker network inspect proxy &> /dev/null; then
-        print_info "Avvio reverse proxy..."
+        print_info "Starting reverse proxy..."
         cd "$SCRIPT_DIR/proxy"
         $DOCKER_COMPOSE up -d nginx-proxy acme-companion
         cd "$SCRIPT_DIR"
         sleep 3
     fi
     
-    # Avvia servizi condivisi
+    # Start shared services
     start_shared_if_needed "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$PHP_VERSION"
     
-    # Avvia container del progetto
-    print_info "Avvio container..."
+    # Start project containers
+    print_info "Starting containers..."
     cd "$PROJECT_PATH"
     
-    # Costruisci i flag --profile basandosi sul .env
+    # Build the --profile flags based on .env
     local profile_flags="--profile app"
     
     if [[ "$INCLUDE_DB" == true ]] && [[ "$USE_SHARED_DB" != true ]]; then
@@ -423,69 +423,69 @@ cmd_create() {
         profile_flags="$profile_flags --profile redis-dedicated"
     fi
     
-    # Attiva sempre scheduler/queue per progetti Laravel
-    # I container aspetteranno che artisan esista prima di partire
+    # Always enable scheduler/queue for Laravel projects
+    # Containers will wait for artisan to exist before starting
     if [[ "$PROJECT_TYPE" == "laravel" ]]; then
         profile_flags="$profile_flags --profile scheduler --profile queue"
     fi
     
-    # Build delle immagini necessarie
-    print_info "Build immagine app..."
+    # Build required images
+    print_info "Building app image..."
     $DOCKER_COMPOSE build app
     
-    # Avvia i container con i profili appropriati
+    # Start containers with appropriate profiles
     $DOCKER_COMPOSE $profile_flags up -d
     
-    # Genera SSL
+    # Generate SSL
     generate_ssl_cert "$DOMAIN"
     
-    print_info "Attesa avvio container..."
+    print_info "Waiting for containers to start..."
     sleep 5
     
-    # Installa framework
+    # Install framework
     if [ "$INSTALL_FRAMEWORK" = true ]; then
         install_framework "$PROJECT_TYPE" "$PROJECT_PATH" "$PROJECT_SLUG" "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$PHP_VERSION"
     fi
     
-    # Copia configurazione VS Code per Xdebug (sempre, tranne per HTML)
+    # Copy VS Code configuration for Xdebug (always, except for HTML)
     if [ "$PROJECT_TYPE" != "html" ]; then
-        print_info "Configurazione VS Code per Xdebug..."
+        print_info "Configuring VS Code for Xdebug..."
         mkdir -p "$PROJECT_PATH/app/.vscode"
         if [ -f "$SCRIPT_DIR/shared/templates/vscode/launch.json" ]; then
             cp "$SCRIPT_DIR/shared/templates/vscode/launch.json" "$PROJECT_PATH/app/.vscode/"
             cp "$SCRIPT_DIR/shared/templates/vscode/XDEBUG-GUIDE.md" "$PROJECT_PATH/app/" 2>/dev/null || true
-            print_success "Configurazione VS Code e guida Xdebug aggiunte"
+            print_success "VS Code configuration and Xdebug guide added"
         fi
     fi
     
-    # Riepilogo finale
+    # Final summary
     show_project_summary "$PROJECT_TYPE" "$DOMAIN" "$PROJECT_PATH" "$INSTALL_FRAMEWORK" "$INCLUDE_DB"
 }
 
 show_create_usage() {
-    echo "Uso: ./phpharbor create <nome> [opzioni]"
+    echo "Usage: ./phpharbor create <name> [options]"
     echo ""
-    echo "Opzioni:"
-    echo "  --type <tipo>         Tipo: laravel, wordpress, php, html (default: laravel)"
-    echo "  --php <versione>      Versione PHP: 7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5 (default: 8.3)"
-    echo "  --node <versione>     Versione Node.js: 18, 20, 21 (default: 20)"
-    echo "  --mysql <versione>    Versione MySQL: 5.7, 8.0 (default: 8.0)"
+    echo "Options:"
+    echo "  --type <type>         Type: laravel, wordpress, php, html (default: laravel)"
+    echo "  --php <version>       PHP version: 7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5 (default: 8.3)"
+    echo "  --node <version>      Node.js version: 18, 20, 21 (default: 20)"
+    echo "  --mysql <version>     MySQL version: 5.7, 8.0 (default: 8.0)"
     echo ""
-    echo "Cherry-picking servizi condivisi:"
-    echo "  --shared-db           Usa MySQL condiviso"
-    echo "  --shared-redis        Usa Redis condiviso"
-    echo "  --shared-php          Scheduler/Queue usano PHP condiviso"
-    echo "  --no-db               Senza MySQL"
-    echo "  --no-redis            Senza Redis"
+    echo "Cherry-picking shared services:"
+    echo "  --shared-db           Use shared MySQL"
+    echo "  --shared-redis        Use shared Redis"
+    echo "  --shared-php          Scheduler/Queue use shared PHP"
+    echo "  --no-db               Without MySQL"
+    echo "  --no-redis            Without Redis"
     echo ""
-    echo "Preset (shortcut):"
-    echo "  --shared              Equivalente a: --shared-db --shared-redis"
-    echo "  --fully-shared        Equivalente a: --shared-db --shared-redis --shared-php"
+    echo "Presets (shortcuts):"
+    echo "  --shared              Equivalent to: --shared-db --shared-redis"
+    echo "  --fully-shared        Equivalent to: --shared-db --shared-redis --shared-php"
     echo ""
-    echo "Altro:"
-    echo "  --no-install          Non installare framework"
+    echo "Other:"
+    echo "  --no-install          Don't install framework"
     echo ""
-    echo "Esempi:"
+    echo "Examples:"
     echo "  ./phpharbor create my-shop"
     echo "  ./phpharbor create blog --shared-db --shared-redis"
     echo "  ./phpharbor create api --fully-shared"
@@ -497,7 +497,7 @@ create_unified_env_file() {
     local php_ver=$6 node_ver=$7 mysql_ver=$8
     local inc_db=$9 inc_redis=${10} shared_db=${11} shared_redis=${12} shared_php=${13}
     
-    # Determina servizi e configurazione
+    # Determine services and configuration
     local db_service="mysql"
     local db_host="mysql"
     local redis_service="redis"
@@ -525,12 +525,12 @@ create_unified_env_file() {
         queue_image="proxy-php-\${PHP_VERSION}-shared"
     fi
     
-    # Aggiungi sempre scheduler ai profiles per progetti con PHP
+    # Always add scheduler to profiles for PHP projects
     if [[ -n "$php_ver" ]] && [[ "$type" == "laravel" ]]; then
         profiles="$profiles scheduler"
     fi
     
-    # Crea .env
+    # Create .env
     cat > "$path/.env" << EOF
 # ============================================
 # PROJECT BASICS
@@ -545,9 +545,9 @@ LETSENCRYPT_EMAIL=dev@localhost
 # ============================================
 EOF
 
-    # Determina path nginx.conf in base al tipo di configurazione
+    # Determine nginx.conf path based on configuration type
     if [[ "$nginx_conf" == "./"* ]]; then
-        # Path locale (per shared-php)
+        # Local path (for shared-php)
         cat >> "$path/.env" << EOF
 NGINX_CONF_PATH=$nginx_conf
 EOF
@@ -741,17 +741,17 @@ start_shared_if_needed() {
         return
     fi
     
-    print_info "Verifica servizi condivisi..."
+    print_info "Checking shared services..."
     cd "$SCRIPT_DIR/proxy"
     
     if [[ "$use_db" == true ]] && ! docker ps | grep -q mysql-shared; then
-        print_info "Avvio MySQL condiviso..."
+        print_info "Starting shared MySQL..."
         $DOCKER_COMPOSE --profile shared-services up -d mysql-shared
         sleep 3
     fi
     
     if [[ "$use_redis" == true ]] && ! docker ps | grep -q redis-shared; then
-        print_info "Avvio Redis condiviso..."
+        print_info "Starting shared Redis..."
         $DOCKER_COMPOSE --profile shared-services up -d redis-shared
         sleep 2
     fi
@@ -759,7 +759,7 @@ start_shared_if_needed() {
     if [[ "$use_php" == true ]]; then
         local container="php-$php_ver-shared"
         if ! docker ps | grep -q "$container"; then
-            print_info "Avvio PHP $php_ver condiviso..."
+            print_info "Starting shared PHP $php_ver..."
             $DOCKER_COMPOSE --profile shared-services up -d "$container"
             sleep 3
         fi
@@ -776,44 +776,44 @@ generate_ssl_cert() {
     mkdir -p "$certs_dir"
     
     if ! command -v mkcert &> /dev/null; then
-        print_warning "mkcert non trovato"
+        print_warning "mkcert not found"
         echo ""
-        echo "Per abilitare HTTPS locale, installa mkcert:"
+        echo "To enable local HTTPS, install mkcert:"
         local os=$(detect_os)
         if [ "$os" = "macos" ]; then
             echo "  brew install mkcert"
         else
-            echo "  # Vedi: https://github.com/FiloSottile/mkcert#installation"
+            echo "  # See: https://github.com/FiloSottile/mkcert#installation"
         fi
         echo "  $SCRIPT_DIR/proxy/setup-ssl-ca.sh"
         return
     fi
     
-    # Verifica se la CA è già installata
+    # Check if CA is already installed
     local ca_root="$(mkcert -CAROOT)"
     if [ ! -f "$ca_root/rootCA.pem" ]; then
         first_time=true
-        print_info "Prima installazione CA locale (richiederà password)..."
+        print_info "First CA installation (will ask for password)..."
         mkcert -install
     fi
     
-    # Genera certificato
+    # Generate certificate
     mkcert -key-file "$certs_dir/$domain.key" -cert-file "$certs_dir/$domain.crt" "$domain" "*.$domain" 2>/dev/null
     
     if [ -f "$certs_dir/$domain.crt" ]; then
         cp "$certs_dir/$domain.crt" "$certs_dir/$domain.chain.pem"
-        print_success "Certificato SSL generato"
+        print_success "SSL certificate generated"
         
-        # Riavvia nginx-proxy per caricare i nuovi certificati
-        print_info "Ricaricamento configurazione SSL..."
+        # Restart nginx-proxy to load new certificates
+        print_info "Reloading SSL configuration..."
         cd "$SCRIPT_DIR/proxy"
         $DOCKER_COMPOSE restart nginx-proxy > /dev/null 2>&1
         cd "$SCRIPT_DIR"
         
-        # Mostra istruzioni se è la prima volta
+        # Show instructions if first time
         if [ "$first_time" = true ]; then
             echo ""
-            print_warning "IMPORTANTE: Chiudi e riavvia tutti i browser per riconoscere i certificati SSL"
+            print_warning "IMPORTANT: Close and restart all browsers to recognize SSL certificates"
         fi
     fi
 }
@@ -826,10 +826,10 @@ install_framework() {
     
     case $type in
         laravel)
-            print_info "Installazione Laravel..."
+            print_info "Installing Laravel..."
             
             if [[ "$shared_php" == true ]]; then
-                # Fully-shared: usa container PHP condiviso
+                # Fully-shared: use shared PHP container
                 docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && composer create-project --prefer-dist laravel/laravel ." 2>/dev/null || true
                 docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && chmod -R 775 storage bootstrap/cache" 2>/dev/null || true
                 
@@ -857,7 +857,7 @@ install_framework() {
                     docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && sed -i 's/REDIS_HOST=.*/REDIS_HOST=$redis_host/' .env" 2>/dev/null || true
                 fi
             else
-                # Dedicato: usa container app del progetto
+                # Dedicated: use project's app container
                 $DOCKER_COMPOSE exec -T app composer create-project --prefer-dist laravel/laravel . 2>/dev/null || true
                 $DOCKER_COMPOSE exec -T app chmod -R 775 storage bootstrap/cache 2>/dev/null || true
                 
@@ -886,35 +886,35 @@ install_framework() {
                 fi
             fi
             
-            print_success "Laravel installato"
+            print_success "Laravel installed"
             ;;
             
         wordpress)
-            print_info "Download WordPress..."
+            print_info "Downloading WordPress..."
             if [[ "$shared_php" == true ]]; then
                 docker exec php-${php_version}-shared bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/projects/$project/app/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
             else
                 $DOCKER_COMPOSE exec -T app bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/html/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
             fi
-            print_success "WordPress scaricato"
+            print_success "WordPress downloaded"
             ;;
             
         html)
             cat > "$path/app/index.html" << 'EOF'
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benvenuto</title>
+    <title>Welcome</title>
 </head>
 <body>
-    <h1>🎉 Il tuo progetto è pronto!</h1>
-    <p>Modifica <code>app/index.html</code></p>
+    <h1>🎉 Your project is ready!</h1>
+    <p>Edit <code>app/index.html</code></p>
 </body>
 </html>
 EOF
-            # Nota: HTML non usa PHP, quindi non serve la config Xdebug
+            # Note: HTML doesn't use PHP, so no Xdebug config needed
             ;;
             
         php)
@@ -923,8 +923,8 @@ EOF
 <html>
 <head><title>PHP Info</title></head>
 <body>
-    <h1>🎉 PHP è funzionante!</h1>
-    <p>Versione: <?php echo phpversion(); ?></p>
+    <h1>🎉 PHP is working!</h1>
+    <p>Version: <?php echo phpversion(); ?></p>
     <?php phpinfo(); ?>
 </body>
 </html>
@@ -937,19 +937,19 @@ show_project_summary() {
     local type=$1 domain=$2 path=$3 installed=$4 inc_db=$5
     
     echo ""
-    print_success "Progetto creato con successo!"
+    print_success "Project created successfully!"
     echo ""
     echo -e "${CYAN}URL:${NC}       http://$domain"
     echo -e "${CYAN}HTTPS:${NC}     https://$domain"
     echo -e "${CYAN}Path:${NC}      $path"
     echo ""
-    echo "Comandi rapidi:"
+    echo "Quick commands:"
     echo "  ./phpharbor start $( basename $path)"
     echo "  ./phpharbor logs $( basename $path)"
     echo "  ./phpharbor shell $( basename $path)"
     
     if [[ "$type" == "laravel" ]] && [[ "$installed" == true ]] && [[ "$inc_db" == true ]]; then
         echo ""
-        print_info "Esegui le migrazioni: ./phpharbor artisan $(basename $path) migrate"
+        print_info "Run migrations: ./phpharbor artisan $(basename $path) migrate"
     fi
 }

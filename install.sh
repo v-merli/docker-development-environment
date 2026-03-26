@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # PHPHarbor - Installer
-# Installa e configura l'ambiente di sviluppo Docker locale
+# Installs and configures local Docker development environment
 
 set -e
 
-# Colori
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -13,21 +13,21 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Funzioni di output
+# Output functions
 print_info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
 print_success() { echo -e "${GREEN}✅ $1${NC}"; }
 print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
 print_error() { echo -e "${RED}❌ $1${NC}"; }
 print_title() { echo -e "${CYAN}━━━ $1 ━━━${NC}"; }
 
-# Rileva sistema operativo
+# Detect operating system
 OS="$(uname -s)"
 IS_WSL=false
 
 case "${OS}" in
     Linux*)     
         OS_TYPE=Linux
-        # Verifica se è WSL
+        # Check if WSL
         if grep -qi microsoft /proc/version 2>/dev/null || grep -qi wsl /proc/version 2>/dev/null; then
             IS_WSL=true
             OS_TYPE="Linux (WSL2)"
@@ -37,63 +37,63 @@ case "${OS}" in
     *)          OS_TYPE="UNKNOWN:${OS}"
 esac
 
-# Directory di installazione
+# Installation directory
 INSTALL_DIR="$HOME/.phpharbor"
 BIN_LINK="/usr/local/bin/phpharbor"
 
 print_title "PHPHarbor - Installer"
 echo ""
-print_info "Sistema operativo rilevato: $OS_TYPE"
+print_info "Operating system detected: $OS_TYPE"
 
-# Messaggio specifico WSL
+# WSL-specific message
 if [ "$IS_WSL" = true ]; then
-    print_info "WSL2 rilevato! Assicurati che Docker Desktop sia installato su Windows"
-    print_info "con integrazione WSL2 abilitata (Settings → Resources → WSL Integration)"
+    print_info "WSL2 detected! Make sure Docker Desktop is installed on Windows"
+    print_info "with WSL2 integration enabled (Settings → Resources → WSL Integration)"
 fi
 
 echo ""
 
 # ==================================================
-# VERIFICA PREREQUISITI
+# CHECK PREREQUISITES
 # ==================================================
-print_info "Verifica prerequisiti..."
+print_info "Checking prerequisites..."
 
 # Docker
 if ! command -v docker &> /dev/null; then
-    print_error "Docker non installato"
-    echo "Installa Docker Desktop da: https://www.docker.com/products/docker-desktop"
+    print_error "Docker not installed"
+    echo "Install Docker Desktop from: https://www.docker.com/products/docker-desktop"
     exit 1
 fi
 
 # Docker Compose
 if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-    print_error "Docker Compose non disponibile"
+    print_error "Docker Compose not available"
     exit 1
 fi
 
 # Docker Compose
 if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-    print_error "Docker Compose non disponibile"
+    print_error "Docker Compose not available"
     exit 1
 fi
 
-# mkcert (opzionale ma consigliato)
+# mkcert (optional but recommended)
 if ! command -v mkcert &> /dev/null; then
-    print_warning "mkcert non installato (opzionale per SSL locale)"
+    print_warning "mkcert not installed (optional for local SSL)"
     if [ "$OS_TYPE" = "macOS" ]; then
-        echo "    Installa con: brew install mkcert"
+        echo "    Install with: brew install mkcert"
     else
-        echo "    Installa con: https://github.com/FiloSottile/mkcert#installation"
-        echo "    Debian/Ubuntu: scarica binary da GitHub releases"
+        echo "    Install with: https://github.com/FiloSottile/mkcert#installation"
+        echo "    Debian/Ubuntu: download binary from GitHub releases"
     fi
-    echo "    Necessario per certificati HTTPS locali"
+    echo "    Required for local HTTPS certificates"
 fi
 
-print_success "Prerequisiti verificati"
+print_success "Prerequisites checked"
 echo ""
 
 # ==================================================
-# INSTALLAZIONE
+# INSTALLATION
 # ==================================================
 
 # GitHub repository info
@@ -101,26 +101,26 @@ GITHUB_USER="v-merli"
 GITHUB_REPO="php-harbor"
 RELEASE_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases/latest/download/php-harbor.tar.gz"
 
-print_info "Directory di installazione: $INSTALL_DIR"
+print_info "Installation directory: $INSTALL_DIR"
 
-# Controlla se già installato
+# Check if already installed
 if [ -d "$INSTALL_DIR" ]; then
-    print_warning "Installazione esistente trovata"
-    read -p "$(echo -e "${CYAN}Aggiornare l'installazione esistente? (y/n):${NC} ")" -n 1 -r
+    print_warning "Existing installation found"
+    read -p "$(echo -e "${CYAN}Update existing installation? (y/n):${NC} ")" -n 1 -r
     echo ""
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installazione annullata"
+        echo "Installation cancelled"
         exit 0
     fi
     
-    print_info "Scaricamento ultima versione..."
+    print_info "Downloading latest version..."
     
-    # Backup configurazione esistente (se presente)
+    # Backup existing configuration (if present)
     if [ -f "$INSTALL_DIR/.env" ]; then
         cp "$INSTALL_DIR/.env" "$INSTALL_DIR/.env.backup"
     fi
     
-    # Rimuovi installazione vecchia (ma mantieni projects/)
+    # Remove old installation (but keep projects/)
     TEMP_PROJECTS="$HOME/.php-harbor-projects-backup"
     if [ -d "$INSTALL_DIR/projects" ]; then
         mv "$INSTALL_DIR/projects" "$TEMP_PROJECTS"
@@ -129,64 +129,64 @@ if [ -d "$INSTALL_DIR" ]; then
     rm -rf "$INSTALL_DIR"
     mkdir -p "$INSTALL_DIR"
     
-    # Scarica e estrai
+    # Download and extract
     curl -fsSL "$RELEASE_URL" | tar -xz -C "$INSTALL_DIR" --strip-components=1
     
-    # Ripristina projects/
+    # Restore projects/
     if [ -d "$TEMP_PROJECTS" ]; then
         mv "$TEMP_PROJECTS" "$INSTALL_DIR/projects"
     fi
     
-    print_success "Aggiornamento completato"
+    print_success "Update completed"
 else
-    print_info "Scaricamento Docker Dev Environment..."
+    print_info "Downloading PHPHarbor..."
     
-    # Crea directory
+    # Create directory
     mkdir -p "$INSTALL_DIR"
     
-    # Scarica e estrai release
+    # Download and extract release
     if curl -fsSL "$RELEASE_URL" | tar -xz -C "$INSTALL_DIR" --strip-components=1; then
-        print_success "Download completato"
+        print_success "Download completed"
     else
-        print_error "Errore durante il download"
-        echo "Verifica che la release sia disponibile su:"
+        print_error "Error during download"
+        echo "Check that the release is available at:"
         echo "$RELEASE_URL"
         echo ""
-        echo "Se il progetto è in sviluppo, usa git clone manualmente:"
+        echo "If the project is in development, use git clone manually:"
         echo "git clone https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git $INSTALL_DIR"
         exit 1
     fi
 fi
 
-print_success "Installazione completata"
+print_success "Installation completed"
 echo ""
 
 # ==================================================
-# PERMESSI E SYMLINK
+# PERMISSIONS AND SYMLINK
 # ==================================================
-print_info "Configurazione permessi..."
+print_info "Configuring permissions..."
 
-# Assicura che phpharbor sia eseguibile
+# Make sure phpharbor is executable
 chmod +x "$INSTALL_DIR/phpharbor"
 
-print_info "Creazione symlink per comando phpharbor..."
+print_info "Creating symlink for phpharbor command..."
 
 if [ -L "$BIN_LINK" ] || [ -f "$BIN_LINK" ]; then
     sudo rm -f "$BIN_LINK"
 fi
 
-# Il symlink eredita automaticamente i permessi del file originale
+# Symlink automatically inherits original file permissions
 sudo ln -sf "$INSTALL_DIR/phpharbor" "$BIN_LINK"
 
-print_success "Comando phpharbor disponibile globalmente"
+print_success "Command phpharbor available globally"
 echo ""
 
 # ==================================================
 # BASH COMPLETION
 # ==================================================
-print_info "Configurazione autocompletamento..."
+print_info "Configuring autocompletion..."
 
-# Rileva shell
+# Detect shell
 SHELL_RC=""
 if [ "$SHELL" = "/bin/zsh" ] || [ "$SHELL" = "/usr/bin/zsh" ]; then
     SHELL_RC="$HOME/.zshrc"
@@ -195,7 +195,7 @@ elif [ "$SHELL" = "/bin/bash" ] || [ "$SHELL" = "/usr/bin/bash" ]; then
 fi
 
 if [ -n "$SHELL_RC" ] && [ -f "$SHELL_RC" ]; then
-    # Rimuovi righe esistenti (compatibile con macOS e Linux)
+    # Remove existing lines (macOS and Linux compatible)
     if [ "$OS_TYPE" = "macOS" ]; then
         sed -i.bak '/phpharbor-completion/d' "$SHELL_RC"
         rm -f "${SHELL_RC}.bak"
@@ -203,27 +203,27 @@ if [ -n "$SHELL_RC" ] && [ -f "$SHELL_RC" ]; then
         sed -i '/phpharbor-completion/d' "$SHELL_RC"
     fi
     
-    # Aggiungi completion
+    # Add completion
     echo "" >> "$SHELL_RC"
-    echo "# PHPHarbor - Autocompletamento" >> "$SHELL_RC"
+    echo "# PHPHarbor - Autocompletion" >> "$SHELL_RC"
     echo "[ -f $INSTALL_DIR/phpharbor-completion.bash ] && source $INSTALL_DIR/phpharbor-completion.bash" >> "$SHELL_RC"
     
-    print_success "Autocompletamento configurato in $SHELL_RC"
+    print_success "Autocompletion configured in $SHELL_RC"
 else
-    print_warning "Shell RC file non trovato, autocompletamento non configurato"
+    print_warning "Shell RC file not found, autocompletion not configured"
 fi
 
 echo ""
 
 # ==================================================
-# SETUP INIZIALE
+# INITIAL SETUP
 # ==================================================
-print_info "Vuoi eseguire il setup iniziale ora?"
-echo "    - Configura nginx reverse proxy"
-echo "    - Setup SSL/HTTPS locale"
-echo "    - Configura rete Docker"
+print_info "Do you want to run the initial setup now?"
+echo "    - Configure nginx reverse proxy"
+echo "    - Setup local SSL/HTTPS"
+echo "    - Configure Docker network"
 echo ""
-read -p "$(echo -e "${CYAN}Eseguire setup? (y/n):${NC} ")" -n 1 -r
+read -p "$(echo -e "${CYAN}Run setup? (y/n):${NC} ")" -n 1 -r
 echo ""
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -233,26 +233,26 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 # ==================================================
-# COMPLETAMENTO
+# COMPLETION
 # ==================================================
-print_success "Installazione completata!"
+print_success "Installation completed!"
 echo ""
-echo -e "${CYAN}━━━ Prossimi Passi ━━━${NC}"
+echo -e "${CYAN}━━━ Next Steps ━━━${NC}"
 echo ""
-echo "1) Ricarica la shell per attivare autocompletamento:"
+echo "1) Reload shell to activate autocompletion:"
 echo "   ${GREEN}source $SHELL_RC${NC}"
 echo ""
-echo "2) Verifica installazione:"
+echo "2) Verify installation:"
 echo "   ${GREEN}phpharbor version${NC}"
 echo ""
-echo "3) Crea il tuo primo progetto:"
-echo "   ${GREEN}phpharbor create${NC}  # Modalità interattiva"
+echo "3) Create your first project:"
+echo "   ${GREEN}phpharbor create${NC}  # Interactive mode"
 echo "   ${GREEN}phpharbor create myapp --type laravel${NC}"
 echo ""
-echo "4) Documenta te stesso:"
+echo "4) Explore the documentation:"
 echo "   ${GREEN}phpharbor help${NC}"
 echo ""
 echo -e "${BLUE}Repository:${NC} $INSTALL_DIR"
-echo -e "${BLUE}Documentazione:${NC} https://github.com/v-merli/php-harbor"
+echo -e "${BLUE}Documentation:${NC} https://github.com/v-merli/php-harbor"
 echo ""
-print_success "Buon sviluppo! 🚀"
+print_success "Happy coding! 🚀"

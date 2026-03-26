@@ -1,18 +1,18 @@
 #!/bin/bash
 
 # Module: Setup
-# Comandi: setup dns/proxy/init
+# Commands: setup dns/proxy/init
 
 cmd_setup() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-        echo "Uso: ./phpharbor setup <comando>"
+        echo "Usage: ./phpharbor setup <command>"
         echo ""
-        echo "Comandi:"
-        echo "  config  Configura directory progetti"
-        echo "  ports   Configura porte servizi (HTTP, HTTPS, MySQL, Redis)"
-        echo "  dns     Installa e configura dnsmasq per *.test"
-        echo "  proxy   Avvia il reverse proxy nginx"
-        echo "  init    Setup completo interattivo"
+        echo "Commands:"
+        echo "  config  Configure projects directory"
+        echo "  ports   Configure service ports (HTTP, HTTPS, MySQL, Redis)"
+        echo "  dns     Install and configure dnsmasq for *.test"
+        echo "  proxy   Start nginx reverse proxy"
+        echo "  init    Complete interactive setup"
         exit 0
     fi
     
@@ -36,39 +36,39 @@ cmd_setup() {
             setup_init "$@"
             ;;
         *)
-            print_error "Sotto-comando sconosciuto: $subcmd"
+            print_error "Unknown sub-command: $subcmd"
             echo ""
-            echo "Uso: ./phpharbor setup <comando>"
+            echo "Usage: ./phpharbor setup <command>"
             echo ""
-            echo "Comandi:"
-            echo "  config  Configura directory progetti"
-            echo "  ports   Configura porte servizi"
-            echo "  dns     Installa e configura dnsmasq per *.test"
-            echo "  proxy   Avvia il reverse proxy nginx"
-            echo "  init    Inizializza l'ambiente (dns + proxy)"
+            echo "Commands:"
+            echo "  config  Configure projects directory"
+            echo "  ports   Configure service ports"
+            echo "  dns     Install and configure dnsmasq for *.test"
+            echo "  proxy   Start nginx reverse proxy"
+            echo "  init    Initialize environment (dns + proxy)"
             exit 1
             ;;
     esac
 }
 
 setup_config() {
-    print_title "Configurazione Directory Progetti"
+    print_title "Projects Directory Configuration"
     echo ""
     
     local default_dir="$SCRIPT_DIR/projects"
     local current_dir="${PROJECTS_DIR:-$default_dir}"
     
-    echo "Directory attuale: $current_dir"
+    echo "Current directory: $current_dir"
     echo ""
-    echo "Dove vuoi salvare i tuoi progetti Docker?"
+    echo "Where do you want to save your Docker projects?"
     echo ""
     echo "1) $default_dir (default)"
     echo "2) $HOME/Development/docker-projects"
-    echo "3) Percorso personalizzato"
-    echo "4) Mantieni attuale ($current_dir)"
+    echo "3) Custom path"
+    echo "4) Keep current ($current_dir)"
     echo ""
     
-    read -p "Scelta [4]: " choice
+    read -p "Choice [4]: " choice
     choice=${choice:-4}
     
     case $choice in
@@ -79,92 +79,92 @@ setup_config() {
             PROJECTS_DIR="$HOME/Development/docker-projects"
             ;;
         3)
-            read -p "Inserisci il percorso completo: " custom_path
-            # Espandi ~ e variabili
+            read -p "Enter the complete path: " custom_path
+            # Expand ~ and variables
             PROJECTS_DIR=$(eval echo "$custom_path")
             ;;
         4)
-            print_info "Mantengo configurazione attuale"
+            print_info "Keeping current configuration"
             return
             ;;
         *)
-            print_warning "Scelta non valida, mantengo configurazione attuale"
+            print_warning "Invalid choice, keeping current configuration"
             return
             ;;
     esac
     
-    # Verifica se ci sono progetti nella directory attuale
+    # Check if there are projects in current directory
     if [ -d "$current_dir" ] && [ "$(ls -A "$current_dir" 2>/dev/null)" ]; then
         echo ""
-        print_warning "ATTENZIONE: Trovati progetti in $current_dir"
+        print_warning "WARNING: Found projects in $current_dir"
         echo ""
-        read -p "Vuoi spostarli nella nuova directory? (y/n): " -n 1 -r
+        read -p "Do you want to move them to the new directory? (y/n): " -n 1 -r
         echo ""
         
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            # Crea nuova directory se non esiste
+            # Create new directory if it doesn't exist
             mkdir -p "$PROJECTS_DIR"
             
-            # Sposta progetti (escludendo README.md)
-            print_info "Spostamento progetti..."
+            # Move projects (excluding README.md)
+            print_info "Moving projects..."
             for project in "$current_dir"/*; do
                 if [ -d "$project" ] && [ "$(basename "$project")" != "README.md" ]; then
                     project_name=$(basename "$project")
-                    print_info "Spostamento $project_name..."
+                    print_info "Moving $project_name..."
                     mv "$project" "$PROJECTS_DIR/"
                 fi
             done
-            print_success "Progetti spostati!"
+            print_success "Projects moved!"
         fi
     fi
     
-    # Crea directory se non esiste
+    # Create directory if it doesn't exist
     if [ ! -d "$PROJECTS_DIR" ]; then
-        print_info "Creazione directory: $PROJECTS_DIR"
+        print_info "Creating directory: $PROJECTS_DIR"
         mkdir -p "$PROJECTS_DIR"
     fi
     
-    # Salva configurazione
+    # Save configuration
     save_config
     
-    print_success "Configurazione aggiornata!"
+    print_success "Configuration updated!"
     echo ""
-    echo "Nuova directory progetti: $PROJECTS_DIR"
+    echo "New projects directory: $PROJECTS_DIR"
     echo ""
-    print_info "Ricarica il terminale o esegui: source ~/.zshrc (o ~/.bashrc)"
+    print_info "Reload the terminal or run: source ~/.zshrc (or ~/.bashrc)"
 }
 
 setup_ports() {
-    print_title "Configurazione Porte Servizi"
+    print_title "Service Ports Configuration"
     echo ""
     
-    echo "Configurazione attuale:"
+    echo "Current configuration:"
     echo "  HTTP:  $HTTP_PORT"
     echo "  HTTPS: $HTTPS_PORT"
     echo "  MySQL: $MYSQL_SHARED_PORT"
     echo "  Redis: $REDIS_SHARED_PORT"
     echo ""
     
-    # Verifica se ci sono servizi in esecuzione
+    # Check if services are running
     local proxy_running=false
     if docker ps | grep -q nginx-proxy; then
         proxy_running=true
-        print_warning "ATTENZIONE: Il proxy è in esecuzione!"
-        echo "Le modifiche alle porte richiederanno un riavvio del proxy."
+        print_warning "WARNING: Proxy is running!"
+        echo "Port changes will require a proxy restart."
         echo ""
     fi
     
     # Menu
-    echo "Cosa vuoi configurare?"
+    echo "What do you want to configure?"
     echo ""
-    echo "1) Porte Proxy (HTTP/HTTPS)"
-    echo "2) Porte Servizi Condivisi (MySQL/Redis)"
-    echo "3) Tutte le porte"
-    echo "4) Ripristina default (8080, 8443, 3306, 6379)"
-    echo "5) Annulla"
+    echo "1) Proxy Ports (HTTP/HTTPS)"
+    echo "2) Shared Services Ports (MySQL/Redis)"
+    echo "3) All ports"
+    echo "4) Restore defaults (8080, 8443, 3306, 6379)"
+    echo "5) Cancel"
     echo ""
     
-    read -p "Scelta [5]: " choice
+    read -p "Choice [5]: " choice
     choice=${choice:-5}
     
     case $choice in
@@ -183,134 +183,134 @@ setup_ports() {
             HTTPS_PORT=8443
             MYSQL_SHARED_PORT=3306
             REDIS_SHARED_PORT=6379
-            print_success "Porte ripristinate ai valori default"
+            print_success "Ports restored to default values"
             ;;
         5)
-            print_info "Operazione annullata"
+            print_info "Operation canceled"
             return
             ;;
         *)
-            print_error "Scelta non valida"
+            print_error "Invalid choice"
             return
             ;;
     esac
     
-    # Salva configurazione
+    # Save configuration
     save_config
     
-    print_success "Configurazione porte aggiornata!"
+    print_success "Port configuration updated!"
     echo ""
-    echo "Nuove porte:"
+    echo "New ports:"
     echo "  HTTP:  $HTTP_PORT"
     echo "  HTTPS: $HTTPS_PORT"
     echo "  MySQL: $MYSQL_SHARED_PORT"
     echo "  Redis: $REDIS_SHARED_PORT"
     echo ""
     
-    # Avvisa se serve riavvio
+    # Warn if restart needed
     if [ "$proxy_running" = true ]; then
-        print_warning "Per applicare le modifiche, riavvia il proxy:"
+        print_warning "To apply changes, restart the proxy:"
         echo "  phpharbor setup proxy"
         echo ""
-        read -p "Vuoi riavviare ora il proxy? (y/n): " -n 1 -r
+        read -p "Do you want to restart the proxy now? (y/n): " -n 1 -r
         echo ""
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             cd "$SCRIPT_DIR/proxy"
             $DOCKER_COMPOSE down
             $DOCKER_COMPOSE up -d
-            print_success "Proxy riavviato con nuove porte!"
+            print_success "Proxy restarted with new ports!"
         fi
     fi
 }
 
-# Funzione helper per configurare porte proxy
+# Helper function to configure proxy ports
 configure_proxy_ports() {
     echo ""
-    echo "=== Configurazione Porte Proxy ==="
+    echo "=== Proxy Ports Configuration ==="
     echo ""
     
     # HTTP Port
     while true; do
-        read -p "Porta HTTP [$HTTP_PORT]: " new_http
+        read -p "HTTP port [$HTTP_PORT]: " new_http
         new_http=${new_http:-$HTTP_PORT}
         
         if validate_port "$new_http"; then
             HTTP_PORT=$new_http
             break
         else
-            print_error "Porta non valida (1-65535)"
+            print_error "Invalid port (1-65535)"
         fi
     done
     
     # HTTPS Port
     while true; do
-        read -p "Porta HTTPS [$HTTPS_PORT]: " new_https
+        read -p "HTTPS port [$HTTPS_PORT]: " new_https
         new_https=${new_https:-$HTTPS_PORT}
         
         if validate_port "$new_https"; then
             if [ "$new_https" -eq "$HTTP_PORT" ]; then
-                print_error "La porta HTTPS non può essere uguale alla porta HTTP"
+                print_error "HTTPS port cannot be the same as HTTP port"
             else
                 HTTPS_PORT=$new_https
                 break
             fi
         else
-            print_error "Porta non valida (1-65535)"
+            print_error "Invalid port (1-65535)"
         fi
     done
     
-    print_success "Porte proxy configurate"
+    print_success "Proxy ports configured"
 }
 
-# Funzione helper per configurare porte servizi condivisi
+# Helper function to configure shared services ports
 configure_shared_ports() {
     echo ""
-    echo "=== Configurazione Porte Servizi Condivisi ==="
+    echo "=== Shared Services Ports Configuration ==="
     echo ""
     
     # MySQL Port
     while true; do
-        read -p "Porta MySQL [$MYSQL_SHARED_PORT]: " new_mysql
+        read -p "MySQL port [$MYSQL_SHARED_PORT]: " new_mysql
         new_mysql=${new_mysql:-$MYSQL_SHARED_PORT}
         
         if validate_port "$new_mysql"; then
             MYSQL_SHARED_PORT=$new_mysql
             break
         else
-            print_error "Porta non valida (1-65535)"
+            print_error "Invalid port (1-65535)"
         fi
     done
     
     # Redis Port
     while true; do
-        read -p "Porta Redis [$REDIS_SHARED_PORT]: " new_redis
+        read -p "Redis port [$REDIS_SHARED_PORT]: " new_redis
         new_redis=${new_redis:-$REDIS_SHARED_PORT}
         
         if validate_port "$new_redis"; then
             if [ "$new_redis" -eq "$MYSQL_SHARED_PORT" ]; then
-                print_error "La porta Redis non può essere uguale alla porta MySQL"
+                print_error "Redis port cannot be the same as MySQL port"
             else
                 REDIS_SHARED_PORT=$new_redis
                 break
             fi
         else
-            print_error "Porta non valida (1-65535)"
+            print_error "Invalid port (1-65535)"
         fi
     done
     
-    print_success "Porte servizi condivisi configurate"
+    print_success "Shared services ports configured"
 }
 
-# Valida porta
+# Validate port
 validate_port() {
     local port=$1
     
-    # Verifica che sia un numero
+    # Check it's a number
     if ! [[ "$port" =~ ^[0-9]+$ ]]; then
         return 1
     fi
     
-    # Verifica range valido
+    # Check valid range
     if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
         return 1
     fi
@@ -319,10 +319,10 @@ validate_port() {
 }
 
 setup_dns() {
-    print_title "Configurazione DNS (dnsmasq)"
+    print_title "DNS Configuration (dnsmasq)"
     echo ""
     
-    # Rileva sistema operativo
+    # Detect operating system
     local OS=""
     if [[ "$OSTYPE" == "darwin"* ]]; then
         OS="macos"
@@ -333,70 +333,70 @@ setup_dns() {
             OS="linux"
         fi
     else
-        print_error "Sistema operativo non supportato: $OSTYPE"
+        print_error "Unsupported operating system: $OSTYPE"
         exit 1
     fi
     
-    # Controlla se dnsmasq è già installato
+    # Check if dnsmasq is already installed
     if command -v dnsmasq >/dev/null 2>&1; then
-        print_info "dnsmasq già installato"
+        print_info "dnsmasq already installed"
     else
-        print_info "Installazione dnsmasq..."
+        print_info "Installing dnsmasq..."
         
         if [ "$OS" = "macos" ]; then
-            # macOS: usa Homebrew
+            # macOS: use Homebrew
             if ! command -v brew >/dev/null 2>&1; then
-                print_error "Homebrew non trovato. Installalo da https://brew.sh"
+                print_error "Homebrew not found. Install it from https://brew.sh"
                 exit 1
             fi
             brew install dnsmasq
         else
-            # Linux/WSL2: usa apt-get
-            print_info "Richiesta permessi sudo per installazione..."
+            # Linux/WSL2: use apt-get
+            print_info "Requesting sudo permissions for installation..."
             sudo apt-get update
             sudo apt-get install -y dnsmasq
         fi
     fi
     
-    # Configurazione specifica per OS
+    # OS-specific configuration
     if [ "$OS" = "macos" ]; then
         # ===== macOS =====
-        print_info "Configurazione dnsmasq (macOS)..."
+        print_info "Configuring dnsmasq (macOS)..."
         mkdir -p /usr/local/etc/dnsmasq.d
         
-        # Copia configurazione
+        # Copy configuration
         cp "$SCRIPT_DIR/shared/dnsmasq/dnsmasq.conf" /usr/local/etc/dnsmasq.conf
         
-        # Configura resolver macOS
+        # Configure macOS resolver
         sudo mkdir -p /etc/resolver
         echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/test > /dev/null
         
-        # Avvia servizio
-        print_info "Avvio servizio dnsmasq..."
+        # Start service
+        print_info "Starting dnsmasq service..."
         sudo brew services start dnsmasq
         
     else
         # ===== Linux/WSL2 =====
-        print_info "Configurazione dnsmasq (Linux)..."
+        print_info "Configuring dnsmasq (Linux)..."
         
-        # Copia configurazione
+        # Copy configuration
         sudo cp "$SCRIPT_DIR/shared/dnsmasq/dnsmasq.conf" /etc/dnsmasq.d/phpharbor-test.conf
         
-        # Configura dnsmasq per ascoltare solo su localhost
+        # Configure dnsmasq to listen only on localhost
         if ! grep -q "listen-address=127.0.0.1" /etc/dnsmasq.conf 2>/dev/null; then
             echo "listen-address=127.0.0.1" | sudo tee -a /etc/dnsmasq.conf > /dev/null
         fi
         
-        # Su Linux, configura systemd-resolved se presente
+        # On Linux, configure systemd-resolved if present
         if systemctl is-active systemd-resolved >/dev/null 2>&1; then
-            print_info "Configurazione systemd-resolved..."
+            print_info "Configuring systemd-resolved..."
             
-            # Crea configurazione per *.test
+            # Create configuration for *.test
             echo "[Resolve]
 DNS=127.0.0.1
 Domains=~test" | sudo tee /etc/systemd/resolved.conf.d/phpharbor.conf > /dev/null 2>&1 || true
             
-            # Disabilita DNSStubListener per evitare conflitto porta 53
+            # Disable DNSStubListener to avoid port 53 conflict
             sudo mkdir -p /etc/systemd/resolved.conf.d
             echo "[Resolve]
 DNSStubListener=no" | sudo tee /etc/systemd/resolved.conf.d/phpharbor-stub.conf > /dev/null
@@ -404,27 +404,27 @@ DNSStubListener=no" | sudo tee /etc/systemd/resolved.conf.d/phpharbor-stub.conf 
             sudo systemctl restart systemd-resolved
         fi
         
-        # Riavvia dnsmasq
-        print_info "Avvio servizio dnsmasq..."
+        # Restart dnsmasq
+        print_info "Starting dnsmasq service..."
         sudo systemctl enable dnsmasq
         sudo systemctl restart dnsmasq
         
-        # Verifica stato
+        # Check status
         if ! sudo systemctl is-active dnsmasq >/dev/null 2>&1; then
-            print_warning "dnsmasq potrebbe non essere avviato correttamente"
-            echo "Controlla i log: sudo journalctl -u dnsmasq -n 50"
+            print_warning "dnsmasq may not have started correctly"
+            echo "Check logs: sudo journalctl -u dnsmasq -n 50"
         fi
     fi
     
-    print_success "DNS configurato!"
+    print_success "DNS configured!"
     echo ""
-    echo -e "${CYAN}Tutti i domini *.test puntano a 127.0.0.1${NC}"
+    echo -e "${CYAN}All *.test domains point to 127.0.0.1${NC}"
     echo ""
     
     if [ "$OS" = "linux" ] || [ "$OS" = "wsl" ]; then
-        echo "NOTA: Su alcuni sistemi Linux potrebbe essere necessario:"
-        echo "  1. Modificare /etc/resolv.conf per usare 127.0.0.1"
-        echo "  2. Oppure usare 127.0.0.1 come DNS nelle impostazioni di rete"
+        echo "NOTE: On some Linux systems you may need to:"
+        echo "  1. Edit /etc/resolv.conf to use 127.0.0.1"
+        echo "  2. Or use 127.0.0.1 as DNS in network settings"
         echo ""
     fi
     
@@ -432,70 +432,70 @@ DNSStubListener=no" | sudo tee /etc/systemd/resolved.conf.d/phpharbor-stub.conf 
 }
 
 setup_proxy() {
-    print_title "Avvio Reverse Proxy"
+    print_title "Starting Reverse Proxy"
     echo ""
     
     cd "$SCRIPT_DIR/proxy"
     
-    # Controlla se è già in esecuzione
+    # Check if already running
     if docker ps | grep -q nginx-proxy; then
-        print_info "Il proxy è già in esecuzione"
+        print_info "Proxy is already running"
         return
     fi
     
-    # Assicurati che il file .env esista
+    # Make sure .env file exists
     if [ ! -f ".env" ]; then
-        print_info "Creazione file di configurazione proxy..."
+        print_info "Creating proxy configuration file..."
         update_proxy_env
     fi
     
-    print_info "Avvio nginx-proxy e acme-companion..."
+    print_info "Starting nginx-proxy and acme-companion..."
     $DOCKER_COMPOSE up -d nginx-proxy acme-companion
     
-    # Attendi che sia pronto
-    print_info "Attendo che il proxy sia pronto..."
+    # Wait for it to be ready
+    print_info "Waiting for proxy to be ready..."
     sleep 3
     
     if docker ps | grep -q nginx-proxy; then
-        print_success "Proxy avviato!"
+        print_success "Proxy started!"
         echo ""
-        echo -e "${CYAN}Rete:${NC} proxy (bridge)"
-        echo -e "${CYAN}Porta:${NC} 80 (HTTP), 443 (HTTPS)"
+        echo -e "${CYAN}Network:${NC} proxy (bridge)"
+        echo -e "${CYAN}Port:${NC} 80 (HTTP), 443 (HTTPS)"
         echo ""
-        echo "Il proxy gestisce automaticamente i certificati SSL e il routing"
+        echo "The proxy automatically manages SSL certificates and routing"
     else
-        print_error "Errore nell'avvio del proxy"
+        print_error "Error starting proxy"
         exit 1
     fi
 }
 
 setup_init() {
-    print_title "Inizializzazione Ambiente Docker Dev"
+    print_title "PHPHarbor Initialization"
     echo ""
     
     # ==================================================
-    # Configurazione Directory Progetti
+    # Projects Directory Configuration
     # ==================================================
-    print_info "Configurazione directory progetti..."
+    print_info "Configuring projects directory..."
     echo ""
     
     local default_dir="$SCRIPT_DIR/projects"
     local current_dir="${PROJECTS_DIR:-$default_dir}"
     
-    echo "Dove vuoi salvare i tuoi progetti Docker?"
+    echo "Where do you want to save your Docker projects?"
     echo ""
     echo "1) $default_dir (default)"
     echo "2) $HOME/Development/docker-projects"
-    echo "3) Percorso personalizzato"
+    echo "3) Custom path"
     echo ""
     
-    # Se esiste già config, mostra quella attuale
+    # If config exists, show current one
     if [ -f "$CONFIG_FILE" ]; then
-        echo -e "${YELLOW}Configurazione attuale: $current_dir${NC}"
+        echo -e "${YELLOW}Current configuration: $current_dir${NC}"
         echo ""
     fi
     
-    read -p "Scelta [1]: " choice
+    read -p "Choice [1]: " choice
     choice=${choice:-1}
     
     case $choice in
@@ -506,119 +506,119 @@ setup_init() {
             PROJECTS_DIR="$HOME/Development/docker-projects"
             ;;
         3)
-            read -p "Inserisci il percorso completo: " custom_path
-            # Espandi ~ e variabili
+            read -p "Enter the complete path: " custom_path
+            # Expand ~ and variables
             PROJECTS_DIR=$(eval echo "$custom_path")
             ;;
         *)
-            print_warning "Scelta non valida, uso default"
+            print_warning "Invalid choice, using default"
             PROJECTS_DIR="$default_dir"
             ;;
     esac
     
-    # Crea directory se non esiste
+    # Create directory if it doesn't exist
     if [ ! -d "$PROJECTS_DIR" ]; then
-        print_info "Creazione directory: $PROJECTS_DIR"
+        print_info "Creating directory: $PROJECTS_DIR"
         mkdir -p "$PROJECTS_DIR"
     fi
     
-    # Salva configurazione
+    # Save configuration
     save_config
     
-    print_success "Directory progetti: $PROJECTS_DIR"
+    print_success "Projects directory: $PROJECTS_DIR"
     echo ""
     
-    # Crea README se non esiste
+    # Create README if it doesn't exist
     if [ ! -f "$PROJECTS_DIR/README.md" ]; then
         cat > "$PROJECTS_DIR/README.md" << 'EOF'
 # Docker Projects
 
-Questa directory contiene tutti i progetti Docker creati con phpharbor
+This directory contains all Docker projects created with phpharbor
 
-Ogni progetto ha la sua directory con:
-- `docker-compose.yml` - Configurazione container
-- `.env` - Variabili d'ambiente
-- `app/` - Codice applicazione
+Each project has its own directory with:
+- `docker-compose.yml` - Container configuration
+- `.env` - Environment variables
+- `app/` - Application code
 
-## Comandi Utili
+## Useful Commands
 
 ```bash
-# Lista progetti
+# List projects
 phpharbor project list
 
-# Avvia progetto
-phpharbor dev PROGETTO
+# Start project
+phpharbor dev PROJECT
 
-# Shell nel container
-phpharbor project shell PROGETTO
+# Shell in container
+phpharbor project shell PROJECT
 
-# Rimuovi progetto
-phpharbor project remove PROGETTO
+# Remove project
+phpharbor project remove PROJECT
 ```
 EOF
-        print_info "Creato README in $PROJECTS_DIR"
+        print_info "Created README in $PROJECTS_DIR"
     fi
     
     echo ""
     
     # ==================================================
-    # Verifica Docker
+    # Check Docker
     # ==================================================
     
-    # Verifica Docker
-    print_info "Verifica Docker..."
+    # Check Docker
+    print_info "Checking Docker..."
     if ! docker info >/dev/null 2>&1; then
-        print_error "Docker non in esecuzione"
-        echo "Avvialo da Docker Desktop e riprova"
+        print_error "Docker not running"
+        echo "Start it from Docker Desktop and try again"
         exit 1
     fi
     print_success "Docker OK"
     
-    # Verifica Docker Compose
+    # Check Docker Compose
     if ! docker compose version >/dev/null 2>&1; then
-        print_error "Docker Compose non disponibile"
+        print_error "Docker Compose not available"
         exit 1
     fi
     print_success "Docker Compose OK"
     
     echo ""
     
-    # Configura DNS
-    read -p "Configurare dnsmasq per *.test? [s/N] " -n 1 -r
+    # Configure DNS
+    read -p "Configure dnsmasq for *.test? [y/N] " -n 1 -r
     echo
-    if [[ $REPLY =~ ^[Ss]$ ]]; then
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
         setup_dns
         echo ""
     fi
     
-    # Avvia proxy
-    read -p "Avviare il reverse proxy? [s/N] " -n 1 -r
+    # Start proxy
+    read -p "Start reverse proxy? [y/N] " -n 1 -r
     echo
-    if [[ $REPLY =~ ^[Ss]$ ]]; then
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
         setup_proxy
         echo ""
     fi
     
-    # Installa mkcert se non presente
+    # Install mkcert if not present
     if ! command -v mkcert >/dev/null 2>&1; then
         echo ""
-        print_info "Per i certificati SSL locali, installa mkcert:"
+        print_info "For local SSL certificates, install mkcert:"
         local os=$(detect_os)
         if [ "$os" = "macos" ]; then
             echo "  brew install mkcert"
         else
-            echo "  # Vedi: https://github.com/FiloSottile/mkcert#installation"
+            echo "  # See: https://github.com/FiloSottile/mkcert#installation"
         fi
         echo "  mkcert -install"
     else
-        print_success "mkcert installato"
+        print_success "mkcert installed"
     fi
     
     echo ""
-    print_success "Ambiente configurato!"
+    print_success "Environment configured!"
     echo ""
-    echo "Prossimi passi:"
-    echo "  1. Crea un progetto: ./phpharbor create"
-    echo "  2. Elenca progetti: ./phpharbor list"
-    echo "  3. Avvia progetto: ./phpharbor start <nome>"
+    echo "Next steps:"
+    echo "  1. Create a project: ./phpharbor create"
+    echo "  2. List projects: ./phpharbor list"
+    echo "  3. Start project: ./phpharbor start <name>"
 }

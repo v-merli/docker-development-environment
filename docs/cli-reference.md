@@ -1,41 +1,41 @@
-# PHPHarbor - CLI Unificato
+# PHPHarbor - Unified CLI
 
-Il nuovo CLI unificato `phpharbor` sostituisce i vari script individuali con un'interfaccia coerente e modulare.
+The new unified `phpharbor` CLI replaces various individual scripts with a consistent and modular interface.
 
-## 🎯 Vantaggi
+## 🎯 Advantages
 
-- **Un solo comando**: `./phpharbor` invece di 5+ script diversi
-- **Help integrato**: `./phpharbor help` e `./phpharbor <comando> --help`
-- **Modularità**: Architettura a moduli in `cli/`
-- **Completezza**: Gestione progetti, sviluppo, servizi condivisi, setup
+- **Single command**: `./phpharbor` instead of 5+ different scripts
+- **Integrated help**: `./phpharbor help` and `./phpharbor <command> --help`
+- **Modularity**: Module-based architecture in `cli/`
+- **Completeness**: Project management, development, shared services, setup
 
-## 📦 Struttura
+## 📦 Structure
 
 ```
-phpharbor              # Entrypoint principale
+phpharbor              # Main entrypoint
 cli/
-  ├── project.sh        # Gestione progetti (list, start, stop, etc)
-  ├── dev.sh            # Strumenti sviluppo (shell, artisan, composer, etc)
-  ├── shared.sh         # Servizi condivisi (mysql, redis, php)
-  ├── setup.sh          # Setup sistema (dns, proxy, init)
-  ├── create.sh         # Creazione progetti
-  └── system.sh         # Info e statistiche
+  ├── project.sh        # Project management (list, start, stop, etc)
+  ├── dev.sh            # Development tools (shell, artisan, composer, etc)
+  ├── shared.sh         # Shared services (mysql, redis, php)
+  ├── setup.sh          # System setup (dns, proxy, init)
+  ├── create.sh         # Project creation
+  └── system.sh         # Info and statistics
 ```
 
-## 🚀 Comandi Principali
+## 🚀 Main Commands
 
-### Gestione Progetti
+### Project Management
 
 ```bash
-# Creare nuovo progetto
+# Create new project
 ./phpharbor create myshop --type laravel --php 8.3
 ./phpharbor create blog --fully-shared --php 8.3
 ./phpharbor create api --shared-db --php 8.2
 
-# Elencare progetti
+# List projects
 ./phpharbor list
 
-# Gestione lifecycle
+# Lifecycle management
 ./phpharbor start myshop
 ./phpharbor stop myshop
 ./phpharbor restart myshop
@@ -43,13 +43,13 @@ cli/
 ./phpharbor remove myshop
 ```
 
-### Strumenti Sviluppo
+### Development Tools
 
 ```bash
-# Shell nel container PHP
+# Shell in PHP container
 ./phpharbor shell myshop
 
-# Comandi Laravel
+# Laravel commands
 ./phpharbor artisan myshop migrate
 ./phpharbor artisan myshop make:controller UserController
 
@@ -65,121 +65,121 @@ cli/
 ./phpharbor mysql myshop
 ```
 
-### Servizi Condivisi
+### Shared Services
 
 ```bash
-# Avviare servizi
+# Start services
 ./phpharbor shared start              # MySQL + Redis
-./phpharbor shared start mysql        # Solo MySQL
-./phpharbor shared start redis        # Solo Redis
-./phpharbor shared php 8.3            # PHP-FPM condiviso
+./phpharbor shared start mysql        # MySQL only
+./phpharbor shared start redis        # Redis only
+./phpharbor shared php 8.3            # Shared PHP-FPM
 
-# Stato e info
+# Status and info
 ./phpharbor shared status
 ./phpharbor shared logs
 
-# MySQL CLI condiviso
+# Shared MySQL CLI
 ./phpharbor shared mysql
 
-# Fermare servizi
+# Stop services
 ./phpharbor shared stop
 ```
 
-### Setup Sistema
+### System Setup
 
 ```bash
-# Setup iniziale completo
+# Complete initial setup
 ./phpharbor setup init
 
-# Setup componenti individuali
-./phpharbor setup dns        # dnsmasq per *.test
+# Setup individual components
+./phpharbor setup dns        # dnsmasq for *.test
 ./phpharbor setup proxy      # nginx reverse proxy
 ```
 
-### Informazioni
+### Information
 
 ```bash
-# Statistiche risorse Docker
+# Docker resource statistics
 ./phpharbor stats
 
-# Info ambiente completo
+# Complete environment info
 ./phpharbor info
 
-# Versione
+# Version
 ./phpharbor version
 ```
 
-## 🎨 Opzioni Creazione Progetto
+## 🎨 Project Creation Options
 
 ```bash
-./phpharbor create <nome> [opzioni]
+./phpharbor create <name> [options]
 
-Opzioni:
-  --type <tipo>         laravel, wordpress, php, html (default: laravel)
-  --php <versione>      7.3, 7.4, 8.1, 8.2, 8.3, 8.5 (default: 8.3)
-  --node <versione>     18, 20, 21 (default: 20)
-  --mysql <versione>    5.7, 8.0 (default: 8.0)
-  --no-db               Senza MySQL
-  --no-redis            Senza Redis
-  --shared-db           MySQL condiviso
-  --shared-redis        Redis condiviso
-  --shared              MySQL + Redis condivisi
-  --shared-php          PHP condiviso
-  --fully-shared        Tutto condiviso (massimo risparmio)
-  --no-install          Non installare framework automaticamente
+Options:
+  --type <type>         laravel, wordpress, php, html (default: laravel)
+  --php <version>      7.3, 7.4, 8.1, 8.2, 8.3, 8.5 (default: 8.3)
+  --node <version>     18, 20, 21 (default: 20)
+  --mysql <version>    5.7, 8.0 (default: 8.0)
+  --no-db               Without MySQL
+  --no-redis            Without Redis
+  --shared-db           Shared MySQL
+  --shared-redis        Shared Redis
+  --shared              Shared MySQL + Redis
+  --shared-php          Shared PHP
+  --fully-shared        Everything shared (maximum savings)
+  --no-install          Don't install framework automatically
 ```
 
-### Esempi Creazione
+### Creation Examples
 
 ```bash
-# Progetto Laravel standard
+# Standard Laravel project
 ./phpharbor create my-shop --type laravel --php 8.3
 
 # WordPress
 ./phpharbor create blog --type wordpress --php 8.2
 
-# Laravel fully-shared (minimo consumo RAM)
+# Laravel fully-shared (minimum RAM consumption)
 ./phpharbor create api --fully-shared --php 8.3
 
-# PHP generico con DB condiviso
+# Generic PHP with shared DB
 ./phpharbor create legacy --type php --php 7.4 --shared-db
 
-# HTML statico
+# Static HTML
 ./phpharbor create landing --type html
 ```
 
-## 📊 Configurazioni Supportate
+## 📊 Supported Configurations
 
 ### 1. Dedicated (Default)
-Ogni progetto ha propri MySQL, Redis, PHP-FPM
+Each project has its own MySQL, Redis, PHP-FPM
 ```bash
 ./phpharbor create project1
 ```
-- **RAM**: ~500MB per progetto
-- **Pro**: Isolamento completo, nessuna interferenza
-- **Contro**: Alto consumo RAM con molti progetti
+- **RAM**: ~500MB per project
+- **Pros**: Complete isolation, no interference
+- **Cons**: High RAM consumption with many projects
 
 ### 2. Shared DB
-MySQL e Redis condivisi, PHP dedicato
+Shared MySQL and Redis, dedicated PHP
 ```bash
 ./phpharbor create project2 --shared
 ```
-- **RAM**: ~300MB per progetto
-- **Pro**: Risparmio su DB, PHP isolato
-- **Contro**: Database condiviso
+- **RAM**: ~300MB per project
+- **Pros**: DB savings, isolated PHP
+- **Cons**: Shared database
 
 ### 3. Fully Shared
-Tutto condiviso (MySQL, Redis, PHP)
+Everything shared (MySQL, Redis, PHP)
 ```bash
 ./phpharbor create project3 --fully-shared --php 8.3
 ```
-- **RAM**: ~10-50MB per progetto (solo nginx!)
-- **Pro**: Massimo risparmio (80%+), ideale per molti progetti
-- **Contro**: PHP condiviso tra progetti
+- **RAM**: ~10-50MB per project (nginx only!)
+- **Pros**: Maximum savings (80%+), ideal for many projects
+- **Cons**: PHP shared between projects
 
-## 🔄 Migrazione da Vecchi Script
+## 🔄 Migration from Old Scripts
 
-### Prima (script multipli)
+### Before (multiple scripts)
 ```bash
 ./new-project.sh myshop --type laravel
 ./manage-projects.sh start myshop
@@ -187,7 +187,7 @@ Tutto condiviso (MySQL, Redis, PHP)
 ./artisan.sh myshop migrate
 ```
 
-### Ora (CLI unificato)
+### Now (unified CLI)
 ```bash
 ./phpharbor create myshop --type laravel
 ./phpharbor start myshop
@@ -195,21 +195,21 @@ Tutto condiviso (MySQL, Redis, PHP)
 ./phpharbor artisan myshop migrate
 ```
 
-## 🔧 Sviluppo Moduli
+## 🔧 Module Development
 
-Per aggiungere nuove funzionalità, crea un modulo in `cli/`:
+To add new functionality, create a module in `cli/`:
 
 ```bash
 # cli/mymodule.sh
 #!/bin/bash
 
 cmd_mycommand() {
-    print_info "Eseguo comando..."
-    # ... logica ...
+    print_info "Running command..."
+    # ... logic ...
 }
 ```
 
-Poi aggiungi il caso in `phpharbor`:
+Then add the case in `phpharbor`:
 ```bash
 case $COMMAND in
     mycommand)
@@ -219,25 +219,25 @@ case $COMMAND in
 esac
 ```
 
-## 📝 Note
+## 📝 Notes
 
-- I vecchi script (`new-project.sh`, `manage-projects.sh`, etc) sono ancora funzionanti
-- Il CLI usa la stessa infrastruttura Docker (proxy, shared services, templates)
-- Compatibile con progetti esistenti creati con i vecchi script
-- Auto-detection per PHP condiviso vs dedicato nei comandi dev
+- The old scripts (`new-project.sh`, `manage-projects.sh`, etc) are still functional
+- The CLI uses the same Docker infrastructure (proxy, shared services, templates)
+- Compatible with existing projects created with old scripts
+- Auto-detection for shared vs dedicated PHP in dev commands
 
 ## 🎓 Tips
 
 ```bash
-# Quick workflow per nuovo progetto
+# Quick workflow for new project
 ./phpharbor create myapp --fully-shared && \
 ./phpharbor start myapp && \
 ./phpharbor shell myapp
 
-# Vedere log in tempo reale durante sviluppo
+# View logs in real-time during development
 ./phpharbor logs myapp -f
 
-# Controllare stato generale
+# Check general status
 ./phpharbor list && ./phpharbor shared status
 
 # Cleanup
@@ -245,9 +245,9 @@ esac
 ./phpharbor shared stop
 ```
 
-## ⚡ Alias Consigliati
+## ⚡ Recommended Aliases
 
-Aggiungi al tuo `~/.zshrc` o `~/.bashrc`:
+Add to your `~/.zshrc` or `~/.bashrc`:
 
 ```bash
 alias dd='./phpharbor'
@@ -257,7 +257,7 @@ alias ddsh='./phpharbor shell'
 alias dda='./phpharbor artisan'
 ```
 
-Uso:
+Usage:
 ```bash
 dd list
 dds myshop
@@ -265,34 +265,34 @@ ddsh myshop
 dda myshop migrate
 ```
 
-## 🎯 Autocompletamento (Bash/Zsh)
+## 🎯 Autocompletion (Bash/Zsh)
 
-Per abilitare l'autocompletamento dei comandi:
+To enable command autocompletion:
 
 ```bash
-# Copia lo script di completion
+# Copy completion script
 cp phpharbor-completion.bash ~/.phpharbor-completion.bash
 
-# Aggiungi a ~/.bashrc o ~/.zshrc
+# Add to ~/.bashrc or ~/.zshrc
 echo 'source ~/.phpharbor-completion.bash' >> ~/.zshrc
 
-# Ricarica shell
+# Reload shell
 source ~/.zshrc
 ```
 
-Ora puoi usare TAB per autocompletare:
-- Comandi: `./phpharbor <TAB>`
-- Progetti: `./phpharbor start <TAB>`
-- Versioni PHP: `./phpharbor shared php <TAB>`
-- Opzioni: `./phpharbor create myapp --<TAB>`
+Now you can use TAB to autocomplete:
+- Commands: `./phpharbor <TAB>`
+- Projects: `./phpharbor start <TAB>`
+- PHP versions: `./phpharbor shared php <TAB>`
+- Options: `./phpharbor create myapp --<TAB>`
 
-**Con alias:**
+**With aliases:**
 ```bash
-# Abilita completion per alias 'dd'
+# Enable completion for 'dd' alias
 echo 'complete -F _docker_dev_completion dd' >> ~/.zshrc
 source ~/.zshrc
 
-# Ora funziona anche con alias
+# Now works with alias too
 dd s<TAB>        # → dd start
 dd start my<TAB> # → dd start myshop
 ```

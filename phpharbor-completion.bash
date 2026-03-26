@@ -1,7 +1,7 @@
 #!/bin/bash
-# Bash completion per phpharbor CLI
-# Installa con: cp phpharbor-completion.bash ~/.phpharbor-completion.bash
-# Poi aggiungi a ~/.bashrc o ~/.zshrc:
+# Bash completion for phpharbor CLI
+# Install with: cp phpharbor-completion.bash ~/.phpharbor-completion.bash
+# Then add to ~/.bashrc or ~/.zshrc:
 #   source ~/.phpharbor-completion.bash
 
 _phpharbor_completion() {
@@ -10,22 +10,22 @@ _phpharbor_completion() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
-    # Comandi principali
+    # Main commands
     commands="create list start stop restart remove logs shell artisan composer npm mysql shared setup stats info version help"
     
-    # Sotto-comandi shared
+    # Shared sub-commands
     shared_commands="start stop status logs mysql php"
     
-    # Sotto-comandi setup
+    # Setup sub-commands
     setup_commands="dns proxy init"
     
-    # Se siamo al primo argomento, suggerisci comandi principali
+    # If we're at the first argument, suggest main commands
     if [ $COMP_CWORD -eq 1 ]; then
         COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
         return 0
     fi
     
-    # Gestione sotto-comandi
+    # Sub-command handling
     local cmd="${COMP_WORDS[1]}"
     
     case "$cmd" in
@@ -33,10 +33,10 @@ _phpharbor_completion() {
             if [ $COMP_CWORD -eq 2 ]; then
                 COMPREPLY=( $(compgen -W "${shared_commands}" -- ${cur}) )
             elif [ $COMP_CWORD -eq 3 ] && [ "$prev" == "php" ]; then
-                # Suggerisci versioni PHP
+                # Suggest PHP versions
                 COMPREPLY=( $(compgen -W "7.3 7.4 8.1 8.2 8.3 8.5" -- ${cur}) )
             elif [ $COMP_CWORD -eq 3 ] && [ "$prev" == "start" ]; then
-                # Suggerisci servizi
+                # Suggest services
                 COMPREPLY=( $(compgen -W "mysql redis" -- ${cur}) )
             fi
             return 0
@@ -48,14 +48,14 @@ _phpharbor_completion() {
             return 0
             ;;
         create)
-            # Suggerisci opzioni per create
+            # Suggest options for create
             if [[ ${cur} == -* ]]; then
                 COMPREPLY=( $(compgen -W "--type --php --node --mysql --no-db --no-redis --shared-db --shared-redis --shared --shared-php --fully-shared --no-install --help" -- ${cur}) )
             fi
             return 0
             ;;
         start|stop|restart|remove|logs|shell|mysql)
-            # Suggerisci progetti disponibili
+            # Suggest available projects
             if [ $COMP_CWORD -eq 2 ]; then
                 local projects_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/projects"
                 if [ -d "$projects_dir" ]; then
@@ -66,7 +66,7 @@ _phpharbor_completion() {
             return 0
             ;;
         artisan|composer|npm)
-            # Suggerisci progetti disponibili come secondo argomento
+            # Suggest available projects as second argument
             if [ $COMP_CWORD -eq 2 ]; then
                 local projects_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/projects"
                 if [ -d "$projects_dir" ]; then
@@ -74,7 +74,7 @@ _phpharbor_completion() {
                     COMPREPLY=( $(compgen -W "${projects}" -- ${cur}) )
                 fi
             fi
-            # Non suggest per i comandi specifici (troppo variabili)
+            # Don't suggest for specific commands (too variable)
             return 0
             ;;
     esac
@@ -82,10 +82,10 @@ _phpharbor_completion() {
     return 0
 }
 
-# Registra la funzione di completion
+# Register the completion function
 complete -F _phpharbor_completion phpharbor
 complete -F _phpharbor_completion ./phpharbor
 
-# Alias comuni (opzionale)
+# Common aliases (optional)
 # alias dd='./phpharbor'
 # complete -F _phpharbor_completion dd

@@ -38,8 +38,8 @@ services:
     networks:
       - proxy
 
-  # Servizi condivisi (opzionali)
-  # I progetti possono usare questi servizi invece di averne uno dedicato
+  # Shared services (optional)
+  # Projects can use these services instead of having a dedicated one
   mysql-shared:
     image: mysql:8.0
     container_name: mysql-shared
@@ -48,7 +48,7 @@ services:
       - "${MYSQL_SHARED_PORT:-3306}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      # I progetti creeranno i loro database via migration
+      # Projects will create their databases via migration
     volumes:
       - mysql_shared_data:/var/lib/mysql
     networks:
@@ -71,8 +71,8 @@ services:
     profiles:
       - shared-services
 
-  # PHP-FPM condivisi per ogni versione
-  # Montano tutti i progetti in /var/www/projects
+  # Shared PHP-FPM for each version
+  # Mount all projects in /var/www/projects
   php-7.3-shared:
     build:
       context: ../shared/dockerfiles

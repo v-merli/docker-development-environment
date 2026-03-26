@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Module: Update
-# Comando: update - Gestione aggiornamenti
+# Command: update - Update management
 
 # CONFIGURAZIONE REPOSITORY
 # Repository GitHub per gli aggiornamenti
@@ -31,7 +31,7 @@ cmd_update() {
             show_update_usage
             ;;
         *)
-            print_error "Comando update sconosciuto: $subcommand"
+            print_error "Unknown update command: $subcommand"
             show_update_usage
             exit 1
             ;;
@@ -39,180 +39,180 @@ cmd_update() {
 }
 
 update_check() {
-    print_title "Verifica Aggiornamenti"
+    print_title "Checking for Updates"
     echo ""
     
-    print_info "Versione corrente: $VERSION"
+    print_info "Current version: $VERSION"
     
-    # Verifica connessione
+    # Check connection
     if ! curl -s --head https://github.com > /dev/null; then
-        print_error "Impossibile connettersi a GitHub"
-        echo "Verifica la connessione internet"
+        print_error "Unable to connect to GitHub"
+        echo "Check your internet connection"
         exit 1
     fi
     
-    # Ottieni info ultima release da GitHub
-    print_info "Controllo ultima versione disponibile..."
+    # Get latest release info from GitHub
+    print_info "Checking latest available version..."
     
     local latest_info
     latest_info=$(curl -s "$RELEASE_LATEST_URL" 2>/dev/null)
     
     if [ $? -ne 0 ] || [ -z "$latest_info" ]; then
-        print_error "Impossibile ottenere informazioni sull'ultima versione"
+        print_error "Unable to get latest version information"
         echo ""
         echo "Repository: $GITHUB_REPO"
-        echo "Verifica che il repository sia pubblico e accessibile"
+        echo "Check that the repository is public and accessible"
         exit 1
     fi
     
-    # Estrai tag della versione
+    # Extract version tag
     local latest_version
     latest_version=$(echo "$latest_info" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/^v//')
     
     if [ -z "$latest_version" ]; then
-        print_warning "Nessuna release trovata su GitHub"
+        print_warning "No releases found on GitHub"
         echo ""
-        echo "Visita: https://github.com/$GITHUB_REPO/releases"
+        echo "Visit: https://github.com/$GITHUB_REPO/releases"
         exit 0
     fi
     
-    print_info "Ultima versione disponibile: $latest_version"
+    print_info "Latest available version: $latest_version"
     echo ""
     
-    # Confronta versioni
+    # Compare versions
     if [ "$VERSION" = "$latest_version" ]; then
-        print_success "Sei già all'ultima versione! 🎉"
+        print_success "You are already on the latest version! 🎉"
         return 0
     fi
     
-    # Versioni diverse
-    print_warning "È disponibile una nuova versione!"
+    # Different versions
+    print_warning "A new version is available!"
     echo ""
-    echo "  Attuale:     $VERSION"
-    echo "  Disponibile: $latest_version"
+    echo "  Current:   $VERSION"
+    echo "  Available: $latest_version"
     echo ""
     
-    # Mostra note di rilascio (prime 10 righe)
+    # Show release notes (first 10 lines)
     local release_notes
     release_notes=$(echo "$latest_info" | grep '"body"' | sed -E 's/.*"body": "(.*)".*/\1/' | sed 's/\\n/\n/g' | head -10)
     
     if [ -n "$release_notes" ]; then
-        echo "📋 Novità:"
+        echo "📋 What's new:"
         echo "$release_notes"
         echo ""
     fi
     
-    # Prompt per aggiornamento
-    read -p "Vuoi aggiornare ora? (y/N): " -n 1 -r
+    # Prompt for update
+    read -p "Update now? (y/N): " -n 1 -r
     echo ""
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         update_install
     else
         echo ""
-        print_info "Puoi aggiornare in seguito con: ./phpharbor update install"
+        print_info "You can update later with: ./phpharbor update install"
     fi
 }
 
 update_install() {
     local target_version="$1"
     
-    print_title "Installazione Aggiornamento"
+    print_title "Installing Update"
     echo ""
     
     local version_to_install
     local release_info
     
     if [ -n "$target_version" ]; then
-        # Versione specifica richiesta
-        print_info "Versione richiesta: $target_version"
+        # Specific version requested
+        print_info "Requested version: $target_version"
         
-        # Rimuovi 'v' se presente
+        # Remove 'v' if present
         target_version="${target_version#v}"
         
-        # Verifica che la versione esista
+        # Check that the version exists
         release_info=$(curl -s "${RELEASE_TAG_URL}/v${target_version}" 2>/dev/null)
         
         if [ -z "$release_info" ] || echo "$release_info" | grep -q '"message": "Not Found"'; then
-            print_error "Versione $target_version non trovata"
+            print_error "Version $target_version not found"
             echo ""
-            echo "Versioni disponibili:"
+            echo "Available versions:"
             echo "  ./phpharbor update list"
             exit 1
         fi
         
         version_to_install="$target_version"
     else
-        # Installa ultima versione
+        # Install latest version
         release_info=$(curl -s "$RELEASE_LATEST_URL" 2>/dev/null)
         
         version_to_install=$(echo "$release_info" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/^v//')
         
         if [ -z "$version_to_install" ]; then
-            print_error "Impossibile determinare l'ultima versione"
+            print_error "Unable to determine latest version"
             exit 1
         fi
         
-        print_info "Ultima versione disponibile: $version_to_install"
+        print_info "Latest available version: $version_to_install"
     fi
     
-    # Verifica se già installata
+    # Check if already installed
     if [ "$VERSION" = "$version_to_install" ]; then
-        print_success "Già alla versione $VERSION"
+        print_success "Already on version $VERSION"
         return 0
     fi
     
     echo ""
-    print_info "Versione corrente: $VERSION"
-    print_info "Versione da installare: $version_to_install"
+    print_info "Current version: $VERSION"
+    print_info "Version to install: $version_to_install"
     echo ""
-    print_warning "ATTENZIONE: Questo sostituirà i file del sistema"
-    echo "I tuoi progetti e configurazioni saranno preservati:"
-    echo "  ✓ Directory progetti"
-    echo "  ✓ File .config"
-    echo "  ✓ Certificati SSL"
-    echo "  ✓ Container Docker (non toccati)"
+    print_warning "WARNING: This will replace system files"
+    echo "Your projects and configurations will be preserved:"
+    echo "  ✓ Projects directory"
+    echo "  ✓ .config file"
+    echo "  ✓ SSL certificates"
+    echo "  ✓ Docker containers (not touched)"
     echo ""
     
-    read -p "Continuare con l'aggiornamento? (y/N): " -n 1 -r
+    read -p "Continue with update? (y/N): " -n 1 -r
     echo ""
     
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        print_info "Aggiornamento annullato"
+        print_info "Update cancelled"
         return 0
     fi
     
-    # Crea directory temporanea
+    # Create temporary directory
     local temp_dir=$(mktemp -d)
     trap "rm -rf $temp_dir" EXIT
     
-    print_info "Download versione $version_to_install..."
+    print_info "Downloading version $version_to_install..."
     
-    # URL download specifico per versione
+    # Version-specific download URL
     local download_url="https://github.com/$GITHUB_REPO/releases/download/v${version_to_install}/php-harbor.tar.gz"
     
     if ! curl -fsSL "$download_url" -o "$temp_dir/php-harbor.tar.gz"; then
-        print_error "Errore durante il download"
+        print_error "Error during download"
         echo "URL: $download_url"
         exit 1
     fi
     
-    print_success "Download completato"
+    print_success "Download completed"
     
-    # Estrai in directory temporanea
-    print_info "Estrazione archivio..."
+    # Extract to temporary directory
+    print_info "Extracting archive..."
     tar -xzf "$temp_dir/php-harbor.tar.gz" -C "$temp_dir"
     
-    # Backup dei file da preservare
-    print_info "Backup configurazioni..."
+    # Backup of files to preserve
+    print_info "Backing up configurations..."
     local backup_dir="$temp_dir/backup"
     mkdir -p "$backup_dir"
     
-    # Salva configurazioni
+    # Save configurations
     [ -f "$SCRIPT_DIR/.config" ] && cp "$SCRIPT_DIR/.config" "$backup_dir/"
     [ -f "$SCRIPT_DIR/proxy/.env" ] && cp "$SCRIPT_DIR/proxy/.env" "$backup_dir/"
     
-    # Salva percorso progetti se personalizzato
+    # Save projects path if custom
     local projects_external=false
     if [ -f "$SCRIPT_DIR/.config" ]; then
         source "$SCRIPT_DIR/.config"
@@ -222,24 +222,24 @@ update_install() {
         fi
     fi
     
-    # Ferma servizi in esecuzione
+    # Stop running services
     local services_running=false
     if docker ps | grep -q "nginx-proxy"; then
         services_running=true
-        print_info "Arresto servizi temporaneo..."
+        print_info "Stopping services temporarily..."
         cd "$SCRIPT_DIR/proxy"
         $DOCKER_COMPOSE down > /dev/null 2>&1 || true
         cd "$SCRIPT_DIR"
     fi
     
-    # Aggiorna i file
-    print_info "Installazione nuova versione..."
+    # Update files
+    print_info "Installing new version..."
     
-    # Copia i nuovi file manualmente per essere cross-platform
-    # (rsync potrebbe non essere disponibile)
+    # Copy new files manually to be cross-platform
+    # (rsync might not be available)
     cd "$temp_dir"
     
-    # Lista di directory/file da NON sovrascrivere
+    # List of directories/files NOT to overwrite
     local preserve_items=(
         "projects"
         ".config"
@@ -250,61 +250,61 @@ update_install() {
         "releases"
     )
     
-    # Crea pattern di esclusione per find
+    # Create exclusion pattern for find
     local find_excludes=""
     for item in "${preserve_items[@]}"; do
         find_excludes="$find_excludes -path \"./$item\" -prune -o"
     done
     
-    # Copia tutti i file tranne quelli da preservare
+    # Copy all files except those to preserve
     find . $find_excludes -type f -print | while read file; do
-        # Rimuovi il ./ iniziale
+        # Remove leading ./
         file="${file#./}"
         
-        # Crea directory di destinazione se non esiste
+        # Create destination directory if it doesn't exist
         local dir=$(dirname "$file")
         mkdir -p "$SCRIPT_DIR/$dir"
         
-        # Copia il file
+        # Copy the file
         cp "$file" "$SCRIPT_DIR/$file"
     done
     
-    # Assicurati che phpharbor sia eseguibile
+    # Make sure phpharbor is executable
     chmod +x "$SCRIPT_DIR/phpharbor" 2>/dev/null || true
     chmod +x "$SCRIPT_DIR"/cli/*.sh 2>/dev/null || true
     
     cd "$SCRIPT_DIR"
     
-    # Ripristina configurazioni
-    print_info "Ripristino configurazioni..."
+    # Restore configurations
+    print_info "Restoring configurations..."
     [ -f "$backup_dir/.config" ] && cp "$backup_dir/.config" "$SCRIPT_DIR/"
     [ -f "$backup_dir/.env" ] && cp "$backup_dir/.env" "$SCRIPT_DIR/proxy/"
     
-    # Riavvia servizi se erano in esecuzione
+    # Restart services if they were running
     if [ "$services_running" = true ]; then
-        print_info "Riavvio servizi..."
+        print_info "Restarting services..."
         cd "$SCRIPT_DIR/proxy"
         $DOCKER_COMPOSE up -d > /dev/null 2>&1
         cd "$SCRIPT_DIR"
     fi
     
-    # Verifica nuovo numero di versione
+    # Check new version number
     local new_version=$(grep "^VERSION=" "$SCRIPT_DIR/phpharbor" | cut -d'"' -f2)
     
-    print_success "Aggiornamento completato! 🎉"
+    print_success "Update completed! 🎉"
     echo ""
-    echo "  Vecchia versione: $VERSION"
-    echo "  Nuova versione:   $new_version"
+    echo "  Old version: $VERSION"
+    echo "  New version: $new_version"
     echo ""
     
     if [ "$projects_external" = true ]; then
-        print_info "I tuoi progetti sono in: $PROJECTS_DIR"
+        print_info "Your projects are in: $PROJECTS_DIR"
     else
-        print_info "I tuoi progetti sono preservati in: $SCRIPT_DIR/projects"
+        print_info "Your projects are preserved in: $SCRIPT_DIR/projects"
     fi
     
     echo ""
-    print_info "Changelog completo:"
+    print_info "Full changelog:"
     echo "  https://github.com/$GITHUB_REPO/releases/tag/v$new_version"
 }
 
@@ -316,25 +316,25 @@ update_changelog() {
     
     local release_url
     if [ -n "$target_version" ]; then
-        # Rimuovi 'v' se presente
+        # Remove 'v' if present
         target_version="${target_version#v}"
-        print_info "Recupero changelog versione $target_version..."
+        print_info "Fetching changelog for version $target_version..."
         release_url="${RELEASE_TAG_URL}/v${target_version}"
     else
-        print_info "Recupero changelog ultima versione..."
+        print_info "Fetching changelog for latest version..."
         release_url="$RELEASE_LATEST_URL"
     fi
     
     echo ""
     
-    # Ottieni info release
+    # Get release info
     local release_info
     release_info=$(curl -s "$release_url" 2>/dev/null)
     
     if [ -z "$release_info" ] || echo "$release_info" | grep -q '"message": "Not Found"'; then
-        print_error "Impossibile recuperare il changelog"
+        print_error "Unable to fetch changelog"
         if [ -n "$target_version" ]; then
-            echo "Versione $target_version non trovata"
+            echo "Version $target_version not found"
         fi
         exit 1
     fi
@@ -349,43 +349,43 @@ update_changelog() {
     release_notes=$(echo "$release_info" | grep '"body"' | sed -E 's/.*"body": "(.*)".*/\1/' | sed 's/\\n/\n/g')
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "Versione: $version"
-    echo "Data:     $release_date"
+    echo "Version: $version"
+    echo "Date:    $release_date"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "$release_notes"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "Tutte le versioni:"
+    echo "All versions:"
     echo "  https://github.com/$GITHUB_REPO/releases"
 }
 
 update_list() {
-    print_title "Versioni Disponibili"
+    print_title "Available Versions"
     echo ""
     
-    print_info "Recupero elenco versioni da GitHub..."
+    print_info "Fetching version list from GitHub..."
     echo ""
     
-    # Ottieni tutte le release (prime 20)
+    # Get all releases (first 20)
     local releases_info
     releases_info=$(curl -s "${RELEASES_API_URL}?per_page=20" 2>/dev/null)
     
     if [ -z "$releases_info" ] || [ "$releases_info" = "[]" ]; then
-        print_warning "Nessuna release trovata"
+        print_warning "No releases found"
         echo ""
         echo "Repository: https://github.com/$GITHUB_REPO/releases"
         return 0
     fi
     
-    # Versione corrente evidenziata
-    echo "Versione corrente: ${GREEN}$VERSION${NC}"
+    # Current version highlighted
+    echo "Current version: ${GREEN}$VERSION${NC}"
     echo ""
-    echo "Versioni disponibili:"
+    echo "Available versions:"
     echo ""
     
-    # Parsing JSON manuale (compatibile senza jq)
+    # Manual JSON parsing (compatible without jq)
     local in_releases=false
     local version=""
     local date=""
@@ -405,10 +405,10 @@ update_list() {
             name=$(echo "$line" | sed -E 's/.*"name": "([^"]+)".*/\1/')
         fi
         
-        # Quando abbiamo tutti i campi, stampa
+        # When we have all fields, print
         if [ -n "$version" ] && [ -n "$date" ] && [ -n "$name" ]; then
             if [ "$version" = "$VERSION" ]; then
-                echo "  ${GREEN}✓ v$version${NC} - $date - $name ${CYAN}(installata)${NC}"
+                echo "  ${GREEN}✓ v$version${NC} - $date - $name ${CYAN}(installed)${NC}"
             else
                 echo "    v$version - $date - $name"
             fi
@@ -421,58 +421,58 @@ update_list() {
     done
     
     echo ""
-    print_info "Per installare una versione specifica:"
-    echo "  ./phpharbor update install <versione>"
+    print_info "To install a specific version:"
+    echo "  ./phpharbor update install <version>"
     echo ""
-    echo "Esempi:"
+    echo "Examples:"
     echo "  ./phpharbor update install 2.0.0"
-    echo "  ./phpharbor update install          # Installa ultima"
+    echo "  ./phpharbor update install          # Install latest"
 }
 
 show_update_usage() {
     cat << EOF
-Uso: ./phpharbor update <comando> [opzioni]
+Usage: ./phpharbor update <command> [options]
 
-Gestisce gli aggiornamenti di PHPHarbor.
+Manages PHPHarbor updates.
 
-COMANDI:
-  check                 Verifica disponibilità aggiornamenti
-  install [versione]    Installa versione (ultima se non specificata)
-  list                  Mostra tutte le versioni disponibili
-  changelog [versione]  Mostra changelog (ultima se non specificata)
-  help                  Mostra questo messaggio
+COMMANDS:
+  check                 Check for available updates
+  install [version]     Install version (latest if not specified)
+  list                  Show all available versions
+  changelog [version]   Show changelog (latest if not specified)
+  help                  Show this message
 
-ESEMPI:
-  # Verifica aggiornamenti
+EXAMPLES:
+  # Check for updates
   ./phpharbor update check
   
-  # Installa ultima versione
+  # Install latest version
   ./phpharbor update install
   
-  # Installa versione specifica
+  # Install specific version
   ./phpharbor update install 1.5.0
   ./phpharbor update install v1.5.0
   
-  # Elenca tutte le versioni
+  # List all versions
   ./phpharbor update list
   
-  # Vedi changelog
-  ./phpharbor update changelog          # Ultima versione
-  ./phpharbor update changelog 2.0.0    # Versione specifica
+  # View changelog
+  ./phpharbor update changelog          # Latest version
+  ./phpharbor update changelog 2.0.0    # Specific version
 
-NOTE:
-  • L'aggiornamento preserva configurazioni e progetti
-  • I certificati SSL vengono mantenuti
-  • I container Docker non vengono toccati
-  • Puoi installare versioni precedenti (downgrade)
-  • È possibile annullare durante il processo
+NOTES:
+  • Update preserves configurations and projects
+  • SSL certificates are kept
+  • Docker containers are not touched
+  • You can install previous versions (downgrade)
+  • You can cancel during the process
 
-CONFIGURAZIONI PRESERVATE:
-  ✓ .config (directory progetti, porte)
-  ✓ proxy/.env (configurazione porte)
-  ✓ projects/ (tutti i progetti)
-  ✓ proxy/nginx/certs/ (certificati SSL)
-  ✓ Container e reti Docker
+PRESERVED CONFIGURATIONS:
+  ✓ .config (projects directory, ports)
+  ✓ proxy/.env (port configuration)
+  ✓ projects/ (all projects)
+  ✓ proxy/nginx/certs/ (SSL certificates)
+  ✓ Docker containers and networks
 
 EOF
 }

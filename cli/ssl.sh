@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Module: SSL
-# Comando: ssl - Gestione certificati SSL
+# Command: ssl - SSL certificate management
 
 cmd_ssl() {
     local subcommand=${1:-help}
@@ -15,8 +15,8 @@ cmd_ssl() {
             ;;
         generate)
             if [ -z "$2" ]; then
-                print_error "Dominio non specificato"
-                echo "Uso: ./phpharbor ssl generate <dominio>"
+                print_error "Domain not specified"
+                echo "Usage: ./phpharbor ssl generate <domain>"
                 exit 1
             fi
             ssl_generate "$2"
@@ -28,7 +28,7 @@ cmd_ssl() {
             show_ssl_usage
             ;;
         *)
-            print_error "Comando SSL sconosciuto: $subcommand"
+            print_error "Unknown SSL command: $subcommand"
             show_ssl_usage
             exit 1
             ;;
@@ -36,20 +36,20 @@ cmd_ssl() {
 }
 
 ssl_setup() {
-    print_info "Configurazione Certificate Authority locale..."
+    print_info "Configuring local Certificate Authority..."
     "$SCRIPT_DIR/proxy/setup-ssl-ca.sh"
 }
 
 ssl_install_ca() {
     if ! command -v mkcert &> /dev/null; then
-        print_error "mkcert non trovato"
+        print_error "mkcert not found"
         echo ""
-        echo "Installa mkcert:"
+        echo "Install mkcert:"
         local os=$(detect_os)
         if [ "$os" = "macos" ]; then
             echo "  brew install mkcert"
         else
-            echo "  # Installazione da source"
+            echo "  # Install from source"
             echo "  curl -JLO https://dl.filippo.io/mkcert/latest?for=linux/amd64"
             echo "  chmod +x mkcert-v*-linux-amd64"
             echo "  sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert"
@@ -57,14 +57,14 @@ ssl_install_ca() {
         exit 1
     fi
     
-    print_info "Installazione CA locale..."
+    print_info "Installing local CA..."
     mkcert -install
     
     local ca_root="$(mkcert -CAROOT)"
     echo ""
-    print_success "CA installata in: $ca_root"
+    print_success "CA installed in: $ca_root"
     echo ""
-    print_warning "Riavvia tutti i browser per applicare le modifiche"
+    print_warning "Restart all browsers to apply changes"
 }
 
 ssl_generate() {
@@ -72,16 +72,16 @@ ssl_generate() {
     local certs_dir="$SCRIPT_DIR/proxy/nginx/certs"
     
     if ! command -v mkcert &> /dev/null; then
-        print_error "mkcert non trovato"
+        print_error "mkcert not found"
         echo ""
-        echo "Installa prima mkcert:"
+        echo "Install mkcert first:"
         echo "  ./phpharbor ssl setup"
         exit 1
     fi
     
     mkdir -p "$certs_dir"
     
-    print_info "Generazione certificato SSL per $domain..."
+    print_info "Generating SSL certificate for $domain..."
     
     mkcert -key-file "$certs_dir/$domain.key" \
            -cert-file "$certs_dir/$domain.crt" \
@@ -90,113 +90,113 @@ ssl_generate() {
     if [ -f "$certs_dir/$domain.crt" ]; then
         cp "$certs_dir/$domain.crt" "$certs_dir/$domain.chain.pem"
         
-        print_success "Certificato generato:"
+        print_success "Certificate generated:"
         echo "  • $certs_dir/$domain.key"
         echo "  • $certs_dir/$domain.crt"
         echo "  • $certs_dir/$domain.chain.pem"
         
-        print_info "Riavvio nginx-proxy..."
+        print_info "Restarting nginx-proxy..."
         cd "$SCRIPT_DIR/proxy"
         $DOCKER_COMPOSE restart nginx-proxy
         cd "$SCRIPT_DIR"
         
         echo ""
-        print_success "Il sito è ora accessibile via HTTPS: https://$domain"
+        print_success "Site is now accessible via HTTPS: https://$domain"
     else
-        print_error "Errore nella generazione del certificato"
+        print_error "Error generating certificate"
         exit 1
     fi
 }
 
 ssl_verify() {
-    print_info "Verifica configurazione SSL..."
+    print_info "Verifying SSL configuration..."
     echo ""
     
-    # Verifica mkcert
+    # Check mkcert
     if command -v mkcert &> /dev/null; then
-        print_success "mkcert installato: $(which mkcert)"
+        print_success "mkcert installed: $(which mkcert)"
         local version=$(mkcert -version 2>&1 | head -1)
-        echo "  Versione: $version"
+        echo "  Version: $version"
     else
-        print_error "mkcert non installato"
+        print_error "mkcert not installed"
         local os=$(detect_os)
         if [ "$os" = "macos" ]; then
-            echo "  Installa: brew install mkcert"
+            echo "  Install: brew install mkcert"
         else
-            echo "  Installa: https://github.com/FiloSottile/mkcert#installation"
+            echo "  Install: https://github.com/FiloSottile/mkcert#installation"
         fi
         return 1
     fi
     
     echo ""
     
-    # Verifica CA
+    # Check CA
     local ca_root="$(mkcert -CAROOT)"
     if [ -f "$ca_root/rootCA.pem" ]; then
-        print_success "CA locale configurata"
+        print_success "Local CA configured"
         echo "  Directory: $ca_root"
         
-        # Verifica installazione CA nel sistema
+        # Check CA installation in system
         local os=$(detect_os)
         if [ "$os" = "macos" ]; then
-            # Verifica nel keychain (macOS)
+            # Check in keychain (macOS)
             if security find-certificate -c "mkcert" /Library/Keychains/System.keychain &> /dev/null; then
-                print_success "CA installata nel keychain di sistema"
+                print_success "CA installed in system keychain"
             else
-                print_warning "CA non trovata nel keychain di sistema"
-                echo "  Esegui: ./phpharbor ssl install"
+                print_warning "CA not found in system keychain"
+                echo "  Run: ./phpharbor ssl install"
             fi
         else
-            # Su Linux verifica nel certutil o certificate store
+            # On Linux check in certutil or certificate store
             if certutil -d sql:$HOME/.pki/nssdb -L 2>/dev/null | grep -q "mkcert"; then
-                print_success "CA installata nel certificate store (NSS)"
+                print_success "CA installed in certificate store (NSS)"
             elif [ -f "/usr/local/share/ca-certificates/mkcert-rootCA.crt" ]; then
-                print_success "CA installata in /usr/local/share/ca-certificates"
+                print_success "CA installed in /usr/local/share/ca-certificates"
             else
-                print_warning "CA potrebbe non essere installata nel sistema"
-                echo "  Esegui: ./phpharbor ssl install"
+                print_warning "CA may not be installed in the system"
+                echo "  Run: ./phpharbor ssl install"
             fi
         fi
     else
-        print_warning "CA locale non configurata"
-        echo "  Esegui: ./phpharbor ssl install"
+        print_warning "Local CA not configured"
+        echo "  Run: ./phpharbor ssl install"
     fi
     
     echo ""
     
-    # Lista certificati generati
+    # List generated certificates
     local certs_dir="$SCRIPT_DIR/proxy/nginx/certs"
     if [ -d "$certs_dir" ]; then
         local cert_count=$(find "$certs_dir" -name "*.crt" -type f | wc -l | tr -d ' ')
         if [ "$cert_count" -gt 0 ]; then
-            print_info "Certificati generati: $cert_count"
+            print_info "Generated certificates: $cert_count"
             echo ""
             find "$certs_dir" -name "*.crt" -type f | while read cert; do
                 local domain=$(basename "$cert" .crt)
                 echo "  ✓ $domain"
             done
         else
-            print_info "Nessun certificato generato"
+            print_info "No certificates generated"
         fi
     fi
     
     echo ""
-    print_info "Per generare un nuovo certificato:"
-    echo "  ./phpharbor ssl generate <dominio>"
+    print_info "To generate a new certificate:"
+    echo "  ./phpharbor ssl generate <domain>"
 }
 
 show_ssl_usage() {
-    echo "Uso: ./phpharbor ssl <comando> [opzioni]"
+    echo "Usage: ./phpharbor ssl <command> [options]"
     echo ""
-    echo "Comandi:"
-    echo "  setup              Configura Certificate Authority locale (prima volta)"
-    echo "  install            Installa/reinstalla CA nel sistema"
-    echo "  generate <domain>  Genera certificato SSL per un dominio"
-    echo "  verify             Verifica configurazione SSL"
-    echo "  help               Mostra questo help"
+    echo "Commands:"
+    echo "  setup              Configure local Certificate Authority (first time)"
+    echo "  install            Install/reinstall CA in the system"
+    echo "  generate <domain>  Generate SSL certificate for a domain"
+    echo "  verify             Verify SSL configuration"
+    echo "  help               Show this help"
     echo ""
-    echo "Esempi:"
-    echo "  ./phpharbor ssl setup                  # Setup iniziale"
-    echo "  ./phpharbor ssl generate myapp.test    # Genera cert per dominio"
-    echo "  ./phpharbor ssl verify                 # Verifica configurazione"
+    echo "Examples:"
+    echo "  ./phpharbor ssl setup                  # Initial setup"
+    echo "  ./phpharbor ssl generate myapp.test    # Generate cert for domain"
+    echo "  ./phpharbor ssl verify                 # Verify configuration"
 }

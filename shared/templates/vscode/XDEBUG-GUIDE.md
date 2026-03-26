@@ -1,91 +1,91 @@
-# Guida Test Xdebug con VS Code
+# Xdebug Test Guide with VS Code
 
-## ✅ Configurazione Completata
+## ✅ Configuration Completed
 
-- **Xdebug installato**: v3.5.1
-- **Porta**: 9003
+- **Xdebug installed**: v3.5.1
+- **Port**: 9003
 - **Host**: host.docker.internal
-- **VS Code launch.json**: Configurato
-- **Route di test**: /xdebug-test
+- **VS Code launch.json**: Configured
+- **Test route**: /xdebug-test
 
 ---
 
-## 🧪 Come Testare Xdebug
+## 🧪 How to Test Xdebug
 
-### Step 1: Installa l'estensione PHP Debug in VS Code
-1. Apri VS Code
-2. Vai su Extensions (Cmd+Shift+X)
-3. Cerca "PHP Debug" di **Xdebug**
-4. Installa l'estensione
+### Step 1: Install the PHP Debug Extension in VS Code
+1. Open VS Code
+2. Go to Extensions (Cmd+Shift+X)
+3. Search for "PHP Debug" by **Xdebug**
+4. Install the extension
 
-### Step 2: Apri il progetto in VS Code
+### Step 2: Open the Project in VS Code
 ```bash
-cd /Users/vincenzo/php-harbor/projects/my-spots-list/app
+cd /path/to/your/project/app
 code .
 ```
 
-### Step 3: Imposta i Breakpoint
-1. Apri il file: `routes/xdebug-test.php`
-2. Clicca sul margine sinistro delle righe 7 e 25 per mettere i breakpoint (pallino rosso)
+### Step 3: Set Breakpoints
+1. Open the file: `routes/xdebug-test.php`
+2. Click on the left margin of lines 7 and 25 to set breakpoints (red dot)
 
-### Step 4: Avvia il Debug Listener
-1. In VS Code, vai su "Run and Debug" (Cmd+Shift+D)
-2. Seleziona "Listen for Xdebug (PHPHarbor)" dal menu a tendina
-3. Clicca sul pulsante verde "Start Debugging" (F5)
-4. Dovresti vedere "Xdebug: Listening on port 9003" nella Debug Console
+### Step 4: Start the Debug Listener
+1. In VS Code, go to "Run and Debug" (Cmd+Shift+D)
+2. Select "Listen for Xdebug (PHPHarbor)" from the dropdown menu
+3. Click the green "Start Debugging" button (F5)
+4. You should see "Xdebug: Listening on port 9003" in the Debug Console
 
-### Step 5: Fai una Richiesta con Xdebug Trigger
-Nel browser, apri una di queste URL:
+### Step 5: Make a Request with Xdebug Trigger
+In your browser, open one of these URLs:
 
-**Opzione A - Con query parameter:**
+**Option A - With query parameter:**
 ```
-http://my-spots-list.test:8080/xdebug-test?XDEBUG_TRIGGER=1
+http://your-project.test:8080/xdebug-test?XDEBUG_TRIGGER=1
 ```
 
-**Opzione B - Con cookie (più comodo):**
-1. Installa l'estensione "Xdebug helper" per Chrome/Firefox
-2. Attivala cliccando sull'icona e selezionando "Debug"
-3. Vai su: `http://my-spots-list.test:8080/xdebug-test`
+**Option B - With cookie (more convenient):**
+1. Install the "Xdebug helper" extension for Chrome/Firefox
+2. Activate it by clicking the icon and selecting "Debug"
+3. Go to: `http://your-project.test:8080/xdebug-test`
 
 ### Step 6: Debug!
-Quando la richiesta arriva al breakpoint:
-- VS Code si fermerà sulla riga
-- Potrai vedere le variabili nel pannello laterale
-- Potrai fare "Step Over" (F10), "Step Into" (F11), "Continue" (F5)
-- Nella Debug Console vedrai i valori delle variabili
+When the request hits the breakpoint:
+- VS Code will stop at that line
+- You can see variables in the side panel
+- You can "Step Over" (F10), "Step Into" (F11), "Continue" (F5)
+- In the Debug Console you'll see variable values
 
 ---
 
-## 🎯 Verifica che Funzioni
+## 🎯 Verify It Works
 
-Se tutto funziona, vedrai:
-1. VS Code si ferma sulla riga con il breakpoint
-2. Il pannello "VARIABLES" mostra `$message`, `$data`, ecc.
-3. Puoi ispezionare array e oggetti
-4. La richiesta nel browser rimane in "loading" finché non premi "Continue"
+If everything works, you'll see:
+1. VS Code stops at the line with the breakpoint
+2. The "VARIABLES" panel shows `$message`, `$data`, etc.
+3. You can inspect arrays and objects
+4. The browser request stays "loading" until you press "Continue"
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Il debug non parte?
-1. Verifica che il listener sia attivo (icona verde nella barra di debug)
-2. Controlla la Debug Console per errori
-3. Verifica che la porta 9003 non sia usata: `lsof -i :9003`
+### Debug doesn't start?
+1. Verify the listener is active (green icon in debug bar)
+2. Check the Debug Console for errors
+3. Verify port 9003 is not in use: `lsof -i :9003`
 
-### Breakpoint ignorati?
-1. Verifica che il path mapping sia corretto in launch.json
-2. Assicurati di usare `?XDEBUG_TRIGGER=1` o il cookie
+### Breakpoints ignored?
+1. Verify path mapping is correct in launch.json
+2. Make sure to use `?XDEBUG_TRIGGER=1` or the cookie
 
-### Altri problemi?
-Controlla i log del container:
+### Other issues?
+Check container logs:
 ```bash
-docker logs my-spots-list-app | grep -i xdebug
+docker logs your-project-app | grep -i xdebug
 ```
 
 ---
 
-## 📚 Risorse Utili
+## 📚 Useful Resources
 
 - [VS Code PHP Debugging](https://code.visualstudio.com/docs/languages/php#_debugging)
 - [Xdebug Documentation](https://xdebug.org/docs/step_debug)
@@ -94,11 +94,11 @@ docker logs my-spots-list-app | grep -i xdebug
 
 ---
 
-## 🎓 Tutorial: Debug di una Request Laravel
+## 🎓 Tutorial: Debug a Laravel Request
 
-1. Metti un breakpoint in un Controller
-2. Apri la route nel browser con `?XDEBUG_TRIGGER=1`
-3. Segui passo-passo l'esecuzione
-4. Ispeziona `$request`, modelli, query database, ecc.
+1. Set a breakpoint in a Controller
+2. Open the route in browser with `?XDEBUG_TRIGGER=1`
+3. Follow the execution step-by-step
+4. Inspect `$request`, models, database queries, etc.
 
-**Buon debug!** 🐛🔍
+**Happy debugging!** 🐛🔍

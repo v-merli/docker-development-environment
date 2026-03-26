@@ -1,80 +1,80 @@
 #!/bin/bash
 
-# Script per configurare correttamente la CA di mkcert su macOS
+# Script to properly configure mkcert CA on macOS
 
 set -e
 
-echo "🔐 Setup Certificate Authority per certificati SSL locali"
+echo "🔐 Certificate Authority Setup for local SSL certificates"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Verifica se mkcert è installato
+# Check if mkcert is installed
 if ! command -v mkcert &> /dev/null; then
-    echo "⚠️  mkcert non trovato. Installazione..."
+    echo "⚠️  mkcert not found. Installing..."
     if command -v brew &> /dev/null; then
         brew install mkcert
-        echo "✅ mkcert installato"
+        echo "✅ mkcert installed"
     else
-        echo "❌ Homebrew non trovato. Installa prima Homebrew:"
+        echo "❌ Homebrew not found. Install Homebrew first:"
         echo "   /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
         exit 1
     fi
 fi
 
-# Verifica se nss è installato (necessario per Firefox)
+# Check if nss is installed (required for Firefox)
 if ! brew list nss &> /dev/null; then
-    echo "📦 Installazione nss (necessario per Firefox)..."
+    echo "📦 Installing nss (required for Firefox)..."
     brew install nss
 fi
 
 echo ""
-echo "🔐 Installazione CA locale..."
-echo "   Verrà richiesta la password di sistema per installare la CA nel keychain"
+echo "🔐 Installing local CA..."
+echo "   System password will be required to install CA in keychain"
 echo ""
 
-# Installa la CA
+# Install CA
 mkcert -install
 
 CA_ROOT="$(mkcert -CAROOT)"
 echo ""
-echo "✅ CA installata in: $CA_ROOT"
+echo "✅ CA installed at: $CA_ROOT"
 echo ""
 
-# Verifica lo stato nel keychain
-echo "🔍 Verifica installazione nel keychain..."
+# Verify keychain status
+echo "🔍 Verifying keychain installation..."
 if security find-certificate -c "mkcert" /Library/Keychains/System.keychain &> /dev/null; then
-    echo "✅ Certificato CA trovato nel keychain di sistema"
+    echo "✅ CA certificate found in system keychain"
 else
-    echo "⚠️  Certificato CA non trovato nel keychain di sistema"
+    echo "⚠️  CA certificate not found in system keychain"
 fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🎉 Configurazione completata!"
+echo "🎉 Configuration completed!"
 echo ""
-echo "📋 Passi successivi:"
+echo "📋 Next steps:"
 echo ""
-echo "   1️⃣  Chiudi TUTTI i browser aperti (Chrome, Firefox, Safari, ecc.)"
-echo "   2️⃣  Riavvia i browser"
-echo "   3️⃣  Testa: https://ptest.test:8443"
+echo "   1️⃣  Close ALL open browsers (Chrome, Firefox, Safari, etc.)"
+echo "   2️⃣  Restart browsers"
+echo "   3️⃣  Test: https://ptest.test:8443"
 echo ""
-echo "🔧 Se il browser mostra ancora avvisi di sicurezza:"
+echo "🔧 If browser still shows security warnings:"
 echo ""
 echo "   Chrome/Safari:"
-echo "   • Apri 'Accesso Portachiavi' (Keychain Access)"
-echo "   • Seleziona il keychain 'Sistema' nella barra laterale"
-echo "   • Cerca 'mkcert' nella lista dei certificati"
-echo "   • Fai doppio clic sul certificato 'mkcert'"
-echo "   • Espandi la sezione 'Fidati'"
-echo "   • Per 'SSL (Secure Sockets Layer)' seleziona: 'Fidati sempre'"
-echo "   • Chiudi la finestra (richiederà la password)"
-echo "   • Riavvia il browser"
+echo "   • Open 'Keychain Access'"
+echo "   • Select 'System' keychain in sidebar"
+echo "   • Search for 'mkcert' in certificate list"
+echo "   • Double-click the 'mkcert' certificate"
+echo "   • Expand 'Trust' section"
+echo "   • For 'SSL (Secure Sockets Layer)' select: 'Always Trust'"
+echo "   • Close window (will require password)"
+echo "   • Restart browser"
 echo ""
 echo "   Firefox:"
-echo "   • Firefox usa il proprio archivio certificati"
-echo "   • L'installazione di nss dovrebbe averlo configurato automaticamente"
-echo "   • Se necessario, vai su about:preferences#privacy"
-echo "   • Scorri a 'Certificati' > 'Visualizza certificati'"
-echo "   • Tab 'Autorità' > 'Importa' > Seleziona $CA_ROOT/rootCA.pem"
+echo "   • Firefox uses its own certificate store"
+echo "   • nss installation should have configured it automatically"
+echo "   • If needed, go to about:preferences#privacy"
+echo "   • Scroll to 'Certificates' > 'View Certificates'"
+echo "   • Tab 'Authorities' > 'Import' > Select $CA_ROOT/rootCA.pem"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

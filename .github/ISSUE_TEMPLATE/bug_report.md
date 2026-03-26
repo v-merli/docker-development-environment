@@ -1,75 +1,75 @@
 ---
 name: Bug Report
-about: Segnala un bug o comportamento inatteso
+about: Report a bug or unexpected behavior
 title: '[BUG] '
 labels: bug
 assignees: ''
 ---
 
-## 🐛 Descrizione Bug
+## 🐛 Bug Description
 
-<!-- Descrizione chiara e concisa del bug -->
+<!-- Clear and concise description of the bug -->
 
-## 🔄 Riproduzione
+## 🔄 Reproduction
 
-Passaggi per riprodurre il comportamento:
+Steps to reproduce the behavior:
 
-1. Esegui comando `...`
-2. Apri browser su `...`
-3. Visualizza errore `...`
+1. Run command `...`
+2. Open browser on `...`
+3. View error `...`
 
-## ✅ Comportamento Atteso
+## ✅ Expected Behavior
 
-<!-- Cosa ti aspettavi che succedesse -->
+<!-- What you expected to happen -->
 
-## ❌ Comportamento Attuale
+## ❌ Actual Behavior
 
-<!-- Cosa succede invece -->
+<!-- What happens instead -->
 
-## 📋 Ambiente
+## 📋 Environment
 
-**Sistema Operativo:**
+**Operating System:**
 ```bash
-# Output di: sw_vers (macOS) o uname -a (Linux)
+# Output of: sw_vers (macOS) or uname -a (Linux)
 ```
 
 **Docker:**
 ```bash
-# Output di: docker --version
+# Output of: docker --version
 ```
 
 **Docker Compose:**
 ```bash
-# Output di: docker compose version
+# Output of: docker compose version
 ```
 
-**Docker Dev Environment:**
+**PHPHarbor:**
 ```bash
-# Output di: phpharbor version
+# Output of: phpharbor version
 ```
 
-**Progetto:**
-- Tipo: [Laravel/WordPress/HTML/PHP]
-- PHP Version: [8.3, 8.2, ecc]
-- Node Version: [22, 20, ecc]
-- Servizi: [dedicated/shared/fully-shared]
+**Project:**
+- Type: [Laravel/WordPress/HTML/PHP]
+- PHP Version: [8.3, 8.2, etc]
+- Node Version: [22, 20, etc]
+- Services: [dedicated/shared/fully-shared]
 
 ## 📄 Logs
 
 <details>
-<summary>Logs Progetto</summary>
+<summary>Project Logs</summary>
 
 ```bash
-# Output di: phpharbor project logs PROJECT_NAME
+# Output of: phpharbor project logs PROJECT_NAME
 ```
 
 </details>
 
 <details>
-<summary>Logs Container Specifico</summary>
+<summary>Specific Container Logs</summary>
 
 ```bash
-# Output di: docker logs CONTAINER_NAME
+# Output of: docker logs CONTAINER_NAME
 ```
 
 </details>
@@ -78,20 +78,20 @@ Passaggi per riprodurre il comportamento:
 <summary>Docker Compose Config</summary>
 
 ```yaml
-# Contenuto di: projects/PROJECT_NAME/docker-compose.yml
-# (rimuovi dati sensibili)
+# Content of: projects/PROJECT_NAME/docker-compose.yml
+# (remove sensitive data)
 ```
 
 </details>
 
 ## 🖼️ Screenshots
 
-<!-- Se applicabile, aggiungi screenshot -->
+<!-- If applicable, add screenshots -->
 
-## 🔍 Informazioni Aggiuntive
+## 🔍 Additional Information
 
-<!-- Qualsiasi altro contesto o informazione utile -->
+<!-- Any other useful context or information -->
 
-- Ho cercato issue simili: [ ] Sì / [ ] No
-- Il problema è riproducibile: [ ] Sempre / [ ] A volte / [ ] Raramente
-- Ho provato a pulire e ricreare: [ ] Sì / [ ] No
+- I searched for similar issues: [ ] Yes / [ ] No
+- The problem is reproducible: [ ] Always / [ ] Sometimes / [ ] Rarely
+- I tried to clean and recreate: [ ] Yes / [ ] No

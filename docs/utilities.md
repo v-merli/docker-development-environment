@@ -1,26 +1,26 @@
-# 🔧 Utilities e Estensioni PHP Incluse
+# 🔧 Utilities and Included PHP Extensions
 
-Tutti i progetti includono automaticamente le seguenti utilities:
+All projects automatically include the following utilities:
 
-## 📦 Estensioni PHP
+## 📦 PHP Extensions
 
-### Estensioni Standard Laravel
-- `pdo_mysql` - Database MySQL
-- `mbstring` - Gestione stringhe multibyte
-- `exif` - Metadati immagini
+### Standard Laravel Extensions
+- `pdo_mysql` - MySQL database
+- `mbstring` - Multibyte string handling
+- `exif` - Image metadata
 - `pcntl` - Process control
-- `bcmath` - Matematica precisione arbitraria
-- `gd` - Elaborazione immagini
-- `zip` - Compressione file
+- `bcmath` - Arbitrary precision math
+- `gd` - Image processing
+- `zip` - File compression
 
-### Estensioni Avanzate
+### Advanced Extensions
 
 #### **Redis** (pecl)
-- Cache e sessioni ad alte prestazioni
-- Queue driver per Laravel
-- Connessione: `redis://redis:6379`
+- High-performance cache and sessions
+- Queue driver for Laravel
+- Connection: `redis://redis:6379`
 
-**Configurazione Laravel (.env):**
+**Laravel Configuration (.env):**
 ```env
 REDIS_HOST=redis
 REDIS_PASSWORD=null
@@ -32,11 +32,11 @@ QUEUE_CONNECTION=redis
 ```
 
 #### **Imagick** (pecl)
-- Manipolazione avanzata immagini
-- Supporto PDF, SVG, e oltre 200 formati
-- Filtri e trasformazioni
+- Advanced image manipulation
+- PDF, SVG support, and over 200 formats
+- Filters and transformations
 
-**Esempio uso:**
+**Usage example:**
 ```php
 $image = new Imagick('input.jpg');
 $image->thumbnailImage(200, 200, true);
@@ -44,11 +44,11 @@ $image->writeImage('output.jpg');
 ```
 
 #### **Xdebug 3** (pecl)
-- Debugging interattivo
-- Code coverage per test
-- Profiling prestazioni
+- Interactive debugging
+- Code coverage for tests
+- Performance profiling
 
-**Configurazione inclusa:**
+**Included configuration:**
 ```ini
 xdebug.mode=develop,debug,coverage
 xdebug.client_host=host.docker.internal
@@ -56,8 +56,8 @@ xdebug.client_port=9003
 xdebug.start_with_request=yes
 ```
 
-**Setup VS Code:**
-Aggiungi al `.vscode/launch.json`:
+**VS Code Setup:**
+Add to `.vscode/launch.json`:
 ```json
 {
   "version": "0.2.0",
@@ -75,33 +75,33 @@ Aggiungi al `.vscode/launch.json`:
 }
 ```
 
-## 🐳 Servizi Container
+## 🐳 Container Services
 
 ### Redis
-Ogni progetto ha il proprio container Redis:
+Each project has its own Redis container:
 ```bash
-# Connessione da Laravel
+# Connection from Laravel
 Host: redis
 Port: 6379
 
-# CLI Redis
-./manage-projects.sh shell my-project
+# Redis CLI
+./phpharbor shell my-project
 redis-cli -h redis
 
-# Monitor comandi Redis
+# Monitor Redis commands
 docker-compose exec redis redis-cli monitor
 ```
 
 ### MySQL
-Container MySQL dedicato per progetto:
+Dedicated MySQL container per project:
 ```bash
-# Accesso via CLI
-./manage-projects.sh mysql my-project
+# CLI access
+./phpharbor mysql my-project
 
-# Backup database
+# Database backup
 docker-compose exec mysql mysqldump -uroot -proot database_name > backup.sql
 
-# Restore database
+# Database restore
 docker-compose exec -T mysql mysql -uroot -proot database_name < backup.sql
 ```
 
@@ -118,15 +118,15 @@ docker-compose exec app php artisan test --coverage-html=coverage
 
 ### Profiling
 ```ini
-# Abilita profiling in php.ini
+# Enable profiling in php.ini
 xdebug.mode=profile
 xdebug.output_dir=/tmp/xdebug
 ```
 
-## ⚙️ Configurazioni Custom
+## ⚙️ Custom Configurations
 
-### Disabilitare Xdebug (per performance)
-Crea `docker-compose.override.yml`:
+### Disable Xdebug (for performance)
+Create `docker-compose.override.yml`:
 ```yaml
 services:
   app:
@@ -134,40 +134,40 @@ services:
       - XDEBUG_MODE=off
 ```
 
-### Configurazione Redis Custom
+### Custom Redis Configuration
 ```yaml
 services:
   redis:
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
 ```
 
-## 📊 Verifica Estensioni Installate
+## 📊 Verify Installed Extensions
 
 ```bash
-# Lista tutte le estensioni PHP
+# List all PHP extensions
 docker-compose exec app php -m
 
-# Verifica Redis
+# Verify Redis
 docker-compose exec app php -r "echo extension_loaded('redis') ? 'OK' : 'NO';"
 
-# Verifica Imagick
+# Verify Imagick
 docker-compose exec app php -r "echo extension_loaded('imagick') ? 'OK' : 'NO';"
 
-# Verifica Xdebug
+# Verify Xdebug
 docker-compose exec app php -v | grep Xdebug
 
-# Info complete PHP
+# Complete PHP info
 docker-compose exec app php -i
 ```
 
 ## 🎯 Best Practices
 
-1. **Redis per Cache**: Usa Redis invece di file cache per migliori prestazioni
-2. **Xdebug in Produzione**: Mai abilitare Xdebug in produzione (rallenta molto)
-3. **Imagick Limits**: Configura limiti memoria per evitare crash con immagini grandi
-4. **Redis Persistenza**: I dati Redis sono persistenti grazie al volume Docker
+1. **Redis for Cache**: Use Redis instead of file cache for better performance
+2. **Xdebug in Production**: Never enable Xdebug in production (significantly slows down)
+3. **Imagick Limits**: Configure memory limits to avoid crashes with large images
+4. **Redis Persistence**: Redis data is persistent thanks to the Docker volume
 
-## 🔗 Connessioni da Codice
+## 🔗 Connections from Code
 
 ### Redis in Laravel
 ```php
@@ -191,13 +191,13 @@ Redis::transaction(function ($redis) {
 ```php
 use Intervention\Image\Facades\Image;
 
-// Con Intervention Image (usa Imagick driver)
+// With Intervention Image (uses Imagick driver)
 $img = Image::make('photo.jpg')
     ->resize(300, 200)
     ->greyscale()
     ->save('thumbnail.jpg');
 
-// Imagick diretto
+// Direct Imagick
 $imagick = new \Imagick('input.pdf[0]');
 $imagick->setImageFormat('jpg');
 $imagick->writeImage('output.jpg');
@@ -205,36 +205,36 @@ $imagick->writeImage('output.jpg');
 
 ## 🐛 Troubleshooting
 
-### Xdebug non si connette
+### Xdebug not connecting
 ```bash
-# Verifica configurazione
+# Check configuration
 docker-compose exec app php --ri xdebug
 
-# Abilita log debug
+# Enable debug logging
 xdebug.log=/tmp/xdebug.log
 xdebug.log_level=7
 
-# Verifica porta libera
+# Check if port is free
 lsof -i :9003
 ```
 
 ### Redis connection refused
 ```bash
-# Verifica container Redis
+# Check Redis container
 docker-compose ps redis
 
-# Test connessione
+# Test connection
 docker-compose exec app php artisan tinker
 > Redis::connection()->ping()
 ```
 
-### Imagick errori memoria
+### Imagick memory errors
 ```bash
-# Aumenta limiti PHP
-# Crea php.ini custom e monta in docker-compose
+# Increase PHP limits
+# Create custom php.ini and mount in docker-compose
 memory_limit = 512M
 ```
 
 ---
 
-Tutte queste estensioni sono pre-configurate e pronte all'uso in ogni nuovo progetto! 🚀
+All these extensions are pre-configured and ready to use in every new project! 🚀

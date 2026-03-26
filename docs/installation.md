@@ -1,31 +1,31 @@
-# Installazione
+# Installation
 
-Guida completa all'installazione di PHPHarbor.
+Complete guide to installing PHPHarbor.
 
-## 📋 Requisiti
+## 📋 Requirements
 
-### Sistema Operativo
+### Operating System
 
 - ✅ **macOS** (10.15+)
-- ✅ **Linux** (Ubuntu, Debian, RHEL, CentOS, ecc.)
-- ✅ **Windows** (10/11 con WSL2) → **[Guida Windows completa →](windows-setup.md)**
+- ✅ **Linux** (Ubuntu, Debian, RHEL, CentOS, etc.)
+- ✅ **Windows** (10/11 with WSL2) → **[Complete Windows guide →](windows-setup.md)**
 
-### Obbligatori
+### Required
 
 - **Docker** (v20.10+)
   - macOS: [Docker Desktop](https://www.docker.com/products/docker-desktop)
   - Linux: [Docker Engine](https://docs.docker.com/engine/install/)
-  - Verifica: `docker --version`
+  - Verify: `docker --version`
 
-### Opzionali (ma consigliati)
+### Optional (but recommended)
 
-- **mkcert** - Per certificati SSL locali HTTPS
+- **mkcert** - For local HTTPS SSL certificates
   - macOS:
     ```bash
     brew install mkcert
     mkcert -install
     ```
-  - Linux: [Installazione da GitHub](https://github.com/FiloSottile/mkcert#installation)
+  - Linux: [Install from GitHub](https://github.com/FiloSottile/mkcert#installation)
     ```bash
     # Debian/Ubuntu
     wget https://github.com/FiloSottile/mkcert/releases/latest/download/mkcert-v*-linux-amd64
@@ -34,119 +34,119 @@ Guida completa all'installazione di PHPHarbor.
     mkcert -install
     ```
 
-- **dnsmasq** - Per DNS wildcard (*.test → 127.0.0.1)
+- **dnsmasq** - For DNS wildcard (*.test → 127.0.0.1)
   - macOS: `brew install dnsmasq`
   - Linux: `sudo apt-get install dnsmasq` (Debian/Ubuntu)
 
 ---
 
-## 🚀 Installazione Rapida
+## 🚀 Quick Installation
 
-### Metodo 1: Script di Installazione (Consigliato)
+### Method 1: Installation Script (Recommended)
 
-Un solo comando per installare tutto (funziona su **macOS, Linux e Windows WSL2**):
+One command to install everything (works on **macOS, Linux and Windows WSL2**):
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/your-username/php-harbor/main/install.sh)
 ```
 
-Lo script:
-- ✅ Rileva automaticamente il sistema operativo (macOS/Linux/WSL2)
-- ✅ Verifica prerequisiti
-- ✅ Clona il repository in `~/.phpharbor`
-- ✅ Imposta permessi eseguibili su `phpharbor
-- ✅ Crea symlink `/usr/local/bin/phpharbor
-- ✅ Configura autocompletamento bash/zsh
-- ✅ Esegue setup iniziale (opzionale)
+The script:
+- ✅ Automatically detects operating system (macOS/Linux/WSL2)
+- ✅ Checks prerequisites
+- ✅ Clones repository to `~/.phpharbor`
+- ✅ Sets executable permissions on `phpharbor`
+- ✅ Creates symlink `/usr/local/bin/phpharbor`
+- ✅ Configures bash/zsh autocompletion
+- ✅ Runs initial setup (optional)
 
-> 🪟 **Utenti Windows**: Prima di eseguire lo script, segui la **[Guida Windows/WSL2 →](windows-setup.md)** per installare WSL2 e Docker Desktop.
+> 🪟 **Windows Users**: Before running the script, follow the **[Windows/WSL2 Guide →](windows-setup.md)** to install WSL2 and Docker Desktop.
 
-### Metodo 2: Installazione Manuale
+### Method 2: Manual Installation
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/your-username/php-harbor.git ~/.phpharbor
 cd ~/.php-harbor
 
-# 2. Imposta permessi e crea symlink
+# 2. Set permissions and create symlink
 chmod +x phpharbor
-sudo ln -sf ~/.php-harbor/phpharbor /local/bin/phpharbor
+sudo ln -sf ~/.php-harbor/phpharbor /usr/local/bin/phpharbor
 
-# 3. Autocompletamento (bash)
+# 3. Autocompletion (bash)
 echo 'source ~/.phpharbor/phpharbor-completion.bash' >> ~/.bashrc
 source ~/.bashrc
 
-# 3. Autocompletamento (zsh)
+# 3. Autocompletion (zsh)
 echo 'source ~/.phpharbor/phpharbor-completion.bash' >> ~/.zshrc
 source ~/.zshrc
 
-# 4. Setup iniziale
+# 4. Initial setup
 phpharbor setup init
 ```
 
 ---
 
-## ⚙️ Setup Iniziale
+## ⚙️ Initial Setup
 
-Dopo l'installazione, esegui il setup per configurare:
+After installation, run setup to configure:
 
 ```bash
 phpharbor setup init
 ```
 
-Questo crea:
-- **Directory Progetti** - Scegli dove salvare i progetti (default: `~/.phpharbor/projects`)
-- **Nginx Reverse Proxy** - Routing automatico dei progetti
-- **SSL Certificate Authority** - Certificati HTTPS locali
-- **Rete Docker condivisa** - Comunicazione tra container
-- **DNS locale** (opzionale) - Risoluzione *.test
+This creates:
+- **Projects Directory** - Choose where to save projects (default: `~/.phpharbor/projects`)
+- **Nginx Reverse Proxy** - Automatic project routing
+- **SSL Certificate Authority** - Local HTTPS certificates
+- **Shared Docker Network** - Inter-container communication
+- **Local DNS** (optional) - *.test resolution
 
-### 📁 Configurazione Directory Progetti
+### 📁 Projects Directory Configuration
 
-Durante il setup ti verrà chiesto dove salvare i progetti:
+During setup you'll be asked where to save projects:
 
 ```
-Dove vuoi salvare i tuoi progetti Docker?
+Where do you want to save your Docker projects?
 
 1) ~/.phpharbor/projects (default)
 2) ~/Development/docker-projects
-3) Percorso personalizzato
+3) Custom path
 ```
 
-**Vantaggi directory custom:**
-- ✅ Organizzazione personale (es: tutti i progetti in `~/Development`)
-- ✅ Performance (usa SSD separato più veloce)
-- ✅ Backup semplificato (cartella esterna al tool)
-- ✅ Condivisione con altri strumenti
+**Custom directory advantages:**
+- ✅ Personal organization (e.g., all projects in `~/Development`)
+- ✅ Performance (use separate faster SSD)
+- ✅ Simplified backup (folder external to tool)
+- ✅ Sharing with other tools
 
-**Cambiare directory in seguito:**
+**Change directory later:**
 ```bash
 phpharbor setup config
 ```
 
-Lo script può anche **spostare automaticamente** i progetti esistenti nella nuova directory.
+The script can also **automatically move** existing projects to the new directory.
 
-### 🔌 Configurazione Porte
+### 🔌 Port Configuration
 
-Puoi personalizzare le porte dei servizi per evitare conflitti:
+You can customize service ports to avoid conflicts:
 
 ```bash
 phpharbor setup ports
 ```
 
-**Porte configurabili:**
-- **HTTP**: Default 8080 (accesso web progetti)
-- **HTTPS**: Default 8443 (accesso HTTPS progetti)
-- **MySQL**: Default 3306 (MySQL condiviso)
-- **Redis**: Default 6379 (Redis condiviso)
+**Configurable ports:**
+- **HTTP**: Default 8080 (web access projects)
+- **HTTPS**: Default 8443 (HTTPS access projects)
+- **MySQL**: Default 3306 (shared MySQL)
+- **Redis**: Default 6379 (shared Redis)
 
-**Casi d'uso comuni:**
-- Porta 8080 già occupata → Usa 8090
-- Multipli ambienti Docker → Usa porte diverse per non confondere
-- MySQL locale già attivo → Usa 3307 per quello condiviso
+**Common use cases:**
+- Port 8080 already in use → Use 8090
+- Multiple Docker environments → Use different ports to avoid confusion
+- Local MySQL already running → Use 3307 for shared one
 
-**Modifica manuale:**
-Puoi anche modificare direttamente `~/.phpharbor/.config`:
+**Manual editing:**
+You can also directly edit `~/.phpharbor/.config`:
 ```bash
 HTTP_PORT=8090
 HTTPS_PORT=8444
@@ -154,79 +154,79 @@ MYSQL_SHARED_PORT=3307
 REDIS_SHARED_PORT=6380
 ```
 
-Dopo la modifica, riavvia i servizi:
+After modification, restart services:
 ```bash
-phpharbor setup proxy  # Riavvia proxy con nuove porte
+phpharbor setup proxy  # Restart proxy with new ports
 ```
 
 ---
 
-## 🧪 Verifica Installazione
+## 🧪 Verify Installation
 
 ```bash
-# Versione
+# Version
 phpharbor version
 
 # Help
 phpharbor help
 
-# Status servizi condivisi
+# Shared services status
 phpharbor shared status
 ```
 
 ---
 
-## 🏃 Primo Progetto
+## 🏃 First Project
 
-### Modalità Interattiva
+### Interactive Mode
 
 ```bash
 phpharbor create
 ```
 
-Ti guida attraverso un menu per scegliere:
-- Nome progetto
-- Tipo (Laravel, WordPress, HTML statico)
-- Versione PHP e Node
-- Servizi dedicati o condivisi
+Guides you through a menu to choose:
+- Project name
+- Type (Laravel, WordPress, static HTML)
+- PHP and Node version
+- Dedicated or shared services
 
-### Modalità CLI
+### CLI Mode
 
 ```bash
-# Laravel completo
+# Complete Laravel
 phpharbor create myapp --type laravel --php 8.3 --node 22
 
-# Laravel con servizi condivisi
+# Laravel with shared services
 phpharbor create myapp --type laravel --fully-shared
 
-# WordPress con MySQL dedicato, Redis condiviso
+# WordPress with dedicated MySQL, shared Redis
 phpharbor create myblog --type wordpress --shared-redis
 
-# HTML statico
+# Static HTML
 phpharbor create landing --type html --shared-php
 ```
 
 ---
 
-## 📦 Gestione Progetti
+## 📦 Project Management
 
 ```bash
-# Lista progetti
+# List projects
 phpharbor project list
 
-# Avvia progetto
+# Start project
 phpharbor dev myapp
 
-# Stop progetto
+# Stop project
 phpharbor project stop myapp
 
 # Logs
 phpharbor project logs myapp
 
-# Info dettagliate
+# Detailed info
 phpharbor project info myapp
 
-# Rimuovi progetto
+# Remove project
 phpharbor project remove myapp
 ```
 
@@ -234,77 +234,77 @@ phpharbor project remove myapp
 
 ## 🔧 Troubleshooting
 
-### Permessi su /usr/local/bin
+### Permissions on /usr/local/bin
 
-Se non hai permessi per creare symlink:
+If you don't have permissions to create symlink:
 
 ```bash
-# Alternativa: aggiungi al PATH
+# Alternative: add to PATH
 echo 'export PATH="$HOME/.phpharbor:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-### Docker Compose non trovato
+### Docker Compose not found
 
-Verifica versione Docker Compose:
+Check Docker Compose version:
 
 ```bash
-# Plugin Compose V2 (nuovo)
+# Compose V2 plugin (new)
 docker compose version
 
-# Standalone Compose V1 (obsoleto)
+# Standalone Compose V1 (obsolete)
 docker-compose --version
 ```
 
-Docker Dev Environment supporta entrambi.
+PHPHarbor supports both.
 
-### Porta 80/443 già in uso
+### Port 80/443 already in use
 
-Se hai Apache/Nginx installato localmente:
+If you have Apache/Nginx installed locally:
 
 ```bash
 # macOS - Stop Apache
 sudo apachectl stop
 
-# Disabilita autostart
+# Disable autostart
 sudo launchctl unload -w /System/Library/LaunchDaemons/org.apache.httpd.plist 2>/dev/null
 ```
 
-### mkcert non funziona
+### mkcert not working
 
-Reinstalla CA:
+Reinstall CA:
 
 ```bash
 mkcert -uninstall
 mkcert -install
-phpharborssl setup-ca
+phpharbor ssl setup-ca
 ```
 
-### Conflitti di porte Vite
+### Vite port conflicts
 
-Se hai conflitti sulla porta 5173:
+If you have conflicts on port 5173:
 
 ```bash
-# Riavvia il progetto (cerca automaticamente porta libera)
+# Restart project (automatically searches for free port)
 phpharbor project restart myapp
 
-# Oppure specifica porta manuale in projects/myapp/.env
+# Or specify manual port in projects/myapp/.env
 VITE_PORT=5999
 ```
 
 ---
 
-## 🔄 Aggiornamento
+## 🔄 Update
 
-### Script Automatico
+### Automatic Script
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/your-username/php-harbor/main/install.sh)
 ```
 
-Lo script rileva installazione esistente e propone aggiornamento.
+The script detects existing installation and proposes update.
 
-### Manuale
+### Manual
 
 ```bash
 cd ~/.phpharbor
@@ -313,79 +313,79 @@ git pull origin main
 
 ---
 
-## 🗑️ Disinstallazione
+## 🗑️ Uninstallation
 
-### Rimuovi Tool
+### Remove Tool
 
 ```bash
-# Rimuovi symlink
+# Remove symlink
 sudo rm /usr/local/bin/phpharbor
 
-# Rimuovi repository
+# Remove repository
 rm -rf ~/.phpharbor
 
-# Rimuovi autocompletamento da shell RC
-# Rimuovi manualmente le righe da ~/.zshrc o ~/.bashrc
+# Remove autocompletion from shell RC
+# Manually remove lines from ~/.zshrc or ~/.bashrc
 ```
 
-### Rimuovi Progetti
+### Remove Projects
 
 ```bash
-# Lista tutti i progetti
+# List all projects
 phpharbor project list
 
-# Rimuovi singolarmente
+# Remove individually
 phpharbor project remove PROJECT_NAME
 
-# Oppure rimuovi manualmente
+# Or remove manually
 cd ~/.phpharbor/projects
 rm -rf PROJECT_NAME
 docker stop $(docker ps -q --filter "name=PROJECT_NAME")
 docker rm $(docker ps -aq --filter "name=PROJECT_NAME")
 ```
 
-### Rimuovi Servizi Condivisi
+### Remove Shared Services
 
 ```bash
-# Stop servizi
+# Stop services
 phpharbor shared stop
 
-# Rimuovi container
+# Remove containers
 docker stop proxy mysql-shared redis-shared proxy-php-8.3-shared
 docker rm proxy mysql-shared redis-shared proxy-php-8.3-shared
 
-# Rimuovi network
+# Remove network
 docker network rm proxy-network
 
-# Rimuovi volumi (ATTENZIONE: perde i dati)
+# Remove volumes (WARNING: loses data)
 docker volume rm mysql-data redis-data
 ```
 
 ---
 
-## 📚 Risorse
+## 📚 Resources
 
-- **[README.md](README.md)** - Panoramica generale
-- **[QUICK-START.md](QUICK-START.md)** - Guida rapida
-- **[CLI-README.md](CLI-README.md)** - Documentazione CLI completa
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Architettura tecnica
-- **[SHARED-SERVICES.md](SHARED-SERVICES.md)** - Servizi condivisi
-- **[SSL-SETUP.md](SSL-SETUP.md)** - Configurazione HTTPS
-- **[WORKERS-GUIDE.md](WORKERS-GUIDE.md)** - Laravel workers e scheduler
+- **[README.md](README.md)** - General overview
+- **[QUICK-START.md](QUICK-START.md)** - Quick guide
+- **[CLI-README.md](CLI-README.md)** - Complete CLI documentation
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical architecture
+- **[SHARED-SERVICES.md](SHARED-SERVICES.md)** - Shared services
+- **[SSL-SETUP.md](SSL-SETUP.md)** - HTTPS configuration
+- **[WORKERS-GUIDE.md](WORKERS-GUIDE.md)** - Laravel workers and scheduler
 
 ---
 
-## 💬 Supporto
+## 💬 Support
 
 - **Issues**: [GitHub Issues](https://github.com/your-username/php-harbor/issues)
-- **Discussioni**: [GitHub Discussions](https://github.com/your-username/php-harbor/discussions)
-- **Pull Requests**: Contributi benvenuti!
+- **Discussions**: [GitHub Discussions](https://github.com/your-username/php-harbor/discussions)
+- **Pull Requests**: Contributions welcome!
 
 ---
 
-## 📝 Note
+## 📝 Notes
 
-- L'installazione richiede circa **500MB** di spazio disco (repository + immagini Docker base)
-- Il primo `phpharbor create` scarica le immagini PHP (circa 300-500MB per versione)
-- I progetti risiedono in `~/.phpharbor/projects/PROJECT_NAME`
-- Configurazioni globali in `~/.phpharbor/proxy/` e `~/.php-phpharbor/shared/`
+- Installation requires approximately **500MB** disk space (repository + base Docker images)
+- The first `phpharbor create` downloads PHP images (approximately 300-500MB per version)
+- Projects reside in `~/.phpharbor/projects/PROJECT_NAME`
+- Global configurations in `~/.phpharbor/proxy/` and `~/.php-phpharbor/shared/`
