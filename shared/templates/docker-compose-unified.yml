@@ -26,11 +26,9 @@ services:
       LETSENCRYPT_HOST: ${DOMAIN}
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
       VITE_PORT: ${VITE_PORT:-5173}
-      # Database configuration (dedicate or shared)
-      DB_HOST: ${DB_HOST:-mysql}
-      DB_CONNECTION: ${DB_CONNECTION:-mysql}
-      # Redis configuration (dedicated or shared)
-      REDIS_HOST: ${REDIS_HOST:-redis}
+      # Note: DB_* and REDIS_* variables are NOT set here
+      # They should be configured in the Laravel .env file instead
+      # This allows full control of database/cache configuration in the app
     networks:
       - proxy
       - backend
@@ -113,12 +111,14 @@ services:
     volumes:
       - ./app:/var/www/html
     environment:
-      DB_HOST: ${DB_HOST:-mysql}
-      REDIS_HOST: ${REDIS_HOST:-redis}
+      # Only set if explicitly defined in project .env (defaults to empty)
+      # This allows Laravel .env to control database configuration
+      DB_HOST: ${DB_HOST:-}
+      REDIS_HOST: ${REDIS_HOST:-}
     networks:
       - backend
       - proxy
-    command: sh -c "until [ -f artisan ]; do echo 'Waiting for Laravel installation...' && sleep 10; done && while true; do php artisan schedule:run --verbose --no-interaction && sleep 60; done"
+    command: sh -c "until [ -f artisan ] && [ -f vendor/autoload.php ]; do echo 'Waiting for Laravel installation...' && sleep 2; done && while true; do php artisan schedule:run --verbose --no-interaction && sleep 60; done"
     profiles:
       - scheduler
 
@@ -134,12 +134,14 @@ services:
     volumes:
       - ./app:/var/www/html
     environment:
-      DB_HOST: ${DB_HOST:-mysql}
-      REDIS_HOST: ${REDIS_HOST:-redis}
+      # Only set if explicitly defined in project .env (defaults to empty)
+      # This allows Laravel .env to control database configuration
+      DB_HOST: ${DB_HOST:-}
+      REDIS_HOST: ${REDIS_HOST:-}
     networks:
       - backend
       - proxy
-    command: sh -c "until [ -f artisan ]; do echo 'Waiting for Laravel installation...' && sleep 10; done && php artisan queue:work --tries=3"
+    command: sh -c "until [ -f artisan ] && [ -f vendor/autoload.php ]; do echo 'Waiting for Laravel installation...' && sleep 2; done && php artisan queue:work --tries=3"
     profiles:
       - queue
 

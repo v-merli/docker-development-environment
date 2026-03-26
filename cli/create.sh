@@ -447,6 +447,17 @@ cmd_create() {
         install_framework "$PROJECT_TYPE" "$PROJECT_PATH" "$PROJECT_SLUG" "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$PHP_VERSION"
     fi
     
+    # Copia configurazione VS Code per Xdebug (sempre, tranne per HTML)
+    if [ "$PROJECT_TYPE" != "html" ]; then
+        print_info "Configurazione VS Code per Xdebug..."
+        mkdir -p "$PROJECT_PATH/app/.vscode"
+        if [ -f "$SCRIPT_DIR/shared/templates/vscode/launch.json" ]; then
+            cp "$SCRIPT_DIR/shared/templates/vscode/launch.json" "$PROJECT_PATH/app/.vscode/"
+            cp "$SCRIPT_DIR/shared/templates/vscode/XDEBUG-GUIDE.md" "$PROJECT_PATH/app/" 2>/dev/null || true
+            print_success "Configurazione VS Code e guida Xdebug aggiunte"
+        fi
+    fi
+    
     # Riepilogo finale
     show_project_summary "$PROJECT_TYPE" "$DOMAIN" "$PROJECT_PATH" "$INSTALL_FRAMEWORK" "$INCLUDE_DB"
 }
@@ -903,6 +914,7 @@ install_framework() {
 </body>
 </html>
 EOF
+            # Nota: HTML non usa PHP, quindi non serve la config Xdebug
             ;;
             
         php)
