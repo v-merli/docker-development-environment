@@ -141,11 +141,11 @@ interactive_create() {
     done
     echo ""
     
-    # Shared PHP for scheduler/queue (only Laravel)
-    if [ "$PROJECT_TYPE" == "laravel" ]; then
-        print_info "PHP for Scheduler/Queue:"
+    # PHP Configuration (all PHP-based projects)
+    if [[ -n "$PHP_VERSION" ]]; then
+        print_info "PHP Runtime:"
         PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
-        select php_choice in "Dedicated (project image)" "Shared (php-shared)"; do
+        select php_choice in "Dedicated (project container)" "Shared (use php-$PHP_VERSION-shared)"; do
             case $php_choice in
                 "Dedicated"*)
                     USE_SHARED_PHP=false
@@ -396,8 +396,20 @@ cmd_create() {
         *)
             # Laravel, WordPress, PHP use the unified template
             case $PROJECT_TYPE in
-                wordpress) NGINX_CONF="wordpress.conf" ;;
-                php) NGINX_CONF="php.conf" ;;
+                wordpress)
+                    if [[ "$USE_SHARED_PHP" == true ]]; then
+                        NGINX_CONF="wordpress-shared.conf"
+                    else
+                        NGINX_CONF="wordpress.conf"
+                    fi
+                    ;;
+                php)
+                    if [[ "$USE_SHARED_PHP" == true ]]; then
+                        NGINX_CONF="php-shared.conf"
+                    else
+                        NGINX_CONF="php.conf"
+                    fi
+                    ;;
                 laravel)
                     if [[ "$USE_SHARED_PHP" == true ]]; then
                         NGINX_CONF="laravel-shared.conf"
@@ -412,6 +424,21 @@ cmd_create() {
             
             # Generate nginx.conf for shared PHP projects
             if [[ "$USE_SHARED_PHP" == true ]]; then
+                print_info "Configuring Nginx for shared PHP..."
+                local nginx_template=""
+                case $PROJECT_TYPE in
+                    laravel) nginx_template="laravel-shared.conf" ;;
+                    wordpress) nginx_template="wordpress-shared.conf" ;;
+                    php) nginx_template="php-shared.conf" ;;
+                esac
+                
+                sed -e "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" \
+                    -e "s/PHP_VERSION_PLACEHOLDER/php-$PHP_VERSION/g" \
+                    "$SCRIPT_DIR/shared/nginx/$nginx_template" > "$PROJECT_PATH/nginx.conf"
+                # Set NGINX_CONF to mount the local file instead of the template
+                NGINX_CONF="./nginx.conf"
+            fi
+            ;;
                 print_info "Configuring Nginx for shared PHP..."
                 sed -e "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" \
                     -e "s/PHP_VERSION_PLACEHOLDER/php-$PHP_VERSION/g" \

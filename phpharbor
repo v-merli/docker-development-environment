@@ -218,6 +218,7 @@ COMMANDS:
     stats                 Show Docker resource stats
     info <name>           Project information
     cleanup               Clean orphaned SSL certs and Docker resources
+    reset <command>       Reset Docker environment (soft/hard/status)
     version               Show version
     help                  Show this message
 
@@ -349,6 +350,10 @@ case $COMMAND in
     cleanup)
         load_module "system"
         cmd_cleanup "$@"
+        ;;
+    reset)
+        load_module "reset"
+        cmd_reset "$@"
         ;;
     version|-v|--version)
         show_version

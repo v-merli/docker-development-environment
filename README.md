@@ -104,6 +104,50 @@ Choose the ideal mix for each project.
 
 📖 **[Complete Architecture Documentation →](docs/architecture.md)**
 
+## 🔧 Maintenance
+
+### Reset Docker Environment
+
+PHPHarbor includes integrated reset commands to clean up the Docker environment:
+
+```bash
+# Interactive mode (recommended)
+./phpharbor reset
+
+# Quick soft reset (keep data)
+./phpharbor reset soft
+
+# Hard reset (WARNING: deletes all data!)
+./phpharbor reset hard
+
+# Show current status
+./phpharbor reset status
+```
+
+**Soft Reset:**
+- Removes all PHPHarbor containers
+- Keeps volumes and data (databases preserved)
+- Useful for troubleshooting container issues
+
+**Hard Reset:**
+- Removes all containers AND volumes
+- ⚠️ **DELETES ALL DATABASE DATA** in shared services
+- Use when you want a completely fresh start
+
+### Uninstall
+
+To completely remove PHPHarbor:
+
+```bash
+./uninstall.sh
+```
+
+This will:
+- Remove all containers and volumes
+- Delete the installation directory
+- Remove the `phpharbor` command
+- Keep your projects directory safe
+
 ## 🤝 Contribute
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

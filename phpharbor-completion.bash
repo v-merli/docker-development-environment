@@ -11,13 +11,22 @@ _phpharbor_completion() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
     # Main commands
-    commands="create list start stop restart remove logs shell artisan composer npm mysql shared setup stats info version help"
+    commands="create list start stop restart remove logs shell artisan composer npm mysql shared ssl setup update stats info cleanup reset version help"
     
     # Shared sub-commands
     shared_commands="start stop status logs mysql php"
     
     # Setup sub-commands
-    setup_commands="dns proxy init"
+    setup_commands="config ports dns proxy init"
+    
+    # Reset sub-commands
+    reset_commands="soft hard status"
+    
+    # SSL sub-commands
+    ssl_commands="setup generate verify install"
+    
+    # Update sub-commands
+    update_commands="check install changelog"
     
     # If we're at the first argument, suggest main commands
     if [ $COMP_CWORD -eq 1 ]; then
@@ -44,6 +53,24 @@ _phpharbor_completion() {
         setup)
             if [ $COMP_CWORD -eq 2 ]; then
                 COMPREPLY=( $(compgen -W "${setup_commands}" -- ${cur}) )
+            fi
+            return 0
+            ;;
+        reset)
+            if [ $COMP_CWORD -eq 2 ]; then
+                COMPREPLY=( $(compgen -W "${reset_commands}" -- ${cur}) )
+            fi
+            return 0
+            ;;
+        ssl)
+            if [ $COMP_CWORD -eq 2 ]; then
+                COMPREPLY=( $(compgen -W "${ssl_commands}" -- ${cur}) )
+            fi
+            return 0
+            ;;
+        update)
+            if [ $COMP_CWORD -eq 2 ]; then
+                COMPREPLY=( $(compgen -W "${update_commands}" -- ${cur}) )
             fi
             return 0
             ;;

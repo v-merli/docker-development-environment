@@ -241,14 +241,12 @@ volumes:
     name: mysql_5_7_shared_data
   mysql_8_0_shared_data:
     name: mysql_8_0_shared_data
-    external: true
   mysql_8_4_shared_data:
     name: mysql_8_4_shared_data
   redis_6_shared_data:
     name: redis_6_shared_data
   redis_7_shared_data:
     name: redis_7_shared_data
-    external: true
 
 networks:
   phpharbor-proxy:
