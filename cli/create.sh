@@ -398,6 +398,8 @@ cmd_create() {
     
     # Check proxy network
     if ! docker network inspect phpharbor-proxy &> /dev/null; then
+        print_info "Creating phpharbor-proxy network..."
+        docker network create phpharbor-proxy
         print_info "Starting reverse proxy..."
         cd "$SCRIPT_DIR/proxy"
         $DOCKER_COMPOSE up -d nginx-proxy acme-companion
@@ -521,8 +523,8 @@ create_unified_env_file() {
     fi
     
     if [[ "$shared_php" == true ]]; then
-        scheduler_image="proxy-php-\${PHP_VERSION}-shared"
-        queue_image="proxy-php-\${PHP_VERSION}-shared"
+        scheduler_image="phpharbor-proxy-php-\${PHP_VERSION}-shared"
+        queue_image="phpharbor-proxy-php-\${PHP_VERSION}-shared"
     fi
     
     # Always add scheduler to profiles for PHP projects

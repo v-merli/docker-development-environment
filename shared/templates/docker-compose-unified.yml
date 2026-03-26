@@ -117,7 +117,7 @@ services:
       REDIS_HOST: ${REDIS_HOST:-}
     networks:
       - backend
-      - proxy
+      - phpharbor-proxy
     command: sh -c "until [ -f artisan ] && [ -f vendor/autoload.php ]; do echo 'Waiting for Laravel installation...' && sleep 2; done && while true; do php artisan schedule:run --verbose --no-interaction && sleep 60; done"
     profiles:
       - scheduler

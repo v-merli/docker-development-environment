@@ -42,7 +42,7 @@ echo "  • Shell autocompletion (from .zshrc/.bashrc)"
 echo ""
 echo "Optionally:"
 echo "  • All existing projects"
-echo "  • Shared services (proxy, MySQL, Redis, PHP)"
+echo "  • Shared services (phpharbor-proxy, MySQL, Redis, PHP)"
 echo "  • Docker volumes with data (DATABASES LOST!)"
 echo ""
 read -p "$(echo -e "${RED}Continue with uninstallation? (y/n):${NC} ")" -n 1 -r
@@ -99,19 +99,19 @@ fi
 echo ""
 print_info "Managing shared services..."
 echo ""
-read -p "$(echo -e "${CYAN}Remove shared services (proxy, MySQL, Redis, PHP)? (y/n):${NC} ")" -n 1 -r
+read -p "$(echo -e "${CYAN}Remove shared services (phpharbor-proxy, MySQL, Redis, PHP)? (y/n):${NC} ")" -n 1 -r
 echo ""
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     print_info "Stopping shared services..."
     
     # Stop and remove containers
-    docker stop proxy mysql-shared redis-shared 2>/dev/null || true
-    docker rm proxy mysql-shared redis-shared 2>/dev/null || true
+    docker stop nginx-proxy nginx-acme-companion mysql-shared redis-shared 2>/dev/null || true
+    docker rm nginx-proxy nginx-acme-companion mysql-shared redis-shared 2>/dev/null || true
     
     # Stop and remove shared PHP
-    docker stop $(docker ps -q --filter "name=^proxy-php-") 2>/dev/null || true
-    docker rm $(docker ps -aq --filter "name=^proxy-php-") 2>/dev/null || true
+    docker stop $(docker ps -q --filter "name=^php-.*-shared$") 2>/dev/null || true
+    docker rm $(docker ps -aq --filter "name=^php-.*-shared$") 2>/dev/null || true
     
     print_success "Shared services removed"
     
@@ -122,14 +122,14 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo ""
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker volume rm mysql-data redis-data 2>/dev/null || true
+        docker volume rm mysql_shared_data redis_shared_data 2>/dev/null || true
         print_success "Volumes removed"
     else
-        print_info "Volumes kept (mysql-data, redis-data)"
+        print_info "Volumes kept (mysql_shared_data, redis_shared_data)"
     fi
     
     # Network
-    docker network rm proxy-network 2>/dev/null || true
+    docker network rm phpharbor-proxy 2>/dev/null || true
 fi
 
 # ==================================================

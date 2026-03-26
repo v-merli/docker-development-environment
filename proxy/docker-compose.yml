@@ -52,11 +52,30 @@ services:
     networks:
       - phpharbor-proxy
 
-  # Shared services (optional)
+  # Shared services (optional) - Multiple versions supported
   # Projects can use these services instead of having a dedicated one
-  mysql-shared:
+  
+  # MySQL Shared Services
+  mysql-5.7-shared:
+    image: mysql:5.7
+    container_name: mysql-5.7-shared
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      # Projects will create their databases via migration
+    volumes:
+      - mysql_5_7_shared_data:/var/lib/mysql
+    networks:
+      - phpharbor-proxy
+    command: --default-authentication-plugin=mysql_native_password
+    profiles:
+      - shared-services
+
+  mysql-8.0-shared:
     image: mysql:8.0
-    container_name: mysql-shared
+    container_name: mysql-8.0-shared
     restart: unless-stopped
     ports:
       - "${MYSQL_SHARED_PORT:-3306}:3306"
@@ -64,21 +83,53 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       # Projects will create their databases via migration
     volumes:
-      - mysql_shared_data:/var/lib/mysql
+      - mysql_8_0_shared_data:/var/lib/mysql
     networks:
       - phpharbor-proxy
     command: --default-authentication-plugin=mysql_native_password
     profiles:
       - shared-services
 
-  redis-shared:
-    image: redis:alpine
-    container_name: redis-shared
+  mysql-8.4-shared:
+    image: mysql:8.4
+    container_name: mysql-8.4-shared
+    restart: unless-stopped
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      # Projects will create their databases via migration
+    volumes:
+      - mysql_8_4_shared_data:/var/lib/mysql
+    networks:
+      - phpharbor-proxy
+    command: --default-authentication-plugin=mysql_native_password
+    profiles:
+      - shared-services
+
+  # Redis Shared Services
+  redis-6-shared:
+    image: redis:6-alpine
+    container_name: redis-6-shared
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_6_shared_data:/data
+    networks:
+      - phpharbor-proxy
+    command: redis-server --appendonly yes
+    profiles:
+      - shared-services
+
+  redis-7-shared:
+    image: redis:7-alpine
+    container_name: redis-7-shared
     restart: unless-stopped
     ports:
       - "${REDIS_SHARED_PORT:-6379}:6379"
     volumes:
-      - redis_shared_data:/data
+      - redis_7_shared_data:/data
     networks:
       - phpharbor-proxy
     command: redis-server --appendonly yes
@@ -186,11 +237,27 @@ services:
       - shared-services
 
 volumes:
+  # Legacy volumes (backward compatibility)
   mysql_shared_data:
-    name: mysql_shared_data
+    name: mysql_8_0_shared_data  # MySQL 8.0 uses the old volume name
+    external: true
   redis_shared_data:
-    name: redis_shared_data
+    name: redis_7_shared_data  # Redis 7 uses the old volume name
+    external: true
+  
+  # Versioned volumes
+  mysql_5_7_shared_data:
+    name: mysql_5_7_shared_data
+  mysql_8_0_shared_data:
+    name: mysql_8_0_shared_data
+  mysql_8_4_shared_data:
+    name: mysql_8_4_shared_data
+  redis_6_shared_data:
+    name: redis_6_shared_data
+  redis_7_shared_data:
+    name: redis_7_shared_data
 
 networks:
   phpharbor-proxy:
     name: phpharbor-proxy
+    external: true
