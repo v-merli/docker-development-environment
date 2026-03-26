@@ -217,6 +217,7 @@ COMMANDS:
   Information:
     stats                 Show Docker resource stats
     info <name>           Project information
+    cleanup               Clean orphaned SSL certs and Docker resources
     version               Show version
     help                  Show this message
 
@@ -344,6 +345,10 @@ case $COMMAND in
     info)
         load_module "system"
         cmd_info "$@"
+        ;;
+    cleanup)
+        load_module "system"
+        cmd_cleanup "$@"
         ;;
     version|-v|--version)
         show_version

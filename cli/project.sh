@@ -177,6 +177,36 @@ cmd_remove() {
         local network="${project}_backend"
         docker network rm "$network" 2>/dev/null || true
         
+        # Clean SSL/ACME certificates
+        print_info "Cleaning SSL certificates..."
+        local domain="${project}.test"
+        local acme_base="$SCRIPT_DIR/proxy/nginx/acme"
+        local mkcert_dir="$SCRIPT_DIR/proxy/nginx/certs"
+        
+        # Remove ACME certificates from staging
+        if [ -d "$acme_base/staging/$domain" ]; then
+            rm -rf "$acme_base/staging/$domain"
+        fi
+        
+        # Remove ACME certificates from dev@localhost
+        if [ -d "$acme_base/dev@localhost/$domain" ]; then
+            rm -rf "$acme_base/dev@localhost/$domain"
+        fi
+        
+        # Remove mkcert certificates
+        if [ -f "$mkcert_dir/$domain.crt" ]; then
+            rm -f "$mkcert_dir/$domain.crt"
+            rm -f "$mkcert_dir/$domain.key"
+            rm -f "$mkcert_dir/$domain.chain.pem"
+        fi
+        
+        # Remove ACME directory from nginx/certs
+        if [ -d "$mkcert_dir/_test_$domain" ]; then
+            rm -rf "$mkcert_dir/_test_$domain"
+        fi
+        
+        print_success "SSL certificates removed"
+        
         cd "$SCRIPT_DIR"
         rm -rf "$project_path"
         print_success "Project $project removed"

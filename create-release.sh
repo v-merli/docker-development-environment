@@ -2,6 +2,7 @@
 
 # Create Release Package
 # Generates a clean tarball for distribution, excluding development files
+# Usage: ./create-release.sh <version> [--no-publish]
 
 set -e
 
@@ -9,15 +10,26 @@ set -e
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m'
 
+# Parse arguments
 VERSION=${1:-"latest"}
+PUBLISH=true
+
+if [[ "$2" == "--no-publish" ]] || [[ "$2" == "--local" ]]; then
+    PUBLISH=false
+fi
+
 OUTPUT_DIR="./releases"
 PACKAGE_NAME="php-harbor-${VERSION}"
+TAG_NAME="v${VERSION}"
 
 echo -e "${BLUE}━━━ PHPHarbor - Release Builder ━━━${NC}"
 echo ""
 echo "📦 Version: $VERSION"
+echo "🏷️  Tag: $TAG_NAME"
+echo "📤 Publish: $([ "$PUBLISH" = true ] && echo "Yes" || echo "No (local only)")"
 echo ""
 
 # Create output directory
@@ -105,20 +117,154 @@ echo ""
 
 # Checksum
 echo -e "${BLUE}SHA256 Checksum:${NC}"
-shasum -a 256 "$OUTPUT_DIR/${PACKAGE_NAME}.tar.gz"
+CHECKSUM=$(shasum -a 256 "$OUTPUT_DIR/${PACKAGE_NAME}.tar.gz")
+echo "$CHECKSUM"
 echo ""
 
-# Instructions
-echo -e "${YELLOW}━━━ Next Steps ━━━${NC}"
-echo ""
-echo "1. Test the tarball locally:"
-echo "   tar -xzf $OUTPUT_DIR/${PACKAGE_NAME}.tar.gz -C /tmp/test"
-echo ""
-echo "2. Create release on GitHub:"
-echo "   - Go to: https://github.com/v-merli/php-harbor/releases/new"
-echo "   - Tag: v${VERSION}"
-echo "   - Title: PHPHarbor v${VERSION}"
-echo "   - Upload: $OUTPUT_DIR/${PACKAGE_NAME}.tar.gz"
-echo ""
-echo "3. Update URL in install.sh with the new release tag"
+# Publish to GitHub if requested
+if [ "$PUBLISH" = true ]; then
+    echo -e "${BLUE}━━━ Publishing to GitHub ━━━${NC}"
+    echo ""
+    
+    # Check if gh CLI is installed
+    if ! command -v gh &> /dev/null; then
+        echo -e "${RED}✗ GitHub CLI (gh) is not installed${NC}"
+        echo ""
+        echo "Install GitHub CLI:"
+        echo ""
+        
+        # Detect OS and show appropriate installation command
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            echo "  macOS:"
+            echo "    brew install gh"
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            echo "  Linux (Debian/Ubuntu):"
+            echo "    sudo apt install gh"
+            echo ""
+            echo "  Linux (Fedora/RHEL):"
+            echo "    sudo dnf install gh"
+            echo ""
+            echo "  Linux (Arch):"
+            echo "    sudo pacman -S github-cli"
+        elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || grep -qi microsoft /proc/version 2>/dev/null; then
+            echo "  Windows/WSL2:"
+            echo "    Follow Linux instructions above"
+        fi
+        
+        echo ""
+        echo "  Or visit: https://cli.github.com/manual/installation"
+        echo ""
+        echo "Or run without publishing:"
+        echo "  ./create-release.sh $VERSION --no-publish"
+        echo ""
+        exit 1
+    fi
+    
+    # Check if authenticated
+    if ! gh auth status &> /dev/null; then
+        echo -e "${RED}✗ Not authenticated with GitHub${NC}"
+        echo ""
+        echo "Authenticate with:"
+        echo "  gh auth login"
+        echo ""
+        exit 1
+    fi
+    
+    # Check if tag already exists
+    if git rev-parse "$TAG_NAME" &> /dev/null; then
+        echo -e "${YELLOW}⚠ Tag $TAG_NAME already exists${NC}"
+        read -p "Do you want to delete and recreate it? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            git tag -d "$TAG_NAME"
+            git push origin ":$TAG_NAME" 2>/dev/null || true
+            echo -e "${GREEN}✓${NC} Old tag deleted"
+        else
+            echo -e "${RED}✗ Aborted${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Create git tag
+    echo -e "${BLUE}Creating git tag...${NC}"
+    git tag -a "$TAG_NAME" -m "Release $VERSION"
+    echo -e "${GREEN}✓${NC} Tag created: $TAG_NAME"
+    
+    # Push tag to origin
+    echo -e "${BLUE}Pushing tag to GitHub...${NC}"
+    git push origin "$TAG_NAME"
+    echo -e "${GREEN}✓${NC} Tag pushed to origin"
+    echo ""
+    
+    # Read release notes if they exist
+    RELEASE_NOTES=""
+    if [ -f "RELEASE_NOTES.md" ]; then
+        RELEASE_NOTES=$(cat RELEASE_NOTES.md)
+    fi
+    
+    # Create GitHub release
+    echo -e "${BLUE}Creating GitHub release...${NC}"
+    
+    if [ -n "$RELEASE_NOTES" ]; then
+        gh release create "$TAG_NAME" \
+            "$OUTPUT_DIR/${PACKAGE_NAME}.tar.gz" \
+            --title "PHPHarbor $VERSION" \
+            --notes "$RELEASE_NOTES"
+    else
+        gh release create "$TAG_NAME" \
+            "$OUTPUT_DIR/${PACKAGE_NAME}.tar.gz" \
+            --title "PHPHarbor $VERSION" \
+            --notes "Release $VERSION"
+    fi
+    
+    echo -e "${GREEN}✓${NC} Release published on GitHub"
+    echo ""
+    
+    # Get release URL
+    RELEASE_URL=$(gh release view "$TAG_NAME" --json url -q .url)
+    
+    echo -e "${GREEN}✅ Successfully published!${NC}"
+    echo ""
+    echo "🌐 Release URL: $RELEASE_URL"
+    echo "📦 Asset: ${PACKAGE_NAME}.tar.gz"
+    echo ""
+    
+    # Update install.sh URL
+    echo -e "${YELLOW}━━━ Updating install.sh ━━━${NC}"
+    DOWNLOAD_URL="https://github.com/v-merli/php-harbor/releases/download/${TAG_NAME}/${PACKAGE_NAME}.tar.gz"
+    
+    if grep -q "RELEASE_URL=" install.sh; then
+        sed -i.bak "s|RELEASE_URL=.*|RELEASE_URL=\"$DOWNLOAD_URL\"|" install.sh
+        rm install.sh.bak
+        echo -e "${GREEN}✓${NC} install.sh updated with new release URL"
+        echo ""
+        echo "Remember to commit and push the updated install.sh:"
+        echo "  git add install.sh"
+        echo "  git commit -m 'Update install.sh URL for $VERSION'"
+        echo "  git push"
+        echo ""
+    else
+        echo -e "${YELLOW}⚠${NC} Could not find RELEASE_URL in install.sh"
+        echo "Update it manually to: $DOWNLOAD_URL"
+        echo ""
+    fi
+else
+    # Local mode - show manual instructions
+    echo -e "${YELLOW}━━━ Next Steps (Manual) ━━━${NC}"
+    echo ""
+    echo "1. Test the tarball locally:"
+    echo "   tar -xzf $OUTPUT_DIR/${PACKAGE_NAME}.tar.gz -C /tmp/test"
+    echo ""
+    echo "2. Publish to GitHub:"
+    echo "   ./create-release.sh $VERSION"
+    echo ""
+    echo "   Or manually:"
+    echo "   - Go to: https://github.com/v-merli/php-harbor/releases/new"
+    echo "   - Tag: $TAG_NAME"
+    echo "   - Title: PHPHarbor $VERSION"
+    echo "   - Upload: $OUTPUT_DIR/${PACKAGE_NAME}.tar.gz"
+    echo ""
+fi
+
+echo -e "${GREEN}━━━ Done! ━━━${NC}"
 echo ""

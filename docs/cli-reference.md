@@ -105,6 +105,9 @@ cli/
 # Complete environment info
 ./phpharbor info
 
+# Clean orphaned resources
+./phpharbor cleanup
+
 # Version
 ./phpharbor version
 ```

@@ -768,6 +768,10 @@ start_shared_if_needed() {
     cd "$SCRIPT_DIR"
 }
 
+# Generate SSL certificate using mkcert (local development)
+# This is the PRIMARY SSL system for .test domains
+# acme-companion will also try but fail (can't validate .test domains)
+# nginx-proxy will use mkcert certificates when available
 generate_ssl_cert() {
     local domain=$1
     local certs_dir="$SCRIPT_DIR/proxy/nginx/certs"
@@ -786,6 +790,8 @@ generate_ssl_cert() {
             echo "  # See: https://github.com/FiloSottile/mkcert#installation"
         fi
         echo "  $SCRIPT_DIR/proxy/setup-ssl-ca.sh"
+        echo ""
+        echo "Note: acme-companion will run but can't generate valid certs for .test domains"
         return
     fi
     

@@ -1,4 +1,6 @@
 services:
+  # Reverse proxy with SSL support
+  # Automatically routes traffic to project containers based on VIRTUAL_HOST
   nginx-proxy:
     image: nginxproxy/nginx-proxy
     container_name: nginx-proxy
@@ -7,6 +9,8 @@ services:
       - "${HTTP_PORT:-8080}:80"
       - "${HTTPS_PORT:-8443}:443"
     volumes:
+      # SSL certificates directory (mkcert generated certificates)
+      # Contains: domain.test.crt, domain.test.key, domain.test.chain.pem
       - ./nginx/certs:/etc/nginx/certs:ro
       - ./nginx/vhost.d:/etc/nginx/vhost.d
       - ./nginx/html:/usr/share/nginx/html
@@ -19,6 +23,10 @@ services:
     networks:
       - proxy
 
+  # Let's Encrypt companion for automatic SSL certificates
+  # Note: Not used for .test domains (they're not publicly routable)
+  # Useful for staging/production environments with real domains
+  # Creates empty _test_*.test directories in nginx/certs (can be ignored)
   acme-companion:
     image: nginxproxy/acme-companion
     container_name: nginx-acme-companion
@@ -26,14 +34,18 @@ services:
     depends_on:
       - nginx-proxy
     volumes:
+      # Read-write access to generate Let's Encrypt certificates
+      # For .test domains, mkcert certificates take priority
       - ./nginx/certs:/etc/nginx/certs:rw
       - ./nginx/vhost.d:/etc/nginx/vhost.d
       - ./nginx/html:/usr/share/nginx/html
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # ACME protocol data (account, challenges, certificates)
       - ./nginx/acme:/etc/acme.sh
     environment:
       - DEFAULT_EMAIL=dev@example.com
       - NGINX_PROXY_CONTAINER=nginx-proxy
+      # Using staging to avoid rate limits during development
       - ACME_CA_URI=https://acme-staging-v02.api.letsencrypt.org/directory
     networks:
       - proxy

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Module: System
-# Commands: stats, info
+# Commands: stats, info, cleanup
 
 cmd_stats() {
     print_title "Resource Usage Statistics"
@@ -166,4 +166,174 @@ cmd_info() {
     echo "  Docs: $SCRIPT_DIR/docs/"
     echo "  Quick Start: $SCRIPT_DIR/docs/quick-start.md"
     echo "  CLI Reference: $SCRIPT_DIR/docs/cli-reference.md"
+}
+
+cmd_cleanup() {
+    print_title "Cleanup Orphaned Resources"
+    echo ""
+    
+    print_info "Searching for orphaned SSL certificates..."
+    echo ""
+    
+    local acme_base="$SCRIPT_DIR/proxy/nginx/acme"
+    local cleaned=0
+    
+    # Get list of existing projects
+    local existing_projects=()
+    if [ -d "$PROJECTS_DIR" ]; then
+        for project_dir in "$PROJECTS_DIR"/*/; do
+            if [ -d "$project_dir" ]; then
+                local proj_name=$(basename "$project_dir")
+                existing_projects+=("${proj_name}.test")
+            fi
+        done
+    fi
+    
+    # Function to check and clean certificate directories
+    check_and_clean_certs() {
+        local cert_dir=$1
+        local cert_type=$2
+        
+        if [ ! -d "$cert_dir" ]; then
+            return
+        fi
+        
+        for domain_dir in "$cert_dir"/*.test/; do
+            if [ ! -d "$domain_dir" ]; then
+                continue
+            fi
+            
+            local domain=$(basename "$domain_dir")
+            local found=false
+            
+            # Check if project exists
+            for existing in "${existing_projects[@]}"; do
+                if [ "$domain" = "$existing" ]; then
+                    found=true
+                    break
+                fi
+            done
+            
+            if [ "$found" = false ]; then
+                echo -e "  ${RED}✗${NC} $domain ${YELLOW}($cert_type)${NC} - project not found"
+                rm -rf "$domain_dir"
+                ((cleaned++))
+            else
+                echo -e "  ${GREEN}✓${NC} $domain ${CYAN}($cert_type)${NC}"
+            fi
+        done
+    }
+    
+    # Clean staging certificates
+    check_and_clean_certs "$acme_base/staging" "staging"
+    
+    # Clean dev@localhost certificates
+    check_and_clean_certs "$acme_base/dev@localhost" "dev"
+    
+    echo ""
+    
+    # Clean mkcert certificates
+    print_info "Checking mkcert certificates..."
+    echo ""
+    
+    local mkcert_dir="$SCRIPT_DIR/proxy/nginx/certs"
+    local mkcert_cleaned=0
+    
+    if [ -d "$mkcert_dir" ]; then
+        # Clean certificate files - process only .crt files to avoid duplicates
+        for cert_file in "$mkcert_dir"/*.test.crt; do
+            if [ ! -f "$cert_file" ]; then
+                continue
+            fi
+            
+            local filename=$(basename "$cert_file")
+            # Extract domain: remove .crt extension
+            local domain="${filename%.crt}"
+            
+            local found=false
+            
+            # Check if project exists
+            for existing in "${existing_projects[@]}"; do
+                if [ "$domain" = "$existing" ]; then
+                    found=true
+                    break
+                fi
+            done
+            
+            if [ "$found" = false ]; then
+                echo -e "  ${RED}✗${NC} $domain ${YELLOW}(mkcert)${NC} - project not found"
+                # Remove all certificate files for this domain
+                rm -f "$mkcert_dir/$domain.crt"
+                rm -f "$mkcert_dir/$domain.key"
+                rm -f "$mkcert_dir/$domain.chain.pem"
+                ((mkcert_cleaned+=3))
+            else
+                echo -e "  ${GREEN}✓${NC} $domain ${CYAN}(mkcert)${NC}"
+            fi
+        done
+        
+        # Clean _test_* ACME directories (check if project exists)
+        for test_dir in "$mkcert_dir"/_test_*.test/; do
+            if [ -d "$test_dir" ]; then
+                local dir_name=$(basename "$test_dir")
+                # Remove _test_ prefix to get actual domain
+                local domain="${dir_name#_test_}"
+                local found=false
+                
+                # Check if project exists
+                for existing in "${existing_projects[@]}"; do
+                    if [ "$domain" = "$existing" ]; then
+                        found=true
+                        break
+                    fi
+                done
+                
+                if [ "$found" = false ]; then
+                    echo -e "  ${RED}✗${NC} $domain ${YELLOW}(acme dir)${NC} - project not found"
+                    rm -rf "$test_dir"
+                    ((mkcert_cleaned++))
+                else
+                    echo -e "  ${GREEN}✓${NC} $domain ${CYAN}(acme dir)${NC}"
+                fi
+            fi
+        done
+    fi
+    
+    echo ""
+    
+    local total_cleaned=$((cleaned + mkcert_cleaned))
+    
+    if [ $total_cleaned -gt 0 ]; then
+        print_success "Cleaned total: $total_cleaned orphaned resources"
+        echo "  - ACME certificates: $cleaned"
+        echo "  - mkcert certificates: $mkcert_cleaned"
+    else
+        print_success "No orphaned certificates found"
+    fi
+    
+    echo ""
+    print_info "Checking for unused Docker resources..."
+    echo ""
+    
+    # Show Docker cleanup summary
+    echo "Docker system prune will remove:"
+    echo "  - Stopped containers"
+    echo "  - Unused networks"
+    echo "  - Dangling images"
+    echo "  - Build cache"
+    echo ""
+    
+    read -p "Run docker system prune? (y/N): " -n 1 -r
+    echo
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        docker system prune -f
+        echo ""
+        print_success "Docker cleanup completed"
+    else
+        echo "Docker cleanup skipped"
+    fi
+    
+    echo ""
+    print_info "Cleanup finished"
 }
