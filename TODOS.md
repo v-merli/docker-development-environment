@@ -6,4 +6,4 @@
 [-] Test switch tipo progetto (php/wordpress/laravel) e controllo container aggiuntivi
 [X] Tradurre documentazione e script stats, scritto interamente in italiano
 [X] Valutare effettivo consumo di risorse (RAM, DISCO, CPU)
-[X] Aggiungere MariaDB come scelta possibile per il database (sia shared che )
+[X] Aggiungere MariaDB come scelta possibile per il database (sia shared che dedicated)
