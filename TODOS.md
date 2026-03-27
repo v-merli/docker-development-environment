@@ -1,6 +1,9 @@
-[X] Aggiungere MariaDB come scelta possibile per il database (sia shared che )
 [-] Controllare phpharbor stats disk --cleanup l'operazione di cleanup l'avevamo già aggiunta in phpharbor cleanup. Mi sembra che si sia creata una ridondanza e più comandi fanno la stessa operazione
-[X] Tradurre documentazione e script stats, scritto interamente in italiano
 [-] Eseguire test totale
 [-] Capire come rendere le stats più potenti: includere sia RAM/CPU che controllare progetto per progetto
+[-] Spostare i volumes database nella cartella di phpharbor e poi controllare che al remove la cartella viene effettivametne pulita (sia per shared che per dedicated)
+[-] Test shared/dedicated per queue/scheduler
+[-] Test switch tipo progetto (php/wordpress/laravel) e controllo container aggiuntivi
+[X] Tradurre documentazione e script stats, scritto interamente in italiano
 [X] Valutare effettivo consumo di risorse (RAM, DISCO, CPU)
+[X] Aggiungere MariaDB come scelta possibile per il database (sia shared che )
