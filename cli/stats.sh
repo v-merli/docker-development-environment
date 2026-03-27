@@ -76,7 +76,7 @@ stats_disk() {
     fi
     
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║     ANALISI CONSUMO DISCO PHPHARBOR (Real-time)           ║${NC}"
+    echo -e "${CYAN}║     ANALISI CONSUMO DISCO PHPHARBOR (Real-time)            ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     
