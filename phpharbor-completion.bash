@@ -11,7 +11,7 @@ _phpharbor_completion() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
     # Main commands
-    commands="create list start stop restart remove logs shell artisan composer npm mysql shared ssl setup update stats info cleanup reset version help"
+    commands="create list start stop restart remove logs convert shell artisan composer npm mysql shared ssl setup update stats info cleanup reset version help"
     
     # Shared sub-commands
     shared_commands="start stop status logs mysql php"
@@ -71,6 +71,20 @@ _phpharbor_completion() {
         update)
             if [ $COMP_CWORD -eq 2 ]; then
                 COMPREPLY=( $(compgen -W "${update_commands}" -- ${cur}) )
+            fi
+            return 0
+            ;;
+        convert)
+            if [ $COMP_CWORD -eq 2 ]; then
+                # Suggest available projects
+                local projects_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/projects"
+                if [ -d "$projects_dir" ]; then
+                    local projects=$(ls -1 "$projects_dir" 2>/dev/null)
+                    COMPREPLY=( $(compgen -W "${projects}" -- ${cur}) )
+                fi
+            elif [ $COMP_CWORD -eq 3 ]; then
+                # Suggest project types
+                COMPREPLY=( $(compgen -W "laravel wordpress php" -- ${cur}) )
             fi
             return 0
             ;;

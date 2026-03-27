@@ -180,6 +180,7 @@ COMMANDS:
     restart <name>        Restart a project
     remove <name>         Remove a project
     logs <name>           Show project logs
+    convert <name> <type> Convert project type (laravel/wordpress/php)
     
   Development Tools:
     shell <name>          Open shell in PHP container
@@ -302,6 +303,10 @@ case $COMMAND in
     logs)
         load_module "project"
         cmd_logs "$@"
+        ;;
+    convert)
+        load_module "convert"
+        cmd_convert "$@"
         ;;
     shell|bash)
         load_module "dev"
