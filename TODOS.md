@@ -1,3 +1,4 @@
+- Aggiungere MariaDB come scelta possibile per il database (sia shared che )
 - Controllare phpharbor stats disk --cleanup l'operazione di cleanup l'avevamo già aggiunta in phpharbor cleanup. Mi sembra che si sia creata una ridondanza e più comandi fanno la stessa operazione
 - Tradurre documentazione e script stats, scritto interamente in italiano
 - Eseguire test totale

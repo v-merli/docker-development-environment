@@ -76,18 +76,18 @@ stats_disk() {
     fi
     
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║     ANALISI CONSUMO DISCO PHPHARBOR (Real-time)            ║${NC}"
+    echo -e "${CYAN}║     PHPHARBOR DISK USAGE ANALYSIS (Real-time)              ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     
     # System overview
-    echo -e "${YELLOW}📊 Panoramica sistema Docker:${NC}"
+    echo -e "${YELLOW}📊 Docker system overview:${NC}"
     echo "─────────────────────────────────────────────────────────────"
     docker system df
     echo ""
     
     # PHPHarbor images
-    echo -e "${YELLOW}🐳 Immagini PHPHarbor:${NC}"
+    echo -e "${YELLOW}🐳 PHPHarbor images:${NC}"
     echo "─────────────────────────────────────────────────────────────"
     docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | head -1
     docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | \
@@ -95,7 +95,7 @@ stats_disk() {
     echo ""
     
     # Shared volumes (only official shared services)
-    echo -e "${YELLOW}💾 Volumi shared (servizi ufficiali):${NC}"
+    echo -e "${YELLOW}💾 Shared volumes (official services):${NC}"
     echo "─────────────────────────────────────────────────────────────"
     local shared_volumes=$(docker volume ls --format "{{.Name}}" | grep -E "^(mysql_[0-9_]+_shared_data|redis_[0-9]+_shared_data|php_[0-9_]+_shared_data)$")
     
@@ -107,7 +107,7 @@ stats_disk() {
             printf "%-30s %s\n" "$vol" "$containers"
         done
     else
-        echo "  Nessun volume shared trovato"
+        echo "  No shared volume found"
     fi
     echo ""
     
@@ -118,7 +118,7 @@ stats_disk() {
     done | wc -l | tr -d ' ')
     
     if [ "$orphan_count" -gt 0 ]; then
-        echo -e "${YELLOW}⚠️  Volumi orfani (non collegati a container): ${orphan_count}${NC}"
+        echo -e "${YELLOW}⚠️  Orphan volumes (not attached to any container): ${orphan_count}${NC}"
         echo "─────────────────────────────────────────────────────────────"
         docker volume ls -q | while read vol; do 
             containers=$(docker ps -a --filter volume=$vol -q | wc -l | tr -d ' ')
@@ -129,16 +129,16 @@ stats_disk() {
         done | head -10
         
         if [ "$orphan_count" -gt 10 ]; then
-            echo "  ... e altri $((orphan_count - 10)) volumi"
+            echo "  ... and $((orphan_count - 10)) more volumes"
         fi
         
         echo ""
-        echo -e "${BLUE}💡 Pulisci con: ./phpharbor stats disk --cleanup${NC}"
+        echo -e "${BLUE}💡 Clean up with: ./phpharbor stats disk --cleanup${NC}"
         echo ""
     fi
     
     # Check for orphan project images
-    echo -e "${YELLOW}🖼️  Immagini progetti:${NC}"
+    echo -e "${YELLOW}🖼️  Project images:${NC}"
     echo "─────────────────────────────────────────────────────────────"
     
     # Get existing projects
@@ -176,16 +176,16 @@ stats_disk() {
     fi
     
     if [ ${#orphan_images[@]} -gt 0 ]; then
-        echo -e "${YELLOW}⚠️  Immagini orfane (progetti non più esistenti): ${#orphan_images[@]}${NC}"
+        echo -e "${YELLOW}⚠️  Orphan images (projects no longer exist): ${#orphan_images[@]}${NC}"
         local total_size=0
         for img in "${orphan_images[@]}"; do
             local size=$(docker images "$img" --format "{{.Size}}")
             echo "  • $img ($size)"
         done
         echo ""
-        echo -e "${BLUE}💡 Pulisci con: ./phpharbor stats disk --cleanup${NC}"
+        echo -e "${BLUE}💡 Clean up with: ./phpharbor stats disk --cleanup${NC}"
     else
-        echo "  Nessuna immagine orfana trovata ✓"
+        echo "  No orphan image found ✓"
     fi
     echo ""
     
@@ -199,16 +199,16 @@ stats_disk() {
     local containers_count=$(docker ps -a --filter "name=phpharbor" --format "{{.Names}}" 2>/dev/null | wc -l | tr -d ' ')
     local containers_running=$(docker ps --filter "name=phpharbor" --format "{{.Names}}" 2>/dev/null | wc -l | tr -d ' ')
     
-    echo -e "${YELLOW}📁 Statistiche progetti:${NC}"
+    echo -e "${YELLOW}📁 Project statistics:${NC}"
     echo "─────────────────────────────────────────────────────────────"
-    echo "  Progetti totali:      $projects_count"
-    echo "  Container totali:     $containers_count"
-    echo "  Container attivi:     $containers_running"
+    echo "  Total projects:      $projects_count"
+    echo "  Total containers:    $containers_count"
+    echo "  Running containers:  $containers_running"
     echo ""
     
     # Detailed breakdown per project
     if [ "$detailed" = true ] && [ $projects_count -gt 0 ]; then
-        echo -e "${YELLOW}🔍 Dettaglio per progetto:${NC}"
+        echo -e "${YELLOW}🔍 Project breakdown:${NC}"
         echo "─────────────────────────────────────────────────────────────"
         
         for project_dir in "$PROJECTS_DIR"/*/ ; do
@@ -240,11 +240,11 @@ stats_disk() {
     
     # Savings calculation
     if [ "$compare" = true ] || [ $projects_count -gt 1 ]; then
-        echo -e "${YELLOW}💰 Stima risparmio architettura shared:${NC}"
+        echo -e "${YELLOW}💰 Estimated savings with shared architecture:${NC}"
         echo "─────────────────────────────────────────────────────────────"
         
         if [ $projects_count -eq 0 ]; then
-            echo "  Nessun progetto trovato per calcolare il risparmio"
+            echo "  No project found to calculate savings"
         else
             # Estimates in MB (based on actual measurements)
             local dedicated_per_project=2350  # MB per project (all dedicated)
@@ -260,18 +260,18 @@ stats_disk() {
                 percent=$((saving * 100 / dedicated_total))
             fi
             
-            echo "  Progetti analizzati:  $projects_count"
+            echo "  Projects analyzed:  $projects_count"
             echo ""
-            echo "  TUTTI DEDICATI:"
-            echo "    ${projects_count} progetti × 2.35 GB = $(echo "scale=2; $dedicated_total / 1000" | bc) GB"
+            echo "  ALL DEDICATED:"
+            echo "    ${projects_count} projects × 2.35 GB = $(echo "scale=2; $dedicated_total / 1000" | bc) GB"
             echo ""
-            echo "  TUTTI SHARED:"
+            echo "  ALL SHARED:"
             echo "    App files:    ${projects_count} × 0.15 GB = $(echo "scale=2; $projects_count * 150 / 1000" | bc) GB"
-            echo "    Infra shared: (una tantum) = 2.17 GB"
+            echo "    Shared infra: (one-time) = 2.17 GB"
             echo "    ─────────────────────────────────"
-            echo "    Totale:       $(echo "scale=2; $shared_total / 1000" | bc) GB"
+            echo "    Total:        $(echo "scale=2; $shared_total / 1000" | bc) GB"
             echo ""
-            echo -e "  ${GREEN}✨ RISPARMIO: $(echo "scale=2; $saving / 1000" | bc) GB (${percent}%)${NC}"
+            echo -e "  ${GREEN}✨ SAVINGS: $(echo "scale=2; $saving / 1000" | bc) GB (${percent}%)${NC}"
             echo ""
             
             # RAM estimation
@@ -280,42 +280,42 @@ stats_disk() {
             local ram_saving=$((ram_dedicated - ram_shared))
             
             if [ $projects_count -gt 1 ]; then
-                echo "  📊 Bonus - Stima risparmio RAM:"
-                echo "    Dedicato:   $(echo "scale=2; $ram_dedicated / 1000" | bc) GB"
-                echo "    Shared:     $(echo "scale=2; $ram_shared / 1000" | bc) GB"
-                echo -e "    ${GREEN}Risparmio:  $(echo "scale=2; $ram_saving / 1000" | bc) GB${NC}"
+                echo "  📊 Bonus - Estimated RAM savings:"
+                echo "    Dedicated:   $(echo "scale=2; $ram_dedicated / 1000" | bc) GB"
+                echo "    Shared:      $(echo "scale=2; $ram_shared / 1000" | bc) GB"
+                echo -e "    ${GREEN}Savings:  $(echo "scale=2; $ram_saving / 1000" | bc) GB${NC}"
                 echo ""
             fi
             
             # Recommendations
             if [ $projects_count -eq 1 ]; then
-                echo -e "  ${BLUE}💡 Con 1 progetto, la differenza è minima${NC}"
-                echo "     Considera shared per facilità di gestione"
+                echo -e "  ${BLUE}💡 With 1 project, the difference is minimal${NC}"
+                echo "     Consider shared for easier management"
             elif [ $projects_count -lt 5 ]; then
-                echo -e "  ${BLUE}💡 Con $projects_count progetti, risparmio moderato${NC}"
-                echo "     Shared conviene già da 2+ progetti"
+                echo -e "  ${BLUE}💡 With $projects_count projects, moderate savings${NC}"
+                echo "     Shared is already worth it from 2+ projects"
             else
-                echo -e "  ${GREEN}💡 Con $projects_count progetti, risparmio significativo!${NC}"
-                echo "     Shared è altamente consigliato (75%+ risparmio)"
+                echo -e "  ${GREEN}💡 With $projects_count projects, significant savings!${NC}"
+                echo "     Shared is highly recommended (75%+ savings)"
             fi
         fi
         echo ""
     fi
     
     # Quick tips
-    echo -e "${YELLOW}💡 Suggerimenti:${NC}"
+    echo -e "${YELLOW}💡 Tips:${NC}"
     echo "─────────────────────────────────────────────────────────────"
-    echo "  • Usa --detailed per vedere breakdown per progetto"
-    echo "  • Usa --compare per simulazione risparmio shared vs dedicato"
-    echo "  • Usa --cleanup per rimuovere volumi e immagini orfane"
-    echo "  • docker image prune -a pulisce tutte le immagini non usate"
-    echo "  • docker volume prune pulisce i volumi dangling"
+    echo "  • Use --detailed to see per-project breakdown"
+    echo "  • Use --compare for shared vs dedicated savings simulation"
+    echo "  • Use --cleanup to remove orphan volumes and images"
+    echo "  • docker image prune -a cleans all unused images"
+    echo "  • docker volume prune cleans dangling volumes"
     echo ""
 }
 
 stats_cleanup_orphans() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║     PULIZIA RISORSE ORFANE                                 ║${NC}"
+    echo -e "${CYAN}║     ORPHAN RESOURCE CLEANUP                                ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     
@@ -359,13 +359,13 @@ stats_cleanup_orphans() {
     
     # Show summary
     if [ ${#orphan_volumes[@]} -eq 0 ] && [ ${#orphan_images[@]} -eq 0 ]; then
-        echo -e "${GREEN}✅ Nessuna risorsa orfana trovata!${NC}"
+        echo -e "${GREEN}✅ No orphan resource found!${NC}"
         echo ""
         return
     fi
     
     if [ ${#orphan_volumes[@]} -gt 0 ]; then
-        echo -e "${YELLOW}📦 Volumi orfani trovati: ${#orphan_volumes[@]}${NC}"
+        echo -e "${YELLOW}📦 Orphan volumes found: ${#orphan_volumes[@]}${NC}"
         echo "─────────────────────────────────────────────────────────────"
         for vol in "${orphan_volumes[@]}"; do
             echo "  • $vol"
@@ -374,7 +374,7 @@ stats_cleanup_orphans() {
     fi
     
     if [ ${#orphan_images[@]} -gt 0 ]; then
-        echo -e "${YELLOW}🖼️  Immagini orfane trovate: ${#orphan_images[@]}${NC}"
+        echo -e "${YELLOW}🖼️  Orphan images found: ${#orphan_images[@]}${NC}"
         echo "─────────────────────────────────────────────────────────────"
         for img in "${orphan_images[@]}"; do
             local size=$(docker images "$img" --format "{{.Size}}")
@@ -383,28 +383,28 @@ stats_cleanup_orphans() {
         echo ""
     fi
     
-    echo -e "${RED}⚠️  ATTENZIONE: Questa operazione eliminerà TUTTE le risorse orfane!${NC}"
-    echo "   • Volumi: I dati contenuti saranno persi permanentemente"
-    echo "   • Immagini: Dovranno essere ricostruite se necessarie"
+    echo -e "${RED}⚠️  WARNING: This operation will delete ALL orphan resources!${NC}"
+    echo "   • Volumes: Data will be lost permanently"
+    echo "   • Images: Will need to be rebuilt if needed"
     echo ""
     
-    read -p "Vuoi procedere? (si/no): " confirm
+    read -p "Do you want to proceed? (yes/no): " confirm
     
     if [[ "$confirm" == "si" ]] || [[ "$confirm" == "s" ]] || [[ "$confirm" == "yes" ]] || [[ "$confirm" == "y" ]]; then
         echo ""
         
         # Remove volumes
         if [ ${#orphan_volumes[@]} -gt 0 ]; then
-            echo -e "${YELLOW}Eliminazione volumi in corso...${NC}"
+            echo -e "${YELLOW}Removing volumes...${NC}"
             local removed_vols=0
             local failed_vols=0
             
             for vol in "${orphan_volumes[@]}"; do
                 if docker volume rm "$vol" >/dev/null 2>&1; then
-                    echo -e "  ${GREEN}✓${NC} Rimosso volume: $vol"
+                    echo -e "  ${GREEN}✓${NC} Removed volume: $vol"
                     ((removed_vols++))
                 else
-                    echo -e "  ${RED}✗${NC} Errore volume: $vol"
+                    echo -e "  ${RED}✗${NC} Error volume: $vol"
                     ((failed_vols++))
                 fi
             done
@@ -413,16 +413,16 @@ stats_cleanup_orphans() {
         
         # Remove images
         if [ ${#orphan_images[@]} -gt 0 ]; then
-            echo -e "${YELLOW}Eliminazione immagini in corso...${NC}"
+            echo -e "${YELLOW}Removing images...${NC}"
             local removed_imgs=0
             local failed_imgs=0
             
             for img in "${orphan_images[@]}"; do
                 if docker rmi "$img" >/dev/null 2>&1; then
-                    echo -e "  ${GREEN}✓${NC} Rimossa immagine: $img"
+                    echo -e "  ${GREEN}✓${NC} Removed image: $img"
                     ((removed_imgs++))
                 else
-                    echo -e "  ${RED}✗${NC} Errore immagine: $img"
+                    echo -e "  ${RED}✗${NC} Error image: $img"
                     ((failed_imgs++))
                 fi
             done
@@ -430,31 +430,31 @@ stats_cleanup_orphans() {
         fi
         
         echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo -e "${GREEN}✅ Pulizia completata!${NC}"
+        echo -e "${GREEN}✅ Cleanup completed!${NC}"
         echo ""
         
         if [ ${#orphan_volumes[@]} -gt 0 ]; then
-            echo "  Volumi rimossi:    ${removed_vols:-0}"
+            echo "  Volumes removed:    ${removed_vols:-0}"
             if [ ${failed_vols:-0} -gt 0 ]; then
-                echo "  Volumi falliti:    $failed_vols"
+                echo "  Volumes failed:     $failed_vols"
             fi
         fi
         
         if [ ${#orphan_images[@]} -gt 0 ]; then
-            echo "  Immagini rimosse:  ${removed_imgs:-0}"
+            echo "  Images removed:     ${removed_imgs:-0}"
             if [ ${failed_imgs:-0} -gt 0 ]; then
-                echo "  Immagini fallite:  $failed_imgs"
+                echo "  Images failed:      $failed_imgs"
             fi
         fi
         echo ""
         
         # Show space reclaimed
-        echo "💾 Per vedere lo spazio recuperato:"
+        echo "💾 To see reclaimed space:"
         echo "   docker system df"
         echo ""
     else
         echo ""
-        echo -e "${BLUE}ℹ️  Operazione annullata${NC}"
+        echo -e "${BLUE}ℹ️  Operation cancelled${NC}"
         echo ""
     fi
 }
