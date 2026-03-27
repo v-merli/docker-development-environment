@@ -13,7 +13,7 @@ cmd_stats() {
         echo "  disk              Show disk usage analysis (default)"
         echo "  disk --detailed   Detailed breakdown per project"
         echo "  disk --compare    Compare shared vs dedicated architecture"
-        echo "  disk --cleanup    Interactive cleanup of orphan volumes"
+        echo "  disk --cleanup    Interactive cleanup of orphan volumes and images"
         echo ""
         echo "Examples:"
         echo "  ./phpharbor stats disk              # Basic disk analysis"
@@ -71,7 +71,7 @@ stats_disk() {
     
     # If cleanup mode, run cleanup and exit
     if [ "$cleanup" = true ]; then
-        stats_cleanup_volumes
+        stats_cleanup_orphans
         return
     fi
     
@@ -133,8 +133,59 @@ stats_disk() {
         fi
         
         echo ""
-        echo -e "${BLUE}💡 Pulisci volumi orfani: docker volume prune${NC}"
+        echo -e "${BLUE}💡 Pulisci con: ./phpharbor stats disk --cleanup${NC}"
         echo ""
+    fi
+    
+    # Check for orphan project images
+    echo -e "${YELLOW}🖼️  Immagini progetti:${NC}"
+    echo "─────────────────────────────────────────────────────────────"
+    
+    # Get existing projects
+    local existing_projects=()
+    if [ -d "$PROJECTS_DIR" ]; then
+        while IFS= read -r project_dir; do
+            if [ -d "$project_dir" ]; then
+                existing_projects+=("$(basename "$project_dir")")
+            fi
+        done < <(find "$PROJECTS_DIR" -mindepth 1 -maxdepth 1 -type d)
+    fi
+    
+    # Find project images (looking for *-app pattern)
+    local project_images=$(docker images --format "{{.Repository}}" | grep -E ".*-app$" | grep -v -E "^(php-.*-shared|mysql-.*-shared|redis-.*-shared)" | sort -u)
+    local orphan_images=()
+    
+    if [ -n "$project_images" ]; then
+        while IFS= read -r img_repo; do
+            # Extract project name from image (remove -app suffix)
+            local img_project=$(echo "$img_repo" | sed 's/-app$//')
+            
+            # Check if project exists
+            local project_exists=false
+            for existing_proj in "${existing_projects[@]}"; do
+                if [ "$existing_proj" = "$img_project" ]; then
+                    project_exists=true
+                    break
+                fi
+            done
+            
+            if [ "$project_exists" = false ]; then
+                orphan_images+=("$img_repo")
+            fi
+        done <<< "$project_images"
+    fi
+    
+    if [ ${#orphan_images[@]} -gt 0 ]; then
+        echo -e "${YELLOW}⚠️  Immagini orfane (progetti non più esistenti): ${#orphan_images[@]}${NC}"
+        local total_size=0
+        for img in "${orphan_images[@]}"; do
+            local size=$(docker images "$img" --format "{{.Size}}")
+            echo "  • $img ($size)"
+        done
+        echo ""
+        echo -e "${BLUE}💡 Pulisci con: ./phpharbor stats disk --cleanup${NC}"
+    else
+        echo "  Nessuna immagine orfana trovata ✓"
     fi
     echo ""
     
@@ -256,14 +307,15 @@ stats_disk() {
     echo "─────────────────────────────────────────────────────────────"
     echo "  • Usa --detailed per vedere breakdown per progetto"
     echo "  • Usa --compare per simulazione risparmio shared vs dedicato"
-    echo "  • Pulisci immagini inutilizzate: docker image prune -a"
-    echo "  • Pulisci volumi orfani: docker volume prune"
+    echo "  • Usa --cleanup per rimuovere volumi e immagini orfane"
+    echo "  • docker image prune -a pulisce tutte le immagini non usate"
+    echo "  • docker volume prune pulisce i volumi dangling"
     echo ""
 }
 
-stats_cleanup_volumes() {
+stats_cleanup_orphans() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║     PULIZIA VOLUMI ORFANI                                  ║${NC}"
+    echo -e "${CYAN}║     PULIZIA RISORSE ORFANE                                 ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     
@@ -276,50 +328,123 @@ stats_cleanup_volumes() {
         fi
     done < <(docker volume ls -q)
     
-    if [ ${#orphan_volumes[@]} -eq 0 ]; then
-        echo -e "${GREEN}✅ Nessun volume orfano trovato!${NC}"
+    # Find orphan images
+    local existing_projects=()
+    if [ -d "$PROJECTS_DIR" ]; then
+        while IFS= read -r project_dir; do
+            if [ -d "$project_dir" ]; then
+                existing_projects+=("$(basename "$project_dir")")
+            fi
+        done < <(find "$PROJECTS_DIR" -mindepth 1 -maxdepth 1 -type d)
+    fi
+    
+    local project_images=$(docker images --format "{{.Repository}}" | grep -E ".*-app$" | grep -v -E "^(php-.*-shared|mysql-.*-shared|redis-.*-shared)" | sort -u)
+    local orphan_images=()
+    
+    if [ -n "$project_images" ]; then
+        while IFS= read -r img_repo; do
+            local img_project=$(echo "$img_repo" | sed 's/-app$//')
+            local project_exists=false
+            for existing_proj in "${existing_projects[@]}"; do
+                if [ "$existing_proj" = "$img_project" ]; then
+                    project_exists=true
+                    break
+                fi
+            done
+            if [ "$project_exists" = false ]; then
+                orphan_images+=("$img_repo")
+            fi
+        done <<< "$project_images"
+    fi
+    
+    # Show summary
+    if [ ${#orphan_volumes[@]} -eq 0 ] && [ ${#orphan_images[@]} -eq 0 ]; then
+        echo -e "${GREEN}✅ Nessuna risorsa orfana trovata!${NC}"
         echo ""
         return
     fi
     
-    echo -e "${YELLOW}Trovati ${#orphan_volumes[@]} volumi orfani:${NC}"
-    echo "─────────────────────────────────────────────────────────────"
-    for vol in "${orphan_volumes[@]}"; do
-        echo "  • $vol"
-    done
-    echo ""
+    if [ ${#orphan_volumes[@]} -gt 0 ]; then
+        echo -e "${YELLOW}📦 Volumi orfani trovati: ${#orphan_volumes[@]}${NC}"
+        echo "─────────────────────────────────────────────────────────────"
+        for vol in "${orphan_volumes[@]}"; do
+            echo "  • $vol"
+        done
+        echo ""
+    fi
     
-    echo -e "${RED}⚠️  ATTENZIONE: Questa operazione eliminerà TUTTI i volumi orfani!${NC}"
-    echo "   I dati contenuti saranno persi permanentemente."
+    if [ ${#orphan_images[@]} -gt 0 ]; then
+        echo -e "${YELLOW}🖼️  Immagini orfane trovate: ${#orphan_images[@]}${NC}"
+        echo "─────────────────────────────────────────────────────────────"
+        for img in "${orphan_images[@]}"; do
+            local size=$(docker images "$img" --format "{{.Size}}")
+            echo "  • $img ($size)"
+        done
+        echo ""
+    fi
+    
+    echo -e "${RED}⚠️  ATTENZIONE: Questa operazione eliminerà TUTTE le risorse orfane!${NC}"
+    echo "   • Volumi: I dati contenuti saranno persi permanentemente"
+    echo "   • Immagini: Dovranno essere ricostruite se necessarie"
     echo ""
     
     read -p "Vuoi procedere? (si/no): " confirm
     
     if [[ "$confirm" == "si" ]] || [[ "$confirm" == "s" ]] || [[ "$confirm" == "yes" ]] || [[ "$confirm" == "y" ]]; then
         echo ""
-        echo -e "${YELLOW}Eliminazione volumi in corso...${NC}"
-        echo ""
         
-        local removed=0
-        local failed=0
+        # Remove volumes
+        if [ ${#orphan_volumes[@]} -gt 0 ]; then
+            echo -e "${YELLOW}Eliminazione volumi in corso...${NC}"
+            local removed_vols=0
+            local failed_vols=0
+            
+            for vol in "${orphan_volumes[@]}"; do
+                if docker volume rm "$vol" >/dev/null 2>&1; then
+                    echo -e "  ${GREEN}✓${NC} Rimosso volume: $vol"
+                    ((removed_vols++))
+                else
+                    echo -e "  ${RED}✗${NC} Errore volume: $vol"
+                    ((failed_vols++))
+                fi
+            done
+            echo ""
+        fi
         
-        for vol in "${orphan_volumes[@]}"; do
-            if docker volume rm "$vol" >/dev/null 2>&1; then
-                echo -e "  ${GREEN}✓${NC} Rimosso: $vol"
-                ((removed++))
-            else
-                echo -e "  ${RED}✗${NC} Errore: $vol"
-                ((failed++))
-            fi
-        done
+        # Remove images
+        if [ ${#orphan_images[@]} -gt 0 ]; then
+            echo -e "${YELLOW}Eliminazione immagini in corso...${NC}"
+            local removed_imgs=0
+            local failed_imgs=0
+            
+            for img in "${orphan_images[@]}"; do
+                if docker rmi "$img" >/dev/null 2>&1; then
+                    echo -e "  ${GREEN}✓${NC} Rimossa immagine: $img"
+                    ((removed_imgs++))
+                else
+                    echo -e "  ${RED}✗${NC} Errore immagine: $img"
+                    ((failed_imgs++))
+                fi
+            done
+            echo ""
+        fi
         
-        echo ""
         echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo -e "${GREEN}✅ Pulizia completata!${NC}"
         echo ""
-        echo "  Volumi rimossi:    $removed"
-        if [ $failed -gt 0 ]; then
-            echo "  Errori:            $failed"
+        
+        if [ ${#orphan_volumes[@]} -gt 0 ]; then
+            echo "  Volumi rimossi:    ${removed_vols:-0}"
+            if [ ${failed_vols:-0} -gt 0 ]; then
+                echo "  Volumi falliti:    $failed_vols"
+            fi
+        fi
+        
+        if [ ${#orphan_images[@]} -gt 0 ]; then
+            echo "  Immagini rimosse:  ${removed_imgs:-0}"
+            if [ ${failed_imgs:-0} -gt 0 ]; then
+                echo "  Immagini fallite:  $failed_imgs"
+            fi
         fi
         echo ""
         
@@ -333,4 +458,3 @@ stats_cleanup_volumes() {
         echo ""
     fi
 }
-

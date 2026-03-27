@@ -221,7 +221,7 @@ COMMANDS:
       disk                Disk usage analysis
       disk --detailed     Per-project breakdown
       disk --compare      Compare shared vs dedicated
-      disk --cleanup      Remove orphan volumes
+      disk --cleanup      Remove orphan volumes and images
     info <name>           Project information
     cleanup               Clean orphaned SSL certs and Docker resources
     reset <command>       Reset Docker environment (soft/hard/status)

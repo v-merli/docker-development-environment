@@ -15,11 +15,13 @@ cmd_stats() {
         echo "  disk              Show disk usage analysis"
         echo "  disk --detailed   Detailed breakdown per project"
         echo "  disk --compare    Compare shared vs dedicated architecture"
+        echo "  disk --cleanup    Interactive cleanup of orphan volumes and images"
         echo ""
         echo "Examples:"
         echo "  ./phpharbor stats              # Show CPU/RAM resources"
         echo "  ./phpharbor stats disk         # Basic disk analysis"
         echo "  ./phpharbor stats disk --compare   # Savings simulation"
+        echo "  ./phpharbor stats disk --cleanup   # Clean orphans"
         exit 0
     fi
     

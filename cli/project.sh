@@ -151,7 +151,11 @@ cmd_remove() {
     fi
     
     print_warning "Are you sure you want to remove project '$project'?"
-    echo "This operation will remove containers and volumes (including database)"
+    echo "This operation will remove:"
+    echo "  • Containers and volumes (including database data)"
+    echo "  • Docker images (PHP app)"
+    echo "  • SSL certificates"
+    echo "  • Project files"
     read -p "Type 'yes' to confirm: " confirm
     
     if [ "$confirm" = "yes" ]; then
@@ -206,6 +210,19 @@ cmd_remove() {
         fi
         
         print_success "SSL certificates removed"
+        
+        # Remove Docker images
+        print_info "Removing Docker images..."
+        local images=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^${project}-")
+        if [ -n "$images" ]; then
+            echo "$images" | while read img; do
+                docker rmi "$img" 2>/dev/null || true
+                echo "  Removed: $img"
+            done
+            print_success "Docker images removed"
+        else
+            echo "  No custom images found"
+        fi
         
         cd "$SCRIPT_DIR"
         rm -rf "$project_path"
