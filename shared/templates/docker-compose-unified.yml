@@ -60,7 +60,7 @@ services:
 
   # ============================================
   # MYSQL - Dedicated database (optional)
-  # Active only if USE_DEDICATED_MYSQL=true
+  # Active only if DB_TYPE=mysql
   # ============================================
   mysql:
     image: mysql:${MYSQL_VERSION:-8.0}
@@ -80,6 +80,28 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     profiles:
       - mysql-dedicated
+
+  # ============================================
+  # MARIADB - Dedicated database (optional)
+  # Active only if DB_TYPE=mariadb
+  # ============================================
+  mariadb:
+    image: mariadb:${MYSQL_VERSION:-11.4}
+    container_name: ${PROJECT_NAME}-mariadb
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - backend
+    profiles:
+      - mariadb-dedicated
 
   # ============================================
   # REDIS - Dedicated cache (optional)
@@ -153,6 +175,8 @@ networks:
 
 volumes:
   mysql_data:
+    driver: local
+  mariadb_data:
     driver: local
   redis_data:
     driver: local

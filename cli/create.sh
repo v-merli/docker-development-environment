@@ -61,7 +61,7 @@ interactive_create() {
     fi
     
     # Database
-    print_info "MySQL Database:"
+    print_info "Database:"
     PS3="$(echo -e "${CYAN}Choose (1-3):${NC} ")"
     select db_choice in "Dedicated" "Shared" "None"; do
         case $db_choice in
@@ -69,12 +69,38 @@ interactive_create() {
                 INCLUDE_DB=true
                 USE_SHARED_DB=false
                 
-                # MySQL version
-                print_info "MySQL version:"
+                # Database type
+                print_info "Database type:"
                 PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
-                select mysql in "8.0" "5.7"; do
-                    case $mysql in
-                        8.0|5.7) MYSQL_VERSION="$mysql"; break;;
+                select db_type in "MySQL" "MariaDB"; do
+                    case $db_type in
+                        "MySQL")
+                            DB_TYPE="mysql"
+                            print_info "MySQL version:"
+                            PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
+                            select mysql in "8.0" "5.7"; do
+                                case $mysql in
+                                    8.0|5.7) MYSQL_VERSION="$mysql"; break;;
+                                    *) echo "Invalid choice";;
+                                esac
+                            done
+                            break
+                            ;;
+                        "MariaDB")
+                            DB_TYPE="mariadb"
+                            print_info "MariaDB version:"
+                            PS3="$(echo -e "${CYAN}Choose (1-4):${NC} ")"
+                            select mariadb in "11.4 (LTS)" "10.11 (LTS)" "10.6" "10.5"; do
+                                case $mariadb in
+                                    "11.4"*) MYSQL_VERSION="11.4"; break;;
+                                    "10.11"*) MYSQL_VERSION="10.11"; break;;
+                                    "10.6") MYSQL_VERSION="10.6"; break;;
+                                    "10.5") MYSQL_VERSION="10.5"; break;;
+                                    *) echo "Invalid choice";;
+                                esac
+                            done
+                            break
+                            ;;
                         *) echo "Invalid choice";;
                     esac
                 done
@@ -84,14 +110,39 @@ interactive_create() {
                 INCLUDE_DB=true
                 USE_SHARED_DB=true
                 
-                # MySQL version for shared
-                print_info "MySQL version:"
-                PS3="$(echo -e "${CYAN}Choose (1-3):${NC} ")"
-                select mysql in "8.0 (default port 3306)" "5.7 (port 3307)" "8.4 (port 3308)"; do
-                    case $mysql in
-                        "8.0"*) MYSQL_VERSION="8.0"; break;;
-                        "5.7"*) MYSQL_VERSION="5.7"; break;;
-                        "8.4"*) MYSQL_VERSION="8.4"; break;;
+                # Database type for shared
+                print_info "Database type:"
+                PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
+                select db_type in "MySQL" "MariaDB"; do
+                    case $db_type in
+                        "MySQL")
+                            DB_TYPE="mysql"
+                            print_info "MySQL version:"
+                            PS3="$(echo -e "${CYAN}Choose (1-3):${NC} ")"
+                            select mysql in "8.0 (default port 3306)" "5.7 (port 3307)" "8.4 (port 3308)"; do
+                                case $mysql in
+                                    "8.0"*) MYSQL_VERSION="8.0"; break;;
+                                    "5.7"*) MYSQL_VERSION="5.7"; break;;
+                                    "8.4"*) MYSQL_VERSION="8.4"; break;;
+                                    *) echo "Invalid choice";;
+                                esac
+                            done
+                            break
+                            ;;
+                        "MariaDB")
+                            DB_TYPE="mariadb"
+                            print_info "MariaDB version:"
+                            PS3="$(echo -e "${CYAN}Choose (1-3):${NC} ")"
+                            select mariadb in "11.4 (port 3309)" "10.11 (port 3310)" "10.6 (port 3311)"; do
+                                case $mariadb in
+                                    "11.4"*) MYSQL_VERSION="11.4"; break;;
+                                    "10.11"*) MYSQL_VERSION="10.11"; break;;
+                                    "10.6"*) MYSQL_VERSION="10.6"; break;;
+                                    *) echo "Invalid choice";;
+                                esac
+                            done
+                            break
+                            ;;
                         *) echo "Invalid choice";;
                     esac
                 done
@@ -186,6 +237,7 @@ interactive_create() {
     [ "$PROJECT_TYPE" != "laravel" ] && cmd_args+=(--type "$PROJECT_TYPE")
     [ -n "$PHP_VERSION" ] && cmd_args+=(--php "$PHP_VERSION")
     [ -n "$NODE_VERSION" ] && cmd_args+=(--node "$NODE_VERSION")
+    [ -n "$DB_TYPE" ] && cmd_args+=(--db-type "$DB_TYPE")
     [ -n "$MYSQL_VERSION" ] && cmd_args+=(--mysql "$MYSQL_VERSION")
     [ -n "$REDIS_VERSION" ] && cmd_args+=(--redis "$REDIS_VERSION")
     [ "$USE_SHARED_DB" == true ] && cmd_args+=(--shared-db)
@@ -213,6 +265,7 @@ cmd_create() {
     local PROJECT_TYPE="laravel"
     local PHP_VERSION="8.3"
     local NODE_VERSION="20"
+    local DB_TYPE="mysql"
     local MYSQL_VERSION="8.0"
     local REDIS_VERSION="7"
     local INCLUDE_DB=true
@@ -257,11 +310,29 @@ cmd_create() {
                 NODE_VERSION="$2"
                 shift 2
                 ;;
+            --db-type=*)
+                DB_TYPE="${1#*=}"
+                shift
+                ;;
+            --db-type)
+                DB_TYPE="$2"
+                shift 2
+                ;;
             --mysql=*)
                 MYSQL_VERSION="${1#*=}"
                 shift
                 ;;
             --mysql)
+                MYSQL_VERSION="$2"
+                shift 2
+                ;;
+            --mariadb=*)
+                DB_TYPE="mariadb"
+                MYSQL_VERSION="${1#*=}"
+                shift
+                ;;
+            --mariadb)
+                DB_TYPE="mariadb"
                 MYSQL_VERSION="$2"
                 shift 2
                 ;;
@@ -359,10 +430,11 @@ cmd_create() {
         fi
     fi
     if [[ "$INCLUDE_DB" == true ]]; then
+        local db_label=$(echo "$DB_TYPE" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
         if [[ "$USE_SHARED_DB" == true ]]; then
-            echo "MySQL:     Shared $MYSQL_VERSION"
+            echo "$db_label:     Shared $MYSQL_VERSION"
         else
-            echo "MySQL:     Dedicated $MYSQL_VERSION"
+            echo "$db_label:     Dedicated $MYSQL_VERSION"
         fi
     fi
     if [[ "$INCLUDE_REDIS" == true ]]; then
@@ -439,19 +511,11 @@ cmd_create() {
                 NGINX_CONF="./nginx.conf"
             fi
             ;;
-                print_info "Configuring Nginx for shared PHP..."
-                sed -e "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" \
-                    -e "s/PHP_VERSION_PLACEHOLDER/php-$PHP_VERSION/g" \
-                    "$SCRIPT_DIR/shared/nginx/laravel-shared.conf" > "$PROJECT_PATH/nginx.conf"
-                # Set NGINX_CONF to mount the local file instead of the template
-                NGINX_CONF="./nginx.conf"
-            fi
-            ;;
     esac
     
     # Create .env with unified configuration
     create_unified_env_file "$PROJECT_PATH" "$PROJECT_SLUG" "$PROJECT_TYPE" "$DOMAIN" "$NGINX_CONF" \
-                    "$PHP_VERSION" "$NODE_VERSION" "$MYSQL_VERSION" \
+                    "$PHP_VERSION" "$NODE_VERSION" "$MYSQL_VERSION" "$DB_TYPE" \
                     "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$REDIS_VERSION"
     
     print_success "Project structure created"
@@ -468,7 +532,7 @@ cmd_create() {
     fi
     
     # Start shared services
-    start_shared_if_needed "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$PHP_VERSION" "$MYSQL_VERSION" "$REDIS_VERSION"
+    start_shared_if_needed "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$PHP_VERSION" "$MYSQL_VERSION" "$REDIS_VERSION" "$DB_TYPE"
     
     # Start project containers
     print_info "Starting containers..."
@@ -531,13 +595,15 @@ show_create_usage() {
     echo "  --type <type>         Type: laravel, wordpress, php, html (default: laravel)"
     echo "  --php <version>       PHP version: 7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5 (default: 8.3)"
     echo "  --node <version>      Node.js version: 18, 20, 21 (default: 20)"
-    echo "  --mysql <version>     MySQL version: 5.7, 8.0 (default: 8.0)"
+    echo "  --db-type <type>      Database type: mysql, mariadb (default: mysql)"
+    echo "  --mysql <version>     MySQL version: 5.7, 8.0, 8.4 (default: 8.0)"
+    echo "  --mariadb <version>   MariaDB version: 10.5, 10.6, 10.11, 11.4 (default: 11.4)"
     echo ""
     echo "Cherry-picking shared services:"
-    echo "  --shared-db           Use shared MySQL"
+    echo "  --shared-db           Use shared database"
     echo "  --shared-redis        Use shared Redis"
     echo "  --shared-php          Scheduler/Queue use shared PHP"
-    echo "  --no-db               Without MySQL"
+    echo "  --no-db               Without database"
     echo "  --no-redis            Without Redis"
     echo ""
     echo "Presets (shortcuts):"
@@ -552,16 +618,17 @@ show_create_usage() {
     echo "  ./phpharbor create blog --shared-db --shared-redis"
     echo "  ./phpharbor create api --fully-shared"
     echo "  ./phpharbor create cms --shared-db --no-redis"
+    echo "  ./phpharbor create mydb --mariadb 10.11 --shared-db"
 }
 
 create_unified_env_file() {
     local path=$1 slug=$2 type=$3 domain=$4 nginx_conf=$5
-    local php_ver=$6 node_ver=$7 mysql_ver=$8
-    local inc_db=$9 inc_redis=${10} shared_db=${11} shared_redis=${12} shared_php=${13} redis_ver=${14}
+    local php_ver=$6 node_ver=$7 mysql_ver=$8 db_type=$9
+    local inc_db=${10} inc_redis=${11} shared_db=${12} shared_redis=${13} shared_php=${14} redis_ver=${15}
     
     # Determine services and configuration
-    local db_service="mysql"
-    local db_host="mysql"
+    local db_service="$db_type"
+    local db_host="$db_type"
     local redis_service="redis"
     local redis_host="redis"
     local scheduler_image="\${PROJECT_NAME}-app"
@@ -569,10 +636,10 @@ create_unified_env_file() {
     local profiles="app"
     
     if [[ "$shared_db" == true ]]; then
-        db_service="mysql-$mysql_ver-shared"
-        db_host="mysql-$mysql_ver-shared"
+        db_service="$db_type-$mysql_ver-shared"
+        db_host="$db_type-$mysql_ver-shared"
     elif [[ "$inc_db" == true ]]; then
-        profiles="$profiles mysql-dedicated"
+        profiles="$profiles $db_type-dedicated"
     fi
     
     if [[ "$shared_redis" == true ]]; then
@@ -636,6 +703,7 @@ EOF
     
     if [[ "$inc_db" == true ]]; then
         cat >> "$path/.env" << EOF
+DB_TYPE=$db_type
 MYSQL_VERSION=$mysql_ver
 EOF
     fi
@@ -647,6 +715,9 @@ EOF
     fi
     
     if [[ "$inc_db" == true ]]; then
+        # Convert db_type to uppercase for display
+        local db_type_upper=$(echo "$db_type" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
+        
         cat >> "$path/.env" << EOF
 
 # ============================================
@@ -660,7 +731,7 @@ EOF
         if [[ "$shared_db" == true ]]; then
             cat >> "$path/.env" << EOF
 
-# MySQL (SHARED)
+# $db_type_upper (SHARED)
 MYSQL_DATABASE=${slug//-/_}_db
 MYSQL_ROOT_PASSWORD=rootpassword
 MYSQL_USER=root
@@ -670,7 +741,7 @@ EOF
             local port=$((13306 + $(echo -n "$slug" | sum | cut -d' ' -f1) % 1000))
             cat >> "$path/.env" << EOF
 
-# MySQL (DEDICATED)
+# $db_type_upper (DEDICATED)
 MYSQL_DATABASE=${slug//-/_}_db
 MYSQL_ROOT_PASSWORD=root
 MYSQL_USER=$type
@@ -811,7 +882,7 @@ EOF
 }
 
 start_shared_if_needed() {
-    local use_db=$1 use_redis=$2 use_php=$3 php_ver=$4 mysql_ver=$5 redis_ver=$6
+    local use_db=$1 use_redis=$2 use_php=$3 php_ver=$4 mysql_ver=$5 redis_ver=$6 db_type=$7
     
     if [[ "$use_db" == false ]] && [[ "$use_redis" == false ]] && [[ "$use_php" == false ]]; then
         return
@@ -821,10 +892,11 @@ start_shared_if_needed() {
     cd "$SCRIPT_DIR/proxy"
     
     if [[ "$use_db" == true ]]; then
-        local mysql_container="mysql-$mysql_ver-shared"
-        if ! docker ps | grep -q "$mysql_container"; then
-            print_info "Starting shared MySQL $mysql_ver..."
-            $DOCKER_COMPOSE --profile shared-services up -d "$mysql_container"
+        local db_container="$db_type-$mysql_ver-shared"
+        local db_label=$(echo "$db_type" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
+        if ! docker ps | grep -q "$db_container"; then
+            print_info "Starting shared $db_label $mysql_ver..."
+            $DOCKER_COMPOSE --profile shared-services up -d "$db_container"
             sleep 3
         fi
     fi

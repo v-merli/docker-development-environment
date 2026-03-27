@@ -106,6 +106,55 @@ services:
     profiles:
       - shared-services
 
+  # MariaDB Shared Services
+  mariadb-11.4-shared:
+    image: mariadb:11.4
+    container_name: mariadb-11.4-shared
+    restart: unless-stopped
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      # Projects will create their databases via migration
+    volumes:
+      - mariadb_11_4_shared_data:/var/lib/mysql
+    networks:
+      - phpharbor-proxy
+    profiles:
+      - shared-services
+
+  mariadb-10.11-shared:
+    image: mariadb:10.11
+    container_name: mariadb-10.11-shared
+    restart: unless-stopped
+    ports:
+      - "3310:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      # Projects will create their databases via migration
+    volumes:
+      - mariadb_10_11_shared_data:/var/lib/mysql
+    networks:
+      - phpharbor-proxy
+    profiles:
+      - shared-services
+
+  mariadb-10.6-shared:
+    image: mariadb:10.6
+    container_name: mariadb-10.6-shared
+    restart: unless-stopped
+    ports:
+      - "3311:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      # Projects will create their databases via migration
+    volumes:
+      - mariadb_10_6_shared_data:/var/lib/mysql
+    networks:
+      - phpharbor-proxy
+    profiles:
+      - shared-services
+
   # Redis Shared Services
   redis-6-shared:
     image: redis:6-alpine
@@ -243,6 +292,12 @@ volumes:
     name: mysql_8_0_shared_data
   mysql_8_4_shared_data:
     name: mysql_8_4_shared_data
+  mariadb_11_4_shared_data:
+    name: mariadb_11_4_shared_data
+  mariadb_10_11_shared_data:
+    name: mariadb_10_11_shared_data
+  mariadb_10_6_shared_data:
+    name: mariadb_10_6_shared_data
   redis_6_shared_data:
     name: redis_6_shared_data
   redis_7_shared_data:
