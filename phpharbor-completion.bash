@@ -28,6 +28,10 @@ _phpharbor_completion() {
     # Update sub-commands
     update_commands="check install changelog"
     
+    # Stats sub-commands
+    stats_commands="disk resources"
+    stats_disk_options="--detailed --compare --cleanup"
+    
     # If we're at the first argument, suggest main commands
     if [ $COMP_CWORD -eq 1 ]; then
         COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
@@ -71,6 +75,15 @@ _phpharbor_completion() {
         update)
             if [ $COMP_CWORD -eq 2 ]; then
                 COMPREPLY=( $(compgen -W "${update_commands}" -- ${cur}) )
+            fi
+            return 0
+            ;;
+        stats)
+            if [ $COMP_CWORD -eq 2 ]; then
+                COMPREPLY=( $(compgen -W "${stats_commands}" -- ${cur}) )
+            elif [ $COMP_CWORD -eq 3 ] && [ "$prev" == "disk" ]; then
+                # Suggest disk options
+                COMPREPLY=( $(compgen -W "${stats_disk_options}" -- ${cur}) )
             fi
             return 0
             ;;

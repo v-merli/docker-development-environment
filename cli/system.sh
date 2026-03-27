@@ -4,6 +4,48 @@
 # Commands: stats, info, cleanup
 
 cmd_stats() {
+    # Check for sub-commands
+    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+        echo "Usage: ./phpharbor stats [command] [options]"
+        echo ""
+        echo "Display real-time statistics about PHPHarbor resource usage."
+        echo ""
+        echo "Commands:"
+        echo "  resources         Show CPU/RAM usage of running containers (default)"
+        echo "  disk              Show disk usage analysis"
+        echo "  disk --detailed   Detailed breakdown per project"
+        echo "  disk --compare    Compare shared vs dedicated architecture"
+        echo ""
+        echo "Examples:"
+        echo "  ./phpharbor stats              # Show CPU/RAM resources"
+        echo "  ./phpharbor stats disk         # Basic disk analysis"
+        echo "  ./phpharbor stats disk --compare   # Savings simulation"
+        exit 0
+    fi
+    
+    local subcmd=$1
+    shift
+    
+    case $subcmd in
+        disk)
+            # Load the stats module for disk analysis
+            source "$SCRIPT_DIR/cli/stats.sh"
+            stats_disk "$@"
+            return
+            ;;
+        resources|"")
+            # Default: show resources (CPU/RAM)
+            stats_resources "$@"
+            ;;
+        *)
+            echo "Unknown stats command: $subcmd"
+            echo "Run './phpharbor stats --help' for available commands."
+            exit 1
+            ;;
+    esac
+}
+
+stats_resources() {
     print_title "Resource Usage Statistics"
     echo ""
     
@@ -26,6 +68,9 @@ cmd_stats() {
     echo ""
     echo -e "${CYAN}Networks:${NC}"
     docker network ls | grep -E "phpharbor-proxy|backend"
+    
+    echo ""
+    echo -e "${BLUE}💡 Tip: Use './phpharbor stats disk' for disk usage analysis${NC}"
 }
 
 cmd_info() {

@@ -216,7 +216,12 @@ COMMANDS:
     update changelog      Show latest changelog
     
   Information:
-    stats                 Show Docker resource stats
+    stats [command]       Show resource usage statistics
+      resources           Show CPU/RAM usage (default)
+      disk                Disk usage analysis
+      disk --detailed     Per-project breakdown
+      disk --compare      Compare shared vs dedicated
+      disk --cleanup      Remove orphan volumes
     info <name>           Project information
     cleanup               Clean orphaned SSL certs and Docker resources
     reset <command>       Reset Docker environment (soft/hard/status)
@@ -247,6 +252,10 @@ EXAMPLES:
   ./phpharbor artisan myshop migrate
   ./phpharbor composer myshop require laravel/sanctum
   ./phpharbor npm myshop install
+  
+  # Statistics
+  ./phpharbor stats disk
+  ./phpharbor stats disk --compare
 
 For specific help: ./phpharbor <command> --help
 
