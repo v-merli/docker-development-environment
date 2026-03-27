@@ -223,8 +223,11 @@ COMMANDS:
       disk --compare      Compare shared vs dedicated
       disk --cleanup      Remove orphan volumes and images
     info <name>           Project information
-    cleanup               Clean orphaned SSL certs and Docker resources
-    reset <command>       Reset Docker environment (soft/hard/status)
+    cleanup               Clean orphaned SSL certificates
+    reset <command>       Reset Docker environment
+      soft                Remove containers only (keep data)
+      hard                Complete reset (removes all data - DATA LOSS!)
+      status              Show current Docker status
     version               Show version
     help                  Show this message
 

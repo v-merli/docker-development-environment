@@ -7,7 +7,7 @@ show_dev_help() {
     echo "Usage: ./phpharbor <command> <project> [args]"
     echo ""
     echo "Commands:"
-    echo "  shell <project>          Open bash shell"
+    echo "  shell <project>          Open bash shell (PHP + Node.js)"
     echo "  artisan <project> <cmd>  Run artisan command"
     echo "  composer <project> <cmd> Run composer command"
     echo "  npm <project> <cmd>      Run npm command"
@@ -18,7 +18,8 @@ cmd_shell() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
         echo "Usage: ./phpharbor shell <project>"
         echo ""
-        echo "Opens an interactive bash shell in the project's PHP container."
+        echo "Opens an interactive bash shell in the project's app container."
+        echo "Has access to: PHP, Composer, Artisan, Node.js, npm"
         exit 0
     fi
     
@@ -38,21 +39,7 @@ cmd_shell() {
     
     cd "$project_path"
     
-    # Check if project uses shared PHP
-    # Check if "app" service does NOT exist in docker-compose.yml
-    if [ -f "docker-compose.yml" ] && ! grep -q "^  app:" "docker-compose.yml" 2>/dev/null; then
-        # Fully-shared project: use shared PHP
-        if [ -f ".env" ]; then
-            php_version=$(grep "^PHP_VERSION=" ".env" 2>/dev/null | cut -d'=' -f2)
-            if [ -n "$php_version" ]; then
-                print_info "Accessing shared PHP $php_version..."
-                docker exec -it php-$php_version-shared bash -c "cd /var/www/projects/$project/app && bash"
-                return
-            fi
-        fi
-    fi
-    
-    # Project with dedicated PHP
+    # Always use app container for consistent UX
     $DOCKER_COMPOSE exec app bash
 }
 
@@ -85,20 +72,7 @@ cmd_artisan() {
     
     cd "$project_path"
     
-    # Check if project uses shared PHP
-    # Check if "app" service does NOT exist in docker-compose.yml
-    if [ -f "docker-compose.yml" ] && ! grep -q "^  app:" "docker-compose.yml" 2>/dev/null; then
-        if [ -f ".env" ]; then
-            php_version=$(grep "^PHP_VERSION=" ".env" 2>/dev/null | cut -d'=' -f2)
-            if [ -n "$php_version" ]; then
-                print_info "Using shared PHP $php_version..."
-                docker exec php-$php_version-shared php /var/www/projects/$project/app/artisan "$@"
-                return
-            fi
-        fi
-    fi
-    
-    # Project with dedicated PHP
+    # Always use app container for consistent UX
     $DOCKER_COMPOSE exec app php artisan "$@"
 }
 
@@ -121,30 +95,16 @@ cmd_composer() {
     cd "$project_path"
     
     # Check if project uses shared PHP
-    # Check if "app" service does NOT exist in docker-compose.yml
-    if [ -f "docker-compose.yml" ] && ! grep -q "^  app:" "docker-compose.yml" 2>/dev/null; then
-        # Fully-shared project: use shared PHP
-        if [ -f ".env" ]; then
-            php_version=$(grep "^PHP_VERSION=" ".env" 2>/dev/null | cut -d'=' -f2)
-            if [ -n "$php_version" ]; then
-                print_info "Using shared PHP $php_version..."
-                docker exec php-$php_version-shared bash -c "cd /var/www/projects/$project/app && composer $*"
-                return
-            fi
+    if uses_shared_php "$project_path"; then
+        php_version=$(grep "^PHP_VERSION=" ".env" 2>/dev/null | cut -d'=' -f2)
+        if [ -n "$php_version" ]; then
+            print_info "Using shared PHP $php_version..."
+            docker exec php-$php_version-shared bash -c "cd /var/www/projects/$project/app && composer $*"
+            return
         fi
     fi
     
-    # Project with dedicated PHP
-    $DOCKER_COMPOSE exec app composer "$@"
-}
-
-cmd_npm() {
-    if [ -z "$1" ]; then
-        print_error "Specify the project name"
-        echo "Usage: ./phpharbor npm <project> <command>"
-        exit 1
-    fi
-    
+    # Always use app container for consistent UX
     local project=$1
     shift
     local project_path="$PROJECTS_DIR/$project"
@@ -156,20 +116,7 @@ cmd_npm() {
     
     cd "$project_path"
     
-    # Check if project uses shared PHP
-    # Check if "app" service does NOT exist in docker-compose.yml
-    if [ -f "docker-compose.yml" ] && ! grep -q "^  app:" "docker-compose.yml" 2>/dev/null; then
-        if [ -f ".env" ]; then
-            php_version=$(grep "^PHP_VERSION=" ".env" 2>/dev/null | cut -d'=' -f2)
-            if [ -n "$php_version" ]; then
-                print_info "Using shared PHP $php_version..."
-                docker exec php-$php_version-shared bash -c "cd /var/www/projects/$project/app && npm $*"
-                return
-            fi
-        fi
-    fi
-    
-    # Project with dedicated PHP
+    # npm always runs in app container (either full PHP+Node or node-only)
     $DOCKER_COMPOSE exec app npm "$@"
 }
 

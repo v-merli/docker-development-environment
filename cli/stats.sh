@@ -97,7 +97,7 @@ stats_disk() {
     # Shared volumes (only official shared services)
     echo -e "${YELLOW}💾 Shared volumes (official services):${NC}"
     echo "─────────────────────────────────────────────────────────────"
-    local shared_volumes=$(docker volume ls --format "{{.Name}}" | grep -E "^(mysql_[0-9_]+_shared_data|redis_[0-9]+_shared_data|php_[0-9_]+_shared_data)$")
+    local shared_volumes=$(docker volume ls --format "{{.Name}}" | grep -E "^(mysql_[0-9_]+_shared_data|mariadb_[0-9_]+_shared_data|redis_[0-9]+_shared_data|php_[0-9_]+_shared_data)$")
     
     if [ -n "$shared_volumes" ]; then
         echo "Volume Name                    Containers"
@@ -152,7 +152,7 @@ stats_disk() {
     fi
     
     # Find project images (looking for *-app pattern)
-    local project_images=$(docker images --format "{{.Repository}}" | grep -E ".*-app$" | grep -v -E "^(php-.*-shared|mysql-.*-shared|redis-.*-shared)" | sort -u)
+    local project_images=$(docker images --format "{{.Repository}}" | grep -E ".*-(app|nginx)$" | grep -v -E "^(php-.*-shared|mysql-.*-shared|mariadb-.*-shared|redis-.*-shared|nginx-proxy)" | sort -u)
     local orphan_images=()
     
     if [ -n "$project_images" ]; then
@@ -338,12 +338,13 @@ stats_cleanup_orphans() {
         done < <(find "$PROJECTS_DIR" -mindepth 1 -maxdepth 1 -type d)
     fi
     
-    local project_images=$(docker images --format "{{.Repository}}" | grep -E ".*-app$" | grep -v -E "^(php-.*-shared|mysql-.*-shared|redis-.*-shared)" | sort -u)
+    local project_images=$(docker images --format "{{.Repository}}" | grep -E ".*-(app|nginx)$" | grep -v -E "^(php-.*-shared|mysql-.*-shared|mariadb-.*-shared|redis-.*-shared|nginx-proxy)" | sort -u)
     local orphan_images=()
     
     if [ -n "$project_images" ]; then
         while IFS= read -r img_repo; do
-            local img_project=$(echo "$img_repo" | sed 's/-app$//')
+            # Extract project name from image (remove -app or -nginx suffix)
+            local img_project=$(echo "$img_repo" | sed -E 's/-(app|nginx)$//')
             local project_exists=false
             for existing_proj in "${existing_projects[@]}"; do
                 if [ "$existing_proj" = "$img_project" ]; then

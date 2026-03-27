@@ -232,7 +232,7 @@ cmd_info() {
 }
 
 cmd_cleanup() {
-    print_title "Cleanup Orphaned Resources"
+    print_title "Cleanup Orphaned SSL Certificates"
     echo ""
     
     print_info "Searching for orphaned SSL certificates..."
@@ -399,4 +399,9 @@ cmd_cleanup() {
     
     echo ""
     print_info "Cleanup finished"
+    echo ""
+    echo -e "${CYAN}💡 Additional cleanup commands:${NC}"
+    echo "  • ./phpharbor stats disk --cleanup    # Remove orphan volumes and project images"
+    echo "  • ./phpharbor reset hard              # Complete reset (removes all data)"
+    echo ""
 }

@@ -134,11 +134,20 @@ reset_hard() {
         mysql_5_7_shared_data \
         mysql_8_0_shared_data \
         mysql_8_4_shared_data \
+        mariadb_11_4_shared_data \
+        mariadb_10_11_shared_data \
+        mariadb_10_6_shared_data \
         redis_6_shared_data \
         redis_7_shared_data \
         2>/dev/null || true
     
-    print_info "Removing unused images (optional)..."
+    print_info "Removing PHPHarbor custom images..."
+    docker images --format "{{.Repository}}:{{.Tag}}" | grep -E "(phpharbor-proxy-php-|mysql-.*-shared|mariadb-.*-shared|redis-.*-shared)" | xargs -r docker rmi -f 2>/dev/null || true
+    
+    print_info "Removing project images..."
+    docker images --format "{{.Repository}}:{{.Tag}}" | grep -E ".*-app:.*" | xargs -r docker rmi -f 2>/dev/null || true
+    
+    print_info "Removing unused images (prune)..."
     docker image prune -f 2>/dev/null || true
     
     print_success "Hard reset completed!"

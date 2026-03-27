@@ -698,6 +698,7 @@ EOF
         cat >> "$path/.env" << EOF
 PHP_VERSION=$php_ver
 NODE_VERSION=$node_ver
+USE_SHARED_PHP=$shared_php
 EOF
     fi
     
@@ -988,62 +989,32 @@ install_framework() {
         laravel)
             print_info "Installing Laravel..."
             
-            if [[ "$shared_php" == true ]]; then
-                # Fully-shared: use shared PHP container
-                docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && composer create-project --prefer-dist laravel/laravel ." 2>/dev/null || true
-                docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && chmod -R 775 storage bootstrap/cache" 2>/dev/null || true
-                
-                if [ ! -f "$path/app/.env" ]; then
-                    docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && cp .env.example .env" 2>/dev/null || true
+            # Always use app container (has PHP + Node)
+            $DOCKER_COMPOSE exec -T app composer create-project --prefer-dist laravel/laravel . 2>/dev/null || true
+            $DOCKER_COMPOSE exec -T app chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+            
+            if [ ! -f "$path/app/.env" ]; then
+                $DOCKER_COMPOSE exec -T app cp .env.example .env 2>/dev/null || true
+            fi
+            
+            $DOCKER_COMPOSE exec -T app php artisan key:generate 2>/dev/null || true
+            
+            if [[ "$inc_db" == true ]]; then
+                local db_host="mysql"
+                local db_password="root"
+                if [[ "$shared_db" == true ]]; then
+                    db_host="mysql-shared"
+                    db_password="rootpassword"
                 fi
-                
-                docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && php artisan key:generate" 2>/dev/null || true
-                
-                if [[ "$inc_db" == true ]]; then
-                    local db_host="mysql"
-                    local db_password="root"
-                    if [[ "$shared_db" == true ]]; then
-                        db_host="mysql-shared"
-                        db_password="rootpassword"
-                    fi
-                    docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && sed -i 's/DB_HOST=.*/DB_HOST=$db_host/' .env" 2>/dev/null || true
-                    docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && sed -i 's/DB_DATABASE=.*/DB_DATABASE=${slug//-/_}_db/' .env" 2>/dev/null || true
-                    docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=$db_password/' .env" 2>/dev/null || true
-                fi
-                
-                if [[ "$inc_redis" == true ]]; then
-                    local redis_host="redis"
-                    [[ "$shared_redis" == true ]] && redis_host="redis-shared"
-                    docker exec php-${php_version}-shared bash -c "cd /var/www/projects/$project/app && sed -i 's/REDIS_HOST=.*/REDIS_HOST=$redis_host/' .env" 2>/dev/null || true
-                fi
-            else
-                # Dedicated: use project's app container
-                $DOCKER_COMPOSE exec -T app composer create-project --prefer-dist laravel/laravel . 2>/dev/null || true
-                $DOCKER_COMPOSE exec -T app chmod -R 775 storage bootstrap/cache 2>/dev/null || true
-                
-                if [ ! -f "$path/app/.env" ]; then
-                    $DOCKER_COMPOSE exec -T app cp .env.example .env 2>/dev/null || true
-                fi
-                
-                $DOCKER_COMPOSE exec -T app php artisan key:generate 2>/dev/null || true
-                
-                if [[ "$inc_db" == true ]]; then
-                    local db_host="mysql"
-                    local db_password="root"
-                    if [[ "$shared_db" == true ]]; then
-                        db_host="mysql-shared"
-                        db_password="rootpassword"
-                    fi
-                    $DOCKER_COMPOSE exec -T app sed -i "s/DB_HOST=.*/DB_HOST=$db_host/" .env 2>/dev/null || true
-                    $DOCKER_COMPOSE exec -T app sed -i "s/DB_DATABASE=.*/DB_DATABASE=${slug//-/_}_db/" .env 2>/dev/null || true
-                    $DOCKER_COMPOSE exec -T app sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$db_password/" .env 2>/dev/null || true
-                fi
-                
-                if [[ "$inc_redis" == true ]]; then
-                    local redis_host="redis"
-                    [[ "$shared_redis" == true ]] && redis_host="redis-shared"
-                    $DOCKER_COMPOSE exec -T app sed -i "s/REDIS_HOST=.*/REDIS_HOST=$redis_host/" .env 2>/dev/null || true
-                fi
+                $DOCKER_COMPOSE exec -T app sed -i "s/DB_HOST=.*/DB_HOST=$db_host/" .env 2>/dev/null || true
+                $DOCKER_COMPOSE exec -T app sed -i "s/DB_DATABASE=.*/DB_DATABASE=${slug//-/_}_db/" .env 2>/dev/null || true
+                $DOCKER_COMPOSE exec -T app sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$db_password/" .env 2>/dev/null || true
+            fi
+            
+            if [[ "$inc_redis" == true ]]; then
+                local redis_host="redis"
+                [[ "$shared_redis" == true ]] && redis_host="redis-shared"
+                $DOCKER_COMPOSE exec -T app sed -i "s/REDIS_HOST=.*/REDIS_HOST=$redis_host/" .env 2>/dev/null || true
             fi
             
             print_success "Laravel installed"
@@ -1051,11 +1022,7 @@ install_framework() {
             
         wordpress)
             print_info "Downloading WordPress..."
-            if [[ "$shared_php" == true ]]; then
-                docker exec php-${php_version}-shared bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/projects/$project/app/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
-            else
-                $DOCKER_COMPOSE exec -T app bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/html/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
-            fi
+            $DOCKER_COMPOSE exec -T app bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/html/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
             print_success "WordPress downloaded"
             ;;
             

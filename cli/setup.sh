@@ -449,6 +449,12 @@ setup_proxy() {
         update_proxy_env
     fi
     
+    # Check and create proxy network if it doesn't exist
+    if ! docker network inspect phpharbor-proxy &> /dev/null; then
+        print_info "Creating phpharbor-proxy network..."
+        docker network create phpharbor-proxy
+    fi
+    
     print_info "Starting nginx-proxy and acme-companion..."
     $DOCKER_COMPOSE up -d nginx-proxy acme-companion
     
