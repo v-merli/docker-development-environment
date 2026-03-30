@@ -167,8 +167,10 @@ convert_project() {
     print_info "Restarting project..."
     cd "$project_path"
     
-    # Stop containers
-    $DOCKER_COMPOSE down 2>/dev/null || true
+    # Stop containers, rimuovi orfani e tutti i container figli del progetto
+    $DOCKER_COMPOSE down --remove-orphans 2>/dev/null || true
+    # Rimuovi tutti i container che iniziano con il nome del progetto (es: test-1-*)
+    docker ps -a --format '{{.Names}}' | grep "^${project}-" | xargs -r docker rm -f 2>/dev/null || true
     
     # Start with new configuration
     local profiles=$(grep "^COMPOSE_PROFILES=" "$project_path/.env" 2>/dev/null | cut -d'=' -f2)
