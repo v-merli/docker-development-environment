@@ -152,7 +152,8 @@ cmd_remove() {
     
     print_warning "Are you sure you want to remove project '$project'?"
     echo "This operation will remove:"
-    echo "  • Containers and volumes (including database data)"
+    echo "  • Containers and Docker volumes"
+    echo "  • Local volume directories (database data in volumes/)"
     echo "  • Docker images (PHP app)"
     echo "  • SSL certificates"
     echo "  • Project files"
@@ -170,11 +171,45 @@ cmd_remove() {
             echo "$containers" | xargs docker rm 2>/dev/null || true
         fi
         
-        # Remove project volumes
-        print_info "Removing volumes..."
+        # Remove project volumes (Docker named volumes)
+        print_info "Removing Docker volumes..."
         local volumes=$(docker volume ls -q --filter "name=^${project}_")
         if [ -n "$volumes" ]; then
             echo "$volumes" | xargs docker volume rm 2>/dev/null || true
+        fi
+        
+        # Remove local volume directories
+        print_info "Removing local volume directories..."
+        local volumes_removed=0
+        
+        if [ -d "$SCRIPT_DIR/volumes/mysql/$project" ]; then
+            rm -rf "$SCRIPT_DIR/volumes/mysql/$project"
+            echo "  Removed: volumes/mysql/$project"
+            volumes_removed=$((volumes_removed + 1))
+        fi
+        
+        if [ -d "$SCRIPT_DIR/volumes/mariadb/$project" ]; then
+            rm -rf "$SCRIPT_DIR/volumes/mariadb/$project"
+            echo "  Removed: volumes/mariadb/$project"
+            volumes_removed=$((volumes_removed + 1))
+        fi
+        
+        if [ -d "$SCRIPT_DIR/volumes/redis/$project" ]; then
+            rm -rf "$SCRIPT_DIR/volumes/redis/$project"
+            echo "  Removed: volumes/redis/$project"
+            volumes_removed=$((volumes_removed + 1))
+        fi
+        
+        if [ -d "$SCRIPT_DIR/volumes/other/$project" ]; then
+            rm -rf "$SCRIPT_DIR/volumes/other/$project"
+            echo "  Removed: volumes/other/$project"
+            volumes_removed=$((volumes_removed + 1))
+        fi
+        
+        if [ $volumes_removed -eq 0 ]; then
+            echo "  No local volumes found"
+        else
+            print_success "Removed $volumes_removed local volume director$([ $volumes_removed -eq 1 ] && echo 'y' || echo 'ies')"
         fi
         
         # Remove network

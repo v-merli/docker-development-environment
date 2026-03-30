@@ -232,10 +232,10 @@ cmd_info() {
 }
 
 cmd_cleanup() {
-    print_title "Cleanup Orphaned SSL Certificates"
+    print_title "Cleanup Orphaned Resources"
     echo ""
     
-    print_info "Searching for orphaned SSL certificates..."
+    print_info "Searching for orphaned SSL certificates and volumes..."
     echo ""
     
     local acme_base="$SCRIPT_DIR/proxy/nginx/acme"
@@ -367,11 +367,84 @@ cmd_cleanup() {
     local total_cleaned=$((cleaned + mkcert_cleaned))
     
     if [ $total_cleaned -gt 0 ]; then
-        print_success "Cleaned total: $total_cleaned orphaned resources"
+        print_success "Cleaned total: $total_cleaned orphaned SSL resources"
         echo "  - ACME certificates: $cleaned"
         echo "  - mkcert certificates: $mkcert_cleaned"
     else
-        print_success "No orphaned certificates found"
+        print_success "No orphaned SSL certificates found"
+    fi
+    
+    echo ""
+    print_info "Checking for orphaned local volumes..."
+    echo ""
+    
+    local volumes_dir="$SCRIPT_DIR/volumes"
+    local volumes_cleaned=0
+    
+    # Get list of project names (without .test suffix)
+    local existing_project_names=()
+    if [ -d "$PROJECTS_DIR" ]; then
+        for project_dir in "$PROJECTS_DIR"/*/; do
+            if [ -d "$project_dir" ]; then
+                local proj_name=$(basename "$project_dir")
+                existing_project_names+=("$proj_name")
+            fi
+        done
+    fi
+    
+    # Function to check and clean volume directories
+    check_and_clean_volumes() {
+        local volume_type=$1
+        local volume_base="$volumes_dir/$volume_type"
+        
+        if [ ! -d "$volume_base" ]; then
+            return
+        fi
+        
+        for volume_dir in "$volume_base"/*/; do
+            if [ ! -d "$volume_dir" ]; then
+                continue
+            fi
+            
+            local volume_name=$(basename "$volume_dir")
+            
+            # Skip .gitkeep and other hidden/special files
+            if [[ "$volume_name" == .* ]] || [[ "$volume_name" == *"-shared" ]]; then
+                continue
+            fi
+            
+            local found=false
+            
+            # Check if project exists
+            for existing in "${existing_project_names[@]}"; do
+                if [ "$volume_name" = "$existing" ]; then
+                    found=true
+                    break
+                fi
+            done
+            
+            if [ "$found" = false ]; then
+                echo -e "  ${RED}✗${NC} $volume_type/$volume_name - project not found"
+                rm -rf "$volume_dir"
+                ((volumes_cleaned++))
+            else
+                echo -e "  ${GREEN}✓${NC} $volume_type/$volume_name"
+            fi
+        done
+    }
+    
+    # Clean volumes for each type
+    check_and_clean_volumes "mysql"
+    check_and_clean_volumes "mariadb"
+    check_and_clean_volumes "redis"
+    check_and_clean_volumes "other"
+    
+    if [ $volumes_cleaned -gt 0 ]; then
+        echo ""
+        print_success "Removed $volumes_cleaned orphaned volume director$([ $volumes_cleaned -eq 1 ] && echo 'y' || echo 'ies')"
+    else
+        echo ""
+        echo "  No orphaned volumes found"
     fi
     
     echo ""
