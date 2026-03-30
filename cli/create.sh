@@ -1022,12 +1022,15 @@ install_framework() {
             
         wordpress)
             print_info "Downloading WordPress..."
-            $DOCKER_COMPOSE exec -T app bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/html/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
+            # Create public directory first
+            $DOCKER_COMPOSE exec -T app mkdir -p /var/www/html/public 2>/dev/null || true
+            $DOCKER_COMPOSE exec -T app bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/html/public/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
             print_success "WordPress downloaded"
             ;;
+            mkdir -p "$path/app/public"
             
         html)
-            cat > "$path/app/index.html" << 'EOF'
+            cat > "$path/app/public/index.html" << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1037,15 +1040,16 @@ install_framework() {
 </head>
 <body>
     <h1>🎉 Your project is ready!</h1>
-    <p>Edit <code>app/index.html</code></p>
+    <p>Edit <code>app/public/index.html</code></p>
 </body>
 </html>
 EOF
             # Note: HTML doesn't use PHP, so no Xdebug config needed
             ;;
             
-        php)
-            cat > "$path/app/index.php" << 'EOF'
+        php)mkdir -p "$path/app/public"
+            
+            cat > "$path/app/public/index.php" << 'EOF'
 <!DOCTYPE html>
 <html>
 <head><title>PHP Info</title></head>

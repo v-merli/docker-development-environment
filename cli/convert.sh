@@ -145,12 +145,15 @@ convert_project() {
     # Step 3: Handle Laravel-specific services (scheduler/queue)
     if [ "$to_type" == "laravel" ] && [ "$from_type" != "laravel" ]; then
         print_info "Adding Laravel scheduler/queue to profiles..."
-        # Add scheduler to COMPOSE_PROFILES if not present
+        # Add scheduler and queue to COMPOSE_PROFILES if not present
         local profiles=$(grep "^COMPOSE_PROFILES=" "$project_path/.env" 2>/dev/null | cut -d'=' -f2)
         if [[ ! "$profiles" =~ scheduler ]]; then
             profiles="$profiles scheduler"
-            sed -i '' "s/^COMPOSE_PROFILES=.*/COMPOSE_PROFILES=$profiles/" "$project_path/.env"
         fi
+        if [[ ! "$profiles" =~ queue ]]; then
+            profiles="$profiles queue"
+        fi
+        sed -i '' "s/^COMPOSE_PROFILES=.*/COMPOSE_PROFILES=$profiles/" "$project_path/.env"
         print_success "Laravel services enabled"
     elif [ "$from_type" == "laravel" ] && [ "$to_type" != "laravel" ]; then
         print_info "Removing Laravel scheduler/queue from profiles..."
