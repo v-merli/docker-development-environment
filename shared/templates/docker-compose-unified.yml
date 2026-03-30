@@ -35,6 +35,8 @@ services:
       - backend
     profiles:
       - app
+    labels:
+      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # NGINX - Web Server (SEMPRE presente)
@@ -58,6 +60,8 @@ services:
       - backend
     profiles:
       - app
+    labels:
+      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # MYSQL - Dedicated database (optional)
@@ -81,6 +85,8 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     profiles:
       - mysql-dedicated
+    labels:
+      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # MARIADB - Dedicated database (optional)
@@ -103,6 +109,8 @@ services:
       - backend
     profiles:
       - mariadb-dedicated
+    labels:
+      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # REDIS - Dedicated cache (optional)
@@ -121,6 +129,8 @@ services:
     command: redis-server --appendonly yes
     profiles:
       - redis-dedicated
+    labels:
+      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # SCHEDULER - Laravel Scheduler
@@ -144,6 +154,8 @@ services:
     command: sh -c "until [ -f artisan ] && [ -f vendor/autoload.php ]; do echo 'Waiting for Laravel installation...' && sleep 2; done && while true; do php artisan schedule:run --verbose --no-interaction && sleep 60; done"
     profiles:
       - scheduler
+    labels:
+      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # QUEUE - Laravel Queue Worker
@@ -167,6 +179,8 @@ services:
     command: sh -c "until [ -f artisan ] && [ -f vendor/autoload.php ]; do echo 'Waiting for Laravel installation...' && sleep 2; done && php artisan queue:work --tries=3"
     profiles:
       - queue
+    labels:
+      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
 
 networks:
   phpharbor-proxy:

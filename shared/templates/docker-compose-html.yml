@@ -13,6 +13,8 @@ services:
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
     networks:
       - phpharbor-proxy
+    labels:
+      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
 
 networks:
   phpharbor-proxy:
