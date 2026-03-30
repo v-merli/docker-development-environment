@@ -570,7 +570,7 @@ cmd_create() {
     
     # Install framework
     if [ "$INSTALL_FRAMEWORK" = true ]; then
-        install_framework "$PROJECT_TYPE" "$PROJECT_PATH" "$PROJECT_SLUG" "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$PHP_VERSION"
+        install_framework "$PROJECT_TYPE" "$PROJECT_PATH" "$PROJECT_SLUG" "$INCLUDE_DB" "$INCLUDE_REDIS" "$USE_SHARED_DB" "$USE_SHARED_REDIS" "$USE_SHARED_PHP" "$PHP_VERSION" "$REDIS_VERSION"
     fi
     
     # Copy VS Code configuration for Xdebug (always, except for HTML)
@@ -980,7 +980,7 @@ generate_ssl_cert() {
 }
 
 install_framework() {
-    local type=$1 path=$2 slug=$3 inc_db=$4 inc_redis=$5 shared_db=$6 shared_redis=$7 shared_php=$8 php_version=$9
+    local type=$1 path=$2 slug=$3 inc_db=$4 inc_redis=$5 shared_db=$6 shared_redis=$7 shared_php=$8 php_version=$9 redis_ver=${10}
     local project=$(basename "$path")
     
     cd "$path"
@@ -1013,7 +1013,7 @@ install_framework() {
             
             if [[ "$inc_redis" == true ]]; then
                 local redis_host="redis"
-                [[ "$shared_redis" == true ]] && redis_host="redis-shared"
+                [[ "$shared_redis" == true ]] && redis_host="redis-${redis_ver}-shared"
                 $DOCKER_COMPOSE exec -T app sed -i "s/REDIS_HOST=.*/REDIS_HOST=$redis_host/" .env 2>/dev/null || true
             fi
             

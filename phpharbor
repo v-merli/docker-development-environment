@@ -188,6 +188,7 @@ COMMANDS:
     composer <name> <cmd> Run composer command
     npm <name> <cmd>      Run npm command
     mysql <name>          Open project MySQL CLI
+    queue <name> <action> Manage queue worker (restart|logs|status)
     
   Shared Services:
     shared start [svc]    Start shared services (mysql/redis/php)
@@ -255,6 +256,7 @@ EXAMPLES:
   ./phpharbor artisan myshop migrate
   ./phpharbor composer myshop require laravel/sanctum
   ./phpharbor npm myshop install
+  ./phpharbor queue myshop restart
   
   # Statistics
   ./phpharbor stats disk
@@ -339,6 +341,10 @@ case $COMMAND in
     mysql)
         load_module "dev"
         cmd_mysql "$@"
+        ;;
+    queue)
+        load_module "dev"
+        cmd_queue "$@"
         ;;
     shared)
         load_module "shared"

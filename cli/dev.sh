@@ -12,6 +12,7 @@ show_dev_help() {
     echo "  composer <project> <cmd> Run composer command"
     echo "  npm <project> <cmd>      Run npm command"
     echo "  mysql <project>          MySQL CLI"
+    echo "  queue <project> <action> Manage queue worker (restart|logs|status)"
 }
 
 cmd_shell() {
@@ -153,4 +154,80 @@ cmd_mysql() {
     
     # Dedicated MySQL
     $DOCKER_COMPOSE exec mysql mysql -uroot -proot
+}
+
+cmd_queue() {
+    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+        echo "Usage: ./phpharbor queue <project> <action>"
+        echo ""
+        echo "Manage Laravel queue worker."
+        echo ""
+        echo "Actions:"
+        echo "  restart    Restart the queue worker (loads new code)"
+        echo "  logs       Show queue worker logs"
+        echo "  status     Show queue worker status"
+        echo ""
+        echo "Examples:"
+        echo "  ./phpharbor queue myapp restart"
+        echo "  ./phpharbor queue myapp logs"
+        exit 0
+    fi
+    
+    if [ -z "$1" ]; then
+        print_error "Specify the project name"
+        echo "Usage: ./phpharbor queue <project> <action>"
+        exit 1
+    fi
+    
+    local project=$1
+    local action=${2:-restart}
+    local project_path="$PROJECTS_DIR/$project"
+    
+    if [ ! -d "$project_path" ]; then
+        print_error "Project '$project' not found"
+        exit 1
+    fi
+    
+    cd "$project_path"
+    
+    case $action in
+        restart)
+            print_info "Restarting queue worker for $project..."
+            if docker ps --format '{{.Names}}' | grep -q "^${project}-queue$"; then
+                docker restart "${project}-queue"
+                print_success "Queue worker restarted"
+                echo ""
+                echo "💡 Tip: Monitor with './phpharbor queue $project logs'"
+            else
+                print_warning "Queue worker not running"
+                echo "Start it with: ./phpharbor start $project"
+            fi
+            ;;
+        logs)
+            if docker ps --format '{{.Names}}' | grep -q "^${project}-queue$"; then
+                echo "Showing queue worker logs (Ctrl+C to exit)..."
+                echo ""
+                docker logs -f "${project}-queue"
+            else
+                print_error "Queue worker not running"
+                exit 1
+            fi
+            ;;
+        status)
+            if docker ps --format '{{.Names}}' | grep -q "^${project}-queue$"; then
+                print_success "Queue worker is running"
+                echo ""
+                docker ps --filter "name=${project}-queue" --format "table {{.Names}}\t{{.Status}}\t{{.RunningFor}}"
+            else
+                print_warning "Queue worker is not running"
+                exit 1
+            fi
+            ;;
+        *)
+            print_error "Unknown action: $action"
+            echo "Available actions: restart, logs, status"
+            echo "Run './phpharbor queue --help' for more info"
+            exit 1
+            ;;
+    esac
 }
