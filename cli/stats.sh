@@ -110,6 +110,21 @@ stats_disk() {
         echo "  No shared volume found"
     fi
     echo ""
+
+    # Bind mount locali per database
+    echo -e "${YELLOW}🗄️  Database bind mounts (volumes/):${NC}"
+    echo "─────────────────────────────────────────────────────────────"
+    if [ -d "$PROJECTS_DIR/../volumes" ]; then
+        find "$PROJECTS_DIR/../volumes" -mindepth 1 -maxdepth 1 -type d | while read dbdir; do
+            dbtype=$(basename "$dbdir")
+            echo "  $dbtype:"
+            du -sh "$dbdir"/* 2>/dev/null | sort -h
+            echo ""
+        done
+    else
+        echo "  Nessuna directory volumes/ trovata"
+    fi
+    echo ""
     
     # Check for orphan volumes
     local orphan_count=$(docker volume ls -q | while read vol; do 
