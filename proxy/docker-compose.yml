@@ -66,7 +66,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       # Projects will create their databases via migration
     volumes:
-      - mysql_5_7_shared_data:/var/lib/mysql
+      - ../volumes/mysql/mysql-5.7-shared:/var/lib/mysql
     networks:
       - phpharbor-proxy
     command: --default-authentication-plugin=mysql_native_password
@@ -83,7 +83,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       # Projects will create their databases via migration
     volumes:
-      - mysql_8_0_shared_data:/var/lib/mysql
+      - ../volumes/mysql/mysql-8.0-shared:/var/lib/mysql
     networks:
       - phpharbor-proxy
     profiles:
@@ -100,7 +100,7 @@ services:
       MYSQL_AUTHENTICATION_PLUGIN: caching_sha2_password
       # Projects will create their databases via migration
     volumes:
-      - mysql_8_4_shared_data:/var/lib/mysql
+      - ../volumes/mysql/mysql-8.4-shared:/var/lib/mysql
     networks:
       - phpharbor-proxy
     profiles:
@@ -117,7 +117,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       # Projects will create their databases via migration
     volumes:
-      - mariadb_11_4_shared_data:/var/lib/mysql
+      - ../volumes/mariadb/mariadb-11.4-shared:/var/lib/mysql
     networks:
       - phpharbor-proxy
     profiles:
@@ -133,7 +133,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       # Projects will create their databases via migration
     volumes:
-      - mariadb_10_11_shared_data:/var/lib/mysql
+      - ../volumes/mariadb/mariadb-10.11-shared:/var/lib/mysql
     networks:
       - phpharbor-proxy
     profiles:
@@ -149,7 +149,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       # Projects will create their databases via migration
     volumes:
-      - mariadb_10_6_shared_data:/var/lib/mysql
+      - ../volumes/mariadb/mariadb-10.6-shared:/var/lib/mysql
     networks:
       - phpharbor-proxy
     profiles:
@@ -163,7 +163,7 @@ services:
     ports:
       - "6380:6379"
     volumes:
-      - redis_6_shared_data:/data
+      - ../volumes/redis/redis-6-shared:/data
     networks:
       - phpharbor-proxy
     command: redis-server --appendonly yes
@@ -177,7 +177,7 @@ services:
     ports:
       - "${REDIS_SHARED_PORT:-6379}:6379"
     volumes:
-      - redis_7_shared_data:/data
+      - ../volumes/redis/redis-7-shared:/data
     networks:
       - phpharbor-proxy
     command: redis-server --appendonly yes
@@ -284,24 +284,9 @@ services:
     profiles:
       - shared-services
 
-volumes:
-  # Shared service volumes - consistent naming pattern
-  mysql_5_7_shared_data:
-    name: mysql_5_7_shared_data
-  mysql_8_0_shared_data:
-    name: mysql_8_0_shared_data
-  mysql_8_4_shared_data:
-    name: mysql_8_4_shared_data
-  mariadb_11_4_shared_data:
-    name: mariadb_11_4_shared_data
-  mariadb_10_11_shared_data:
-    name: mariadb_10_11_shared_data
-  mariadb_10_6_shared_data:
-    name: mariadb_10_6_shared_data
-  redis_6_shared_data:
-    name: redis_6_shared_data
-  redis_7_shared_data:
-    name: redis_7_shared_data
+# Volumes are now stored in ../volumes/ directory
+# Organized by type: mysql/, mariadb/, redis/
+# No named volumes needed - using bind mounts
 
 networks:
   phpharbor-proxy:

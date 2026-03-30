@@ -75,7 +75,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - ../../volumes/mysql/${PROJECT_NAME}:/var/lib/mysql
     networks:
       - backend
     command: --default-authentication-plugin=mysql_native_password
@@ -98,7 +98,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - ../../volumes/mariadb/${PROJECT_NAME}:/var/lib/mysql
     networks:
       - backend
     profiles:
@@ -115,7 +115,7 @@ services:
     ports:
       - "${REDIS_PORT:-6379}"
     volumes:
-      - redis_data:/data
+      - ../../volumes/redis/${PROJECT_NAME}:/data
     networks:
       - backend
     command: redis-server --appendonly yes
@@ -174,10 +174,6 @@ networks:
   backend:
     driver: bridge
 
-volumes:
-  mysql_data:
-    driver: local
-  mariadb_data:
-    driver: local
-  redis_data:
-    driver: local
+# Volumes are now stored in ../../volumes/ directory
+# Organized by type: mysql/, mariadb/, redis/
+# Each project has its own subdirectory: volumes/{type}/{PROJECT_NAME}/

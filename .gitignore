@@ -30,6 +30,21 @@ docker-compose.override.yml
 **/docker-compose.override.yml
 
 # ====================================
+# Database Volumes
+# ====================================
+# Volumi Docker locali con dati dei database
+# Ogni sviluppatore ha i propri dati locali
+volumes/mysql/*
+volumes/mariadb/*
+volumes/redis/*
+volumes/other/*
+
+# Ma mantieni i .gitkeep e la documentazione
+!volumes/*/.gitkeep
+!volumes/README.md
+!volumes/MIGRATION.md
+
+# ====================================
 # Sistema Operativo
 # ====================================
 # macOS
