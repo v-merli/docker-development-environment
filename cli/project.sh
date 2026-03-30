@@ -162,9 +162,9 @@ cmd_remove() {
     if [ "$confirm" = "yes" ]; then
         cd "$project_path"
         
-        # Find all project containers (including those with profiles)
+        # Find all project containers using Docker label
         print_info "Stopping containers..."
-        local containers=$(docker ps -aq --filter "name=^${project}-")
+        local containers=$(docker ps -aq --filter "label=com.docker.compose.project=phpharbor-app-$project")
         
         if [ -n "$containers" ]; then
             echo "$containers" | xargs docker stop 2>/dev/null || true
