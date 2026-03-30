@@ -203,6 +203,7 @@ COMMANDS:
     ssl generate <domain> Generate SSL certificate
     ssl verify            Verify SSL configuration
     ssl install           Install/reinstall CA
+    ssl cleanup           Remove orphaned SSL certificates
     
   System Setup:
     setup config          Configure projects directory
@@ -218,13 +219,12 @@ COMMANDS:
     
   Information:
     stats [command]       Show resource usage statistics
-      resources           Show CPU/RAM usage (default)
-      disk                Disk usage analysis
-      disk --detailed     Per-project breakdown
-      disk --compare      Compare shared vs dedicated
-      disk --cleanup      Remove orphan volumes and images
+        resources           Show CPU/RAM usage (default)
+        disk                Disk usage analysis
+        disk --detailed     Per-project breakdown
+        disk --compare      Compare shared vs dedicated
+        disk --cleanup      Remove orphan volumes and images
     info <name>           Project information
-    cleanup               Clean orphaned SSL certificates and volume directories
     reset <command>       Reset Docker environment
       soft                Remove containers only (keep data)
       hard                Complete reset (removes all data - DATA LOSS!)
@@ -369,10 +369,6 @@ case $COMMAND in
     info)
         load_module "system"
         cmd_info "$@"
-        ;;
-    cleanup)
-        load_module "system"
-        cmd_cleanup "$@"
         ;;
     reset)
         load_module "reset"

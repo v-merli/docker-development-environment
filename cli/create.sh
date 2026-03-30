@@ -78,9 +78,9 @@ interactive_create() {
                             DB_TYPE="mysql"
                             print_info "MySQL version:"
                             PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
-                            select mysql in "8.0" "5.7"; do
+                            select mysql in "8.0" "8.4" "5.7"; do
                                 case $mysql in
-                                    8.0|5.7) MYSQL_VERSION="$mysql"; break;;
+                                    8.0|8.4|5.7) MYSQL_VERSION="$mysql"; break;;
                                     *) echo "Invalid choice";;
                                 esac
                             done
@@ -89,13 +89,14 @@ interactive_create() {
                         "MariaDB")
                             DB_TYPE="mariadb"
                             print_info "MariaDB version:"
-                            PS3="$(echo -e "${CYAN}Choose (1-4):${NC} ")"
-                            select mariadb in "11.4 (LTS)" "10.11 (LTS)" "10.6" "10.5"; do
+                            PS3="$(echo -e "${CYAN}Choose (1-5):${NC} ")"
+                            select mariadb in "11.4 (LTS)" "10.11 (LTS)" "10.6" "10.5" "10.4"; do
                                 case $mariadb in
                                     "11.4"*) MYSQL_VERSION="11.4"; break;;
                                     "10.11"*) MYSQL_VERSION="10.11"; break;;
                                     "10.6") MYSQL_VERSION="10.6"; break;;
                                     "10.5") MYSQL_VERSION="10.5"; break;;
+                                    "10.4") MYSQL_VERSION="10.4"; break;;
                                     *) echo "Invalid choice";;
                                 esac
                             done
@@ -119,11 +120,11 @@ interactive_create() {
                             DB_TYPE="mysql"
                             print_info "MySQL version:"
                             PS3="$(echo -e "${CYAN}Choose (1-3):${NC} ")"
-                            select mysql in "8.0 (default port 3306)" "5.7 (port 3307)" "8.4 (port 3308)"; do
+                            select mysql in "8.0 (3306)" "8.4 (3308)" "5.7 (3307)"; do
                                 case $mysql in
                                     "8.0"*) MYSQL_VERSION="8.0"; break;;
-                                    "5.7"*) MYSQL_VERSION="5.7"; break;;
                                     "8.4"*) MYSQL_VERSION="8.4"; break;;
+                                    "5.7"*) MYSQL_VERSION="5.7"; break;;
                                     *) echo "Invalid choice";;
                                 esac
                             done
@@ -165,13 +166,22 @@ interactive_create() {
             "Dedicated")
                 INCLUDE_REDIS=true
                 USE_SHARED_REDIS=false
+                # Redis version per dedicated
+                print_info "Redis version:"
+                PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
+                select redis_ver in "7" "6"; do
+                    case $redis_ver in
+                        "7"*) REDIS_VERSION="7"; break;;
+                        "6"*) REDIS_VERSION="6"; break;;
+                        *) echo "Invalid choice";;
+                    esac
+                done
                 break
                 ;;
             "Shared")
                 INCLUDE_REDIS=true
                 USE_SHARED_REDIS=true
-                
-                # Redis version for shared
+                # Redis version per shared
                 print_info "Redis version:"
                 PS3="$(echo -e "${CYAN}Choose (1-2):${NC} ")"
                 select redis_ver in "7 (default port 6379)" "6 (port 6380)"; do
@@ -592,26 +602,27 @@ show_create_usage() {
     echo "Usage: ./phpharbor create <name> [options]"
     echo ""
     echo "Options:"
-    echo "  --type <type>         Type: laravel, wordpress, php, html (default: laravel)"
+    echo "  --type <type>         Project type: laravel, wordpress, php, html (default: laravel)"
     echo "  --php <version>       PHP version: 7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5 (default: 8.3)"
     echo "  --node <version>      Node.js version: 18, 20, 21 (default: 20)"
     echo "  --db-type <type>      Database type: mysql, mariadb (default: mysql)"
     echo "  --mysql <version>     MySQL version: 5.7, 8.0, 8.4 (default: 8.0)"
-    echo "  --mariadb <version>   MariaDB version: 10.5, 10.6, 10.11, 11.4 (default: 11.4)"
+    echo "  --mariadb <version>   MariaDB version: 10.4, 10.5, 10.6, 10.11, 11.4 (default: 11.4)"
+    echo "  --redis <version>     Redis version: 6, 7 (default: 7)"
     echo ""
     echo "Cherry-picking shared services:"
-    echo "  --shared-db           Use shared database"
-    echo "  --shared-redis        Use shared Redis"
-    echo "  --shared-php          Scheduler/Queue use shared PHP"
-    echo "  --no-db               Without database"
-    echo "  --no-redis            Without Redis"
+    echo "  --shared-db           Use shared database container"
+    echo "  --shared-redis        Use shared Redis container"
+    echo "  --shared-php          Scheduler/Queue use shared PHP container"
+    echo "  --no-db               Do not include a database"
+    echo "  --no-redis            Do not include Redis"
     echo ""
     echo "Presets (shortcuts):"
     echo "  --shared              Equivalent to: --shared-db --shared-redis"
     echo "  --fully-shared        Equivalent to: --shared-db --shared-redis --shared-php"
     echo ""
     echo "Other:"
-    echo "  --no-install          Don't install framework"
+    echo "  --no-install          Do not install framework automatically"
     echo ""
     echo "Examples:"
     echo "  ./phpharbor create my-shop"
@@ -1027,9 +1038,9 @@ install_framework() {
             $DOCKER_COMPOSE exec -T app bash -c "curl -o /tmp/wp.tar.gz https://wordpress.org/latest.tar.gz && tar -xzf /tmp/wp.tar.gz -C /tmp && cp -r /tmp/wordpress/. /var/www/html/public/ && rm -rf /tmp/wordpress*" 2>/dev/null || true
             print_success "WordPress downloaded"
             ;;
-            mkdir -p "$path/app/public"
             
         html)
+            mkdir -p "$path/app/public"
             cat > "$path/app/public/index.html" << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
