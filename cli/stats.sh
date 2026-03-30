@@ -86,13 +86,16 @@ stats_disk() {
     docker system df
     echo ""
     
-    # PHPHarbor images
-    echo -e "${YELLOW}🐳 PHPHarbor images:${NC}"
-    echo "─────────────────────────────────────────────────────────────"
-    docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | head -1
-    docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | \
-        grep -E "(php-harbor|phpharbor|mysql.*shared|redis.*shared|nginx-proxy)" | sort
-    echo ""
+        # PHPHarbor images (from containers with compose project 'phpharbor-proxy')
+        echo -e "${YELLOW}🐳 PHPHarbor images (phpharbor-proxy):${NC}"
+        echo "─────────────────────────────────────────────────────────────"
+        echo -e "REPOSITORY\tTAG\tSIZE"
+        docker ps -a --filter 'label=com.docker.compose.project=phpharbor-proxy' --format '{{.Image}}' | \
+            sort | uniq | \
+            while read img; do
+                docker images --format '{{.Repository}}\t{{.Tag}}\t{{.Size}}' | grep "^$img" || true
+            done
+        echo ""
     
     # Shared volumes (only official shared services)
     echo -e "${YELLOW}💾 Shared volumes (official services):${NC}"
