@@ -89,11 +89,23 @@ stats_disk() {
         # PHPHarbor images (from containers with compose project 'phpharbor-proxy')
         echo -e "${YELLOW}🐳 PHPHarbor images (phpharbor-proxy):${NC}"
         echo "─────────────────────────────────────────────────────────────"
-        echo -e "REPOSITORY\tTAG\tSIZE"
-        docker ps -a --filter 'label=com.docker.compose.project=phpharbor-proxy' --format '{{.Image}}' | \
+        printf "%-30s %-15s %-15s\n" "REPOSITORY" "TAG" "SIZE"
+        docker ps -a --filter 'label=phpharbor.project=phpharbor-proxy' --format '{{.Image}}' | \
             sort | uniq | \
             while read img; do
-                docker images --format '{{.Repository}}\t{{.Tag}}\t{{.Size}}' | grep "^$img" || true
+                if [[ "$img" == *:* ]]; then
+                    repo="${img%%:*}"
+                    tag="${img#*:}"
+                else
+                    repo="$img"
+                    tag="latest"
+                fi
+                found=$(docker images --format '{{.Repository}}\t{{.Tag}}\t{{.Size}}' | awk -v r="$repo" -v t="$tag" -F'\t' '$1==r && $2==t {print $0}')
+                if [ -n "$found" ]; then
+                    printf "%-30s %-15s %-15s\n" "$repo" "$tag" "$(echo "$found" | awk -F'\t' '{print $3}')"
+                else
+                    printf "%-30s %-15s %-15s\n" "$repo" "$tag" "(image not found)"
+                fi
             done
         echo ""
     
@@ -121,7 +133,23 @@ stats_disk() {
         find "$PROJECTS_DIR/../volumes" -mindepth 1 -maxdepth 1 -type d | while read dbdir; do
             dbtype=$(basename "$dbdir")
             echo "  $dbtype:"
-            du -sh "$dbdir"/* 2>/dev/null | sort -h
+            total_bytes=0
+            if [ -d "$dbdir" ]; then
+                for path in "$dbdir"/*; do
+                    [ -e "$path" ] || continue
+                    bytes=$(du -sb "$path" 2>/dev/null | awk '{print $1}')
+                    mountname=$(basename "$path")
+                    total_bytes=$((total_bytes + bytes))
+                    size=$(numfmt --to=iec --suffix=B "$bytes" 2>/dev/null || echo "$bytes B")
+                    printf "    %-20s %10s\n" "$mountname" "$size"
+                done
+                if [ "$total_bytes" -gt 0 ]; then
+                    total_human=$(numfmt --to=iec --suffix=B "$total_bytes" 2>/dev/null || echo "$total_bytes B")
+                    printf "    %-20s %10s\n" "TOTAL" "$total_human"
+                fi
+            else
+                echo "    (nessun dato)"
+            fi
             echo ""
         done
     else

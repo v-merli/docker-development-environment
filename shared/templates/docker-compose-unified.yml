@@ -36,7 +36,7 @@ services:
     profiles:
       - app
     labels:
-      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # NGINX - Web Server (SEMPRE presente)
@@ -61,7 +61,7 @@ services:
     profiles:
       - app
     labels:
-      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # MYSQL - Dedicated database (optional)
@@ -86,7 +86,7 @@ services:
     profiles:
       - mysql-dedicated
     labels:
-      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # MARIADB - Dedicated database (optional)
@@ -110,7 +110,7 @@ services:
     profiles:
       - mariadb-dedicated
     labels:
-      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # REDIS - Dedicated cache (optional)
@@ -130,7 +130,7 @@ services:
     profiles:
       - redis-dedicated
     labels:
-      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # SCHEDULER - Laravel Scheduler
@@ -155,7 +155,7 @@ services:
     profiles:
       - scheduler
     labels:
-      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
 
   # ============================================
   # QUEUE - Laravel Queue Worker
@@ -180,7 +180,7 @@ services:
     profiles:
       - queue
     labels:
-      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
 
 networks:
   phpharbor-proxy:

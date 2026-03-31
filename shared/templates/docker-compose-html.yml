@@ -14,7 +14,7 @@ services:
     networks:
       - phpharbor-proxy
     labels:
-      - com.docker.compose.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
 
 networks:
   phpharbor-proxy:

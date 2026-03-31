@@ -22,6 +22,7 @@ services:
       - DEFAULT_HOST=localhost
     labels:
       - com.github.nginx-proxy.nginx
+      - phpharbor.project=phpharbor-proxy
     networks:
       - phpharbor-proxy
 
@@ -51,6 +52,8 @@ services:
       - ACME_CA_URI=https://acme-staging-v02.api.letsencrypt.org/directory
     networks:
       - phpharbor-proxy
+    labels:
+      - phpharbor.project=phpharbor-proxy
 
   # Shared services (optional) - Multiple versions supported
   # Projects can use these services instead of having a dedicated one
@@ -74,6 +77,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   mysql-8.0-shared:
     image: mysql:8.0
@@ -92,6 +96,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   mysql-8.4-shared:
     image: mysql:8.4
@@ -111,6 +116,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   # MariaDB Shared Services
   mariadb-11.4-shared:
@@ -130,6 +136,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   mariadb-10.11-shared:
     image: mariadb:10.11
@@ -148,6 +155,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   mariadb-10.6-shared:
     image: mariadb:10.6
@@ -166,6 +174,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   # Redis Shared Services
   redis-6-shared:
@@ -183,6 +192,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   redis-7-shared:
     image: redis:7-alpine
@@ -198,7 +208,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
-      - phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
     command: redis-server --appendonly yes
 
   # Shared PHP-FPM for each version
@@ -218,6 +228,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   php-7.4-shared:
     build:
@@ -234,6 +245,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   php-8.1-shared:
     build:
@@ -250,6 +262,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   php-8.2-shared:
     build:
@@ -266,6 +279,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   php-8.3-shared:
     build:
@@ -282,6 +296,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   php-8.4-shared:
     build:
@@ -298,6 +313,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
   php-8.5-shared:
     build:
@@ -314,6 +330,7 @@ services:
       - shared-services
     labels:
       - com.docker.compose.project=phpharbor-proxy
+      - phpharbor.project=phpharbor-proxy
 
 # Volumes are now stored in ../volumes/ directory
 # Organized by type: mysql/, mariadb/, redis/
