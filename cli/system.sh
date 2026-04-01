@@ -46,30 +46,83 @@ cmd_stats() {
 }
 
 stats_resources() {
-    print_title "Resource Usage Statistics"
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║     PHPHARBOR RESOURCE USAGE (Real-time)                   ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     
-    # Show general Docker statistics
-    echo -e "${CYAN}Active Containers:${NC}"
-    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Size}}" | head -20
+    # Get all PHPHarbor containers using label
+    local all_containers=$(docker ps --filter 'label=phpharbor.project' --format '{{.Names}}' 2>/dev/null)
     
-    echo ""
-    echo -e "${CYAN}Resource Usage:${NC}"
-    docker stats --no-stream --format "table {{.Name}}\t{{.CPU}}\t{{.MemUsage}}" | head -20
+    if [ -z "$all_containers" ]; then
+        echo -e "${YELLOW}⚠️  No PHPHarbor containers running${NC}"
+        echo ""
+        echo "Start the proxy with: ./phpharbor setup proxy"
+        echo "Create a project with: ./phpharbor create <name>"
+        return
+    fi
     
+    # Active Containers
+    echo -e "${YELLOW}📦 Active containers:${NC}"
+    echo "────────────────────────────────────────────────────────────"
+    printf "%-25s %-20s %s\n" "NAME" "STATUS" "UPTIME"
+    echo "────────────────────────────────────────────────────────────"
+    docker ps --filter 'label=phpharbor.project' --format '{{.Names}}\t{{.Status}}' | \
+        while IFS=$'\t' read -r name status; do
+            # Extract uptime from status (e.g., "Up 2 hours" -> "2 hours")
+            uptime=$(echo "$status" | sed 's/Up //')
+            printf "%-25s %-20s %s\n" "$name" "Running" "$uptime"
+        done
     echo ""
-    echo -e "${CYAN}Images:${NC}"
-    docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | grep -E "php-laravel|mysql|redis|nginx-proxy" | head -10
     
-    echo ""
-    echo -e "${CYAN}Volumes:${NC}"
-    docker volume ls | grep -E "mysql-data|redis-data" || echo "  No persistent volumes found"
+    # Resource Usage (CPU/RAM)
+    echo -e "${YELLOW}💻 Resource usage (CPU/Memory):${NC}"
+    echo "────────────────────────────────────────────────────────────"
+    printf "%-25s %-15s %s\n" "NAME" "CPU %" "MEMORY"
+    echo "────────────────────────────────────────────────────────────"
     
+    # Use docker stats with --no-stream and simple format
+    docker stats --no-stream --format '{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}' \
+        $(docker ps --filter 'label=phpharbor.project' --format '{{.Names}}') 2>/dev/null | \
+        while IFS=$'\t' read -r name cpu mem; do
+            printf "%-25s %-15s %s\n" "$name" "$cpu" "$mem"
+        done
     echo ""
-    echo -e "${CYAN}Networks:${NC}"
-    docker network ls | grep -E "phpharbor-proxy|backend"
     
+    # PHPHarbor Images
+    echo -e "${YELLOW}🐳 PHPHarbor images:${NC}"
+    echo "────────────────────────────────────────────────────────────"
+    printf "%-30s %-15s %s\n" "REPOSITORY" "TAG" "SIZE"
+    echo "────────────────────────────────────────────────────────────"
+    
+    # Get images from containers with phpharbor.project label
+    docker ps -a --filter 'label=phpharbor.project' --format '{{.Image}}' | \
+        sort -u | \
+        while read img; do
+            if [[ "$img" == *:* ]]; then
+                repo="${img%%:*}"
+                tag="${img#*:}"
+            else
+                repo="$img"
+                tag="latest"
+            fi
+            found=$(docker images --format '{{.Repository}}\t{{.Tag}}\t{{.Size}}' | \
+                awk -v r="$repo" -v t="$tag" -F'\t' '$1==r && $2==t {print $0}')
+            if [ -n "$found" ]; then
+                printf "%-30s %-15s %s\n" "$repo" "$tag" "$(echo "$found" | awk -F'\t' '{print $3}')"
+            fi
+        done
     echo ""
+    
+    # Networks
+    echo -e "${YELLOW}🌐 PHPHarbor networks:${NC}"
+    echo "────────────────────────────────────────────────────────────"
+    docker network ls --format '{{.Name}}\t{{.Driver}}' | grep -E 'phpharbor-proxy|backend' | \
+        while IFS=$'\t' read -r name driver; do
+            echo "  • $name ($driver)"
+        done
+    echo ""
+    
     echo -e "${BLUE}💡 Tip: Use './phpharbor stats disk' for disk usage analysis${NC}"
 }
 

@@ -258,8 +258,10 @@ EXAMPLES:
   ./phpharbor queue myshop restart
   
   # Statistics
+  ./phpharbor stats resources
   ./phpharbor stats disk
   ./phpharbor stats disk --detailed
+  ./phpharbor stats disk --cleanup
 
 For specific help: ./phpharbor <command> --help
 
