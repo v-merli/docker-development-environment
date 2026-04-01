@@ -126,6 +126,24 @@ reset_hard() {
     print_info "Stopping all PHPHarbor services..."
     docker compose --profile shared-services down 2>/dev/null || true
     
+    # Remove system projects (like mailpit)
+    print_info "Removing system project containers..."
+    local system_containers=$(docker ps -aq --filter "label=phpharbor.type=system")
+    if [ -n "$system_containers" ]; then
+        # Get images before removing containers
+        local system_images=$(echo "$system_containers" | xargs docker inspect --format='{{.Config.Image}}' 2>/dev/null | sort -u)
+        
+        # Stop and remove containers
+        echo "$system_containers" | xargs docker stop 2>/dev/null || true
+        echo "$system_containers" | xargs docker rm 2>/dev/null || true
+        
+        # Remove associated images
+        if [ -n "$system_images" ]; then
+            print_info "Removing system project images..."
+            echo "$system_images" | xargs docker rmi -f 2>/dev/null || true
+        fi
+    fi
+    
     print_info "Removing containers..."
     docker ps -a --format "{{.Names}}" | grep -E "^(nginx-proxy|nginx-acme-companion|mysql-.*-shared|redis-.*-shared|php-.*-shared)$" | xargs -r docker rm -f 2>/dev/null || true
     
@@ -149,6 +167,16 @@ reset_hard() {
     
     print_info "Removing unused images (prune)..."
     docker image prune -f 2>/dev/null || true
+    
+    print_info "Removing all projects (including system projects)..."
+    if [ -d "$SCRIPT_DIR/projects" ]; then
+        # Remove all directories except .gitkeep and README.md
+        find "$SCRIPT_DIR/projects" -mindepth 1 -type d -exec rm -rf {} + 2>/dev/null || true
+        find "$SCRIPT_DIR/projects" -mindepth 1 -type f ! -name ".gitkeep" ! -name "README.md" -exec rm -f {} + 2>/dev/null || true
+    fi
+    
+    print_info "Removing all volume data..."
+    rm -rf "$SCRIPT_DIR/volumes/"*/* 2>/dev/null || true
     
     print_success "Hard reset completed!"
     echo ""

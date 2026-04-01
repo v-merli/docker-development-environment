@@ -156,9 +156,23 @@ cmd_remove() {
     fi
     
     # Protect system projects from removal
+    # Check both .system file and Docker labels
     if [ -f "$project_path/.system" ]; then
         print_error "Cannot remove system project '$project'"
         echo "This is a PHPHarbor infrastructure project and cannot be deleted."
+        echo "System projects are essential for the platform operation."
+        exit 1
+    fi
+    
+    # Check if any container with system label matches this project name
+    # System projects may use different naming patterns (e.g., phpharbor-system-mailpit)
+    local system_containers=$(docker ps -aq --filter "label=phpharbor.type=system" 2>/dev/null | \
+        xargs docker inspect --format '{{.Name}} {{index .Config.Labels "phpharbor.project"}}' 2>/dev/null | \
+        grep -i "$project" || true)
+    
+    if [ -n "$system_containers" ]; then
+        print_error "Cannot remove system project '$project'"
+        echo "This project has running system containers and cannot be deleted."
         echo "System projects are essential for the platform operation."
         exit 1
     fi
