@@ -91,20 +91,20 @@ stats_disk() {
         return
     fi
     
-    echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║     PHPHARBOR DISK USAGE ANALYSIS (Real-time)              ║${NC}"
-    echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${CYAN}╔═════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║     PHPHARBOR DISK USAGE ANALYSIS (Real-time)               ║${NC}"
+    echo -e "${CYAN}╚═════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     
     # System overview
     echo -e "${YELLOW}📊 Docker system overview:${NC}"
-    echo "─────────────────────────────────────────────────────────────"
+    echo "──────────────────────────────────────────────────────────────"
     docker system df
     echo ""
     
         # PHPHarbor images (from containers with compose project 'phpharbor-proxy')
         echo -e "${YELLOW}🐳 PHPHarbor images (phpharbor-proxy):${NC}"
-        echo "─────────────────────────────────────────────────────────────"
+        echo "──────────────────────────────────────────────────────────────"
         printf "%-30s %-15s %-15s\n" "REPOSITORY" "TAG" "SIZE"
         docker ps -a --filter 'label=phpharbor.project=phpharbor-proxy' --format '{{.Image}}' | \
             sort | uniq | \
@@ -127,15 +127,19 @@ stats_disk() {
     
     # Shared volumes (only official shared services)
     echo -e "${YELLOW}💾 Shared volumes (official services):${NC}"
-    echo "─────────────────────────────────────────────────────────────"
-    local shared_volumes=$(docker volume ls --format "{{.Name}}" | grep -E "^(mysql_[0-9_]+_shared_data|mariadb_[0-9_]+_shared_data|redis_[0-9]+_shared_data|php_[0-9_]+_shared_data)$")
+    echo "──────────────────────────────────────────────────────────────"
+    
+    # Get volumes from containers with phpharbor.service.type=shared label
+    local shared_volumes=$(docker ps -a --filter 'label=phpharbor.service.type=shared' --format '{{.ID}}' | \
+        xargs -I {} docker inspect {} --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}{{"\n"}}{{end}}{{end}}' 2>/dev/null | \
+        sort | uniq)
     
     if [ -n "$shared_volumes" ]; then
-        echo "Volume Name                    Containers"
-        echo "────────────────────────────   ──────────"
+        printf "%-30s %10s\n" "VOLUME NAME" "CONTAINERS"
+        echo "──────────────────────────────────────────────────────────────"
         echo "$shared_volumes" | while read vol; do
             containers=$(docker ps -a --filter volume=$vol --format "{{.Names}}" | wc -l | tr -d ' ')
-            printf "%-30s %s\n" "$vol" "$containers"
+            printf "%-30s %10s\n" "$vol" "$containers"
         done
     else
         echo "  No shared volume found"
@@ -144,12 +148,24 @@ stats_disk() {
 
     # Bind mount locali per database
     echo -e "${YELLOW}🗄️  Database bind mounts (volumes/):${NC}"
-    echo "─────────────────────────────────────────────────────────────"
+    echo "──────────────────────────────────────────────────────────────"
     if [ -d "$PROJECTS_DIR/../volumes" ]; then
-        find "$PROJECTS_DIR/../volumes" -mindepth 1 -maxdepth 1 -type d | while read dbdir; do
+        printf "%-15s %-35s %10s\n" "TYPE" "MOUNT NAME" "SIZE"
+        echo "──────────────────────────────────────────────────────────────"
+        
+        local first_group=true
+        find "$PROJECTS_DIR/../volumes" -mindepth 1 -maxdepth 1 -type d | sort | while read dbdir; do
             dbtype=$(basename "$dbdir")
-            echo "  $dbtype:"
+            
+            # Add blank line between groups (except before first)
+            if [ "$first_group" = false ]; then
+                echo ""
+            fi
+            first_group=false
+            
             total_bytes=0
+            local first_mount=true
+            
             if [ -d "$dbdir" ]; then
                 for path in "$dbdir"/*; do
                     [ -e "$path" ] || continue
@@ -158,18 +174,25 @@ stats_disk() {
                     bytes=$((kb * 1024))
                     mountname=$(basename "$path")
                     total_bytes=$((total_bytes + bytes))
-                    # Mostra sempre in formato human readable (K, M, G)
                     size_human=$(human_size "$bytes")
-                    printf "    %-20s %10s\n" "$mountname" "$size_human"
+                    
+                    # Show type only on first mount of the group
+                    if [ "$first_mount" = true ]; then
+                        printf "%-15s %-35s %10s\n" "$dbtype" "$mountname" "$size_human"
+                        first_mount=false
+                    else
+                        printf "%-15s %-35s %10s\n" "" "$mountname" "$size_human"
+                    fi
                 done
+                
+                # Show subtotal for the group
                 if [ "$total_bytes" -gt 0 ]; then
                     total_human=$(human_size "$total_bytes")
-                    printf "    %-20s %10s\n" "TOTAL" "$total_human"
+                    printf "%-15s %-35s %10s\n" "" "Subtotal" "$total_human"
                 fi
             else
-                echo "    (nessun dato)"
+                printf "%-15s %-35s %10s\n" "$dbtype" "(nessun dato)" "-"
             fi
-            echo ""
         done
     else
         echo "  Nessuna directory volumes/ trovata"
@@ -184,7 +207,7 @@ stats_disk() {
     
     if [ "$orphan_count" -gt 0 ]; then
         echo -e "${YELLOW}⚠️  Orphan volumes (not attached to any container): ${orphan_count}${NC}"
-        echo "─────────────────────────────────────────────────────────────"
+        echo "──────────────────────────────────────────────────────────────"
         docker volume ls -q | while read vol; do 
             containers=$(docker ps -a --filter volume=$vol -q | wc -l | tr -d ' ')
             if [ "$containers" -eq 0 ]; then
@@ -204,7 +227,7 @@ stats_disk() {
     
     # Check for orphan project images
     echo -e "${YELLOW}🖼️  Project images:${NC}"
-    echo "─────────────────────────────────────────────────────────────"
+    echo "──────────────────────────────────────────────────────────────"
     
     # Get existing projects
     local existing_projects=()
@@ -265,7 +288,7 @@ stats_disk() {
     local containers_running=$(docker ps --filter "name=phpharbor" --format "{{.Names}}" 2>/dev/null | wc -l | tr -d ' ')
     
     echo -e "${YELLOW}📁 Project statistics:${NC}"
-    echo "─────────────────────────────────────────────────────────────"
+    echo "──────────────────────────────────────────────────────────────"
     echo "  Total projects:      $projects_count"
     echo "  Total containers:    $containers_count"
     echo "  Running containers:  $containers_running"
@@ -274,7 +297,7 @@ stats_disk() {
     # Detailed breakdown per project
     if [ "$detailed" = true ] && [ $projects_count -gt 0 ]; then
         echo -e "${YELLOW}🔍 Project breakdown:${NC}"
-        echo "─────────────────────────────────────────────────────────────"
+        echo "──────────────────────────────────────────────────────────────"
         
         for project_dir in "$PROJECTS_DIR"/*/ ; do
             if [ -d "$project_dir" ]; then
@@ -306,7 +329,7 @@ stats_disk() {
     # Savings calculation
     if [ "$compare" = true ] || [ $projects_count -gt 1 ]; then
         echo -e "${YELLOW}💰 Estimated savings with shared architecture:${NC}"
-        echo "─────────────────────────────────────────────────────────────"
+        echo "──────────────────────────────────────────────────────────────"
         
         if [ $projects_count -eq 0 ]; then
             echo "  No project found to calculate savings"
@@ -369,7 +392,7 @@ stats_disk() {
     
     # Quick tips
     echo -e "${YELLOW}💡 Tips:${NC}"
-    echo "─────────────────────────────────────────────────────────────"
+    echo "──────────────────────────────────────────────────────────────"
     echo "  • Use --detailed to see per-project breakdown"
     echo "  • Use --compare for shared vs dedicated savings simulation"
     echo "  • Use --cleanup to remove orphan volumes and images"
@@ -432,7 +455,7 @@ stats_cleanup_orphans() {
     
     if [ ${#orphan_volumes[@]} -gt 0 ]; then
         echo -e "${YELLOW}📦 Orphan volumes found: ${#orphan_volumes[@]}${NC}"
-        echo "─────────────────────────────────────────────────────────────"
+        echo "──────────────────────────────────────────────────────────────"
         for vol in "${orphan_volumes[@]}"; do
             echo "  • $vol"
         done
@@ -441,7 +464,7 @@ stats_cleanup_orphans() {
     
     if [ ${#orphan_images[@]} -gt 0 ]; then
         echo -e "${YELLOW}🖼️  Orphan images found: ${#orphan_images[@]}${NC}"
-        echo "─────────────────────────────────────────────────────────────"
+        echo "──────────────────────────────────────────────────────────────"
         for img in "${orphan_images[@]}"; do
             local size=$(docker images "$img" --format "{{.Size}}")
             echo "  • $img ($size)"
