@@ -29,11 +29,13 @@ cmd_stats() {
         echo "  disk              Show disk usage analysis (default)"
         echo "  disk --detailed   Detailed breakdown per project"
         echo "  disk --cleanup    Interactive cleanup of orphan volumes and images"
+        echo "  disk --prune      Safe prune of unused PHPHarbor resources only"
         echo ""
         echo "Examples:"
         echo "  ./phpharbor stats disk              # Basic disk analysis"
         echo "  ./phpharbor stats disk --detailed   # Per-project breakdown"
         echo "  ./phpharbor stats disk --cleanup    # Remove orphan volumes"
+        echo "  ./phpharbor stats disk --prune      # Prune unused PHPHarbor resources"
         exit 0
     fi
     
@@ -59,6 +61,7 @@ cmd_stats() {
 stats_disk() {
     local detailed=false
     local cleanup=false
+    local prune=false
     
     # Parse options
     while [[ $# -gt 0 ]]; do
@@ -71,6 +74,10 @@ stats_disk() {
                 cleanup=true
                 shift
                 ;;
+            --prune)
+                prune=true
+                shift
+                ;;
             *)
                 echo "Unknown option: $1"
                 exit 1
@@ -81,6 +88,12 @@ stats_disk() {
     # If cleanup mode, run cleanup and exit
     if [ "$cleanup" = true ]; then
         stats_cleanup_orphans
+        return
+    fi
+    
+    # If prune mode, run safe PHPHarbor prune and exit
+    if [ "$prune" = true ]; then
+        stats_prune_phpharbor
         return
     fi
     
@@ -375,9 +388,8 @@ stats_disk() {
     echo -e "${YELLOW}💡 Tips:${NC}"
     echo "───────────────────────────────────────────────────────────────────────"
     echo "  • Use --detailed to see per-project breakdown"
-    echo "  • Use --cleanup to remove orphan volumes and images"
-    echo "  • docker image prune -a cleans all unused images"
-    echo "  • docker volume prune cleans dangling volumes"
+    echo "  • Use --cleanup to safely remove PHPHarbor orphan resources"
+    echo "  • Use --prune to safely remove ALL unused PHPHarbor resources"
     echo ""
 }
 
@@ -518,6 +530,135 @@ stats_cleanup_orphans() {
         echo ""
         
         # Show space reclaimed
+        echo "💾 To see reclaimed space:"
+        echo "   docker system df"
+        echo ""
+    else
+        echo ""
+        echo -e "${BLUE}ℹ️  Operation cancelled${NC}"
+        echo ""
+    fi
+}
+
+stats_prune_phpharbor() {
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║     SAFE PHPHARBOR PRUNE                                   ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${YELLOW}This will remove ONLY unused PHPHarbor resources:${NC}"
+    echo "  • Stopped PHPHarbor containers"
+    echo "  • Unused PHPHarbor images (not currently running)"
+    echo "  • Dangling PHPHarbor volumes (not attached to any container)"
+    echo ""
+    echo -e "${GREEN}✅ Safe: Other Docker projects will NOT be affected${NC}"
+    echo ""
+    
+    # Find stopped PHPHarbor containers
+    local stopped_containers=$(docker ps -aq --filter "status=exited" --filter "label=phpharbor.project" 2>/dev/null)
+    local stopped_count=0
+    if [ -n "$stopped_containers" ]; then
+        stopped_count=$(echo "$stopped_containers" | wc -l | tr -d ' ')
+    fi
+    
+    # Find unused PHPHarbor images (images with phpharbor label not currently used)
+    local all_phpharbor_images=$(docker images --filter "label=phpharbor.project" --format "{{.ID}}" 2>/dev/null)
+    local running_image_ids=$(docker ps -q --filter "label=phpharbor.project" 2>/dev/null | xargs docker inspect --format='{{.Image}}' 2>/dev/null | sort -u)
+    local unused_images=()
+    
+    if [ -n "$all_phpharbor_images" ]; then
+        while IFS= read -r img_id; do
+            local is_used=false
+            while IFS= read -r running_img; do
+                if [[ "$img_id" == "$running_img"* ]] || [[ "$running_img" == "$img_id"* ]]; then
+                    is_used=true
+                    break
+                fi
+            done <<< "$running_image_ids"
+            
+            if [ "$is_used" = false ]; then
+                unused_images+=("$img_id")
+            fi
+        done <<< "$all_phpharbor_images"
+    fi
+    
+    # Find dangling volumes (not attached to any container)
+    local dangling_volumes=$(docker volume ls -qf dangling=true 2>/dev/null)
+    local dangling_count=0
+    if [ -n "$dangling_volumes" ]; then
+        dangling_count=$(echo "$dangling_volumes" | wc -l | tr -d ' ')
+    fi
+    
+    # Show summary
+    echo -e "${YELLOW}📋 Resources found:${NC}"
+    echo "───────────────────────────────────────────────────────────────────────"
+    echo "  • Stopped containers: $stopped_count"
+    echo "  • Unused images:      ${#unused_images[@]}"
+    echo "  • Dangling volumes:   $dangling_count"
+    echo ""
+    
+    if [ "$stopped_count" -eq 0 ] && [ "${#unused_images[@]}" -eq 0 ] && [ "$dangling_count" -eq 0 ]; then
+        echo -e "${GREEN}✅ No unused PHPHarbor resources found!${NC}"
+        echo ""
+        return
+    fi
+    
+    # Calculate approximate space
+    local total_size=0
+    if [ "${#unused_images[@]}" -gt 0 ]; then
+        for img_id in "${unused_images[@]}"; do
+            local size_bytes=$(docker images --format "{{.Size}}" --filter "id=$img_id" | head -1)
+            echo "  └─ Image: $img_id ($size_bytes)"
+        done
+    fi
+    echo ""
+    
+    echo -e "${YELLOW}⚠️  This will free up disk space by removing these resources${NC}"
+    echo ""
+    
+    read -p "Do you want to proceed? (yes/no): " confirm
+    
+    if [[ "$confirm" == "si" ]] || [[ "$confirm" == "s" ]] || [[ "$confirm" == "yes" ]] || [[ "$confirm" == "y" ]]; then
+        echo ""
+        
+        local removed_containers=0
+        local removed_images=0
+        local removed_volumes=0
+        
+        # Remove stopped containers
+        if [ "$stopped_count" -gt 0 ]; then
+            echo -e "${YELLOW}Removing stopped containers...${NC}"
+            echo "$stopped_containers" | xargs docker rm -f >/dev/null 2>&1 && removed_containers=$stopped_count
+            echo -e "  ${GREEN}✓${NC} Removed $removed_containers containers"
+            echo ""
+        fi
+        
+        # Remove unused images
+        if [ "${#unused_images[@]}" -gt 0 ]; then
+            echo -e "${YELLOW}Removing unused images...${NC}"
+            for img_id in "${unused_images[@]}"; do
+                if docker rmi "$img_id" >/dev/null 2>&1; then
+                    ((removed_images++))
+                fi
+            done
+            echo -e "  ${GREEN}✓${NC} Removed $removed_images images"
+            echo ""
+        fi
+        
+        # Remove dangling volumes
+        if [ "$dangling_count" -gt 0 ]; then
+            echo -e "${YELLOW}Removing dangling volumes...${NC}"
+            echo "$dangling_volumes" | xargs docker volume rm >/dev/null 2>&1 && removed_volumes=$dangling_count
+            echo -e "  ${GREEN}✓${NC} Removed $removed_volumes volumes"
+            echo ""
+        fi
+        
+        echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${GREEN}✅ Prune completed!${NC}"
+        echo ""
+        echo "  Containers removed: $removed_containers"
+        echo "  Images removed:     $removed_images"
+        echo "  Volumes removed:    $removed_volumes"
+        echo ""
         echo "💾 To see reclaimed space:"
         echo "   docker system df"
         echo ""
