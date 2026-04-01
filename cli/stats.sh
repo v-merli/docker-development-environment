@@ -1,3 +1,19 @@
+# Funzione per convertire byte in formato human readable (compatibile macOS/Linux)
+human_size() {
+    local bytes=$1
+    local kib=1024
+    local mib=$((kib * 1024))
+    local gib=$((mib * 1024))
+    if [ "$bytes" -ge $gib ]; then
+        echo "$(echo "scale=2; $bytes / $gib" | bc)G"
+    elif [ "$bytes" -ge $mib ]; then
+        echo "$(echo "scale=2; $bytes / $mib" | bc)M"
+    elif [ "$bytes" -ge $kib ]; then
+        echo "$(echo "scale=2; $bytes / $kib" | bc)K"
+    else
+        echo "${bytes}B"
+    fi
+}
 #!/bin/bash
 
 # Module: Stats
@@ -137,14 +153,17 @@ stats_disk() {
             if [ -d "$dbdir" ]; then
                 for path in "$dbdir"/*; do
                     [ -e "$path" ] || continue
-                    bytes=$(du -sb "$path" 2>/dev/null | awk '{print $1}')
+                    # du -sk restituisce la dimensione in KB (compatibile macOS/Linux)
+                    kb=$(du -sk "$path" 2>/dev/null | awk '{print $1}')
+                    bytes=$((kb * 1024))
                     mountname=$(basename "$path")
                     total_bytes=$((total_bytes + bytes))
-                    size=$(numfmt --to=iec --suffix=B "$bytes" 2>/dev/null || echo "$bytes B")
-                    printf "    %-20s %10s\n" "$mountname" "$size"
+                    # Mostra sempre in formato human readable (K, M, G)
+                    size_human=$(human_size "$bytes")
+                    printf "    %-20s %10s\n" "$mountname" "$size_human"
                 done
                 if [ "$total_bytes" -gt 0 ]; then
-                    total_human=$(numfmt --to=iec --suffix=B "$total_bytes" 2>/dev/null || echo "$total_bytes B")
+                    total_human=$(human_size "$total_bytes")
                     printf "    %-20s %10s\n" "TOTAL" "$total_human"
                 fi
             else
