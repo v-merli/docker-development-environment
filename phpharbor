@@ -181,6 +181,8 @@ COMMANDS:
     remove <name>         Remove a project
     logs <name>           Show project logs
     convert <name> <type> Convert project type (laravel/wordpress/php)
+    add-service <name> <service>    Add optional service (queue/scheduler/redis/mysql/mariadb)
+    remove-service <name> <service> Remove optional service
     
   Development Tools:
     shell <name>          Open shell in PHP container
@@ -245,6 +247,11 @@ EXAMPLES:
   ./phpharbor start myshop
   ./phpharbor logs myshop
   ./phpharbor shell myshop
+  
+  # Add/remove services
+  ./phpharbor add-service myblog queue
+  ./phpharbor add-service myapp redis
+  ./phpharbor remove-service myblog scheduler
   
   # Shared services
   ./phpharbor shared start
@@ -322,6 +329,14 @@ case $COMMAND in
     convert)
         load_module "convert"
         cmd_convert "$@"
+        ;;
+    add-service)
+        load_module "services"
+        cmd_add_service "$@"
+        ;;
+    remove-service)
+        load_module "services"
+        cmd_remove_service "$@"
         ;;
     shell|bash)
         load_module "dev"
