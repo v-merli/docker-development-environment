@@ -181,13 +181,15 @@ COMMANDS:
     remove <name>         Remove a project
     logs <name>           Show project logs
     convert <name> <type> Convert project type (laravel/wordpress/php)
-    add-service <name> <service>    Add optional service (queue/scheduler/redis/mysql/mariadb)
-    remove-service <name> <service> Remove optional service
+    info <name>           Project information
     
-  Service Templates:
-    list-templates              List available service templates
-    add-template <name> <tmpl>  Add pre-configured service (mailhog/wp-cron/etc)
-    remove-template <name> <tmpl> Remove service template
+  Service Management:
+    service add <name> <service>          Add service (queue/scheduler/redis/mysql/mariadb)
+    service remove <name> <service>       Remove service
+    service list <name>                   List active services
+    service templates                     List available templates
+    service add-template <name> <tmpl>    Install template (mailhog/wp-cron/etc)
+    service remove-template <name> <tmpl> Remove template
     
   Development Tools:
     shell <name>          Open shell in PHP container
@@ -230,7 +232,6 @@ COMMANDS:
         disk                Disk usage analysis
         disk --detailed     Per-project breakdown
         disk --cleanup      Remove orphan volumes and images
-    info <name>           Project information
     reset <command>       Reset Docker environment
       soft                Remove containers only (keep data)
       hard                Complete reset (removes all data - DATA LOSS!)
@@ -252,16 +253,19 @@ EXAMPLES:
   ./phpharbor start myshop
   ./phpharbor logs myshop
   ./phpharbor shell myshop
+  ./phpharbor info myshop
   
-  # Add/remove services
-  ./phpharbor add-service myblog queue
-  ./phpharbor add-service myapp redis
-  ./phpharbor remove-service myblog scheduler
+  # Manage services
+  ./phpharbor service add myblog queue
+  ./phpharbor service add myapp redis
+  ./phpharbor service remove myblog scheduler
+  ./phpharbor service list myblog
   
-  # Add service templates
-  ./phpharbor list-templates
-  ./phpharbor add-template myblog mailhog
-  ./phpharbor add-template mysite wp-cron
+  # Service templates
+  ./phpharbor service templates
+  ./phpharbor service add-template myblog mailhog
+  ./phpharbor service add-template mysite wp-cron
+  ./phpharbor service remove-template myblog mailhog
   
   # Shared services
   ./phpharbor shared start
@@ -340,6 +344,11 @@ case $COMMAND in
         load_module "convert"
         cmd_convert "$@"
         ;;
+    service)
+        load_module "services"
+        cmd_service "$@"
+        ;;
+    # Backward compatibility aliases
     add-service)
         load_module "services"
         cmd_add_service "$@"

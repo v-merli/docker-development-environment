@@ -1,12 +1,74 @@
 #!/bin/bash
 
 # Module: Services
-# Commands: add-service, remove-service
+# Commands: service (unified service management)
 
 # Available services by project type
 LARAVEL_SERVICES="queue scheduler redis mysql mariadb"
 WORDPRESS_SERVICES="redis mysql mariadb"
 PHP_SERVICES="redis mysql mariadb"
+
+# Main service command (unified interface)
+cmd_service() {
+    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]] || [ $# -eq 0 ]; then
+        echo "Usage: ./phpharbor service <command> [options]"
+        echo ""
+        echo "Manage project services and templates."
+        echo ""
+        echo "Commands:"
+        echo "  add <project> <service>           Add service (queue/scheduler/redis/mysql/mariadb)"
+        echo "  remove <project> <service>        Remove service"
+        echo "  list <project>                    List active services for a project"
+        echo "  templates                         List available service templates"
+        echo "  add-template <project> <tmpl>     Install service template"
+        echo "  remove-template <project> <tmpl>  Remove service template"
+        echo ""
+        echo "Examples:"
+        echo "  ./phpharbor service add myblog queue"
+        echo "  ./phpharbor service remove myblog scheduler"
+        echo "  ./phpharbor service list myblog"
+        echo "  ./phpharbor service templates"
+        echo "  ./phpharbor service add-template myblog mailhog"
+        echo ""
+        echo "For detailed help on each command:"
+        echo "  ./phpharbor service add --help"
+        echo "  ./phpharbor service templates --help"
+        exit 0
+    fi
+    
+    local subcmd=$1
+    shift
+    
+    case $subcmd in
+        add)
+            cmd_add_service "$@"
+            ;;
+        remove)
+            cmd_remove_service "$@"
+            ;;
+        list)
+            cmd_list_services "$@"
+            ;;
+        templates)
+            cmd_list_templates "$@"
+            ;;
+        add-template)
+            cmd_add_template "$@"
+            ;;
+        remove-template)
+            cmd_remove_template "$@"
+            ;;
+        *)
+            print_error "Unknown service command: $subcmd"
+            echo ""
+            echo "Usage: ./phpharbor service <command>"
+            echo "Commands: add, remove, list, templates, add-template, remove-template"
+            echo ""
+            echo "Use './phpharbor service --help' for more information"
+            exit 1
+            ;;
+    esac
+}
 
 cmd_add_service() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
@@ -197,6 +259,137 @@ cmd_remove_service() {
     
     # Remove service
     remove_service_from_project "$project" "$project_path" "$service" "$profile"
+}
+
+cmd_list_services() {
+    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+        echo "Usage: ./phpharbor service list <project>"
+        echo ""
+        echo "List all active services for a project."
+        echo ""
+        echo "Shows:"
+        echo "  • Standard services (queue, scheduler, redis, mysql, mariadb)"
+        echo "  • Custom templates (mailhog, wp-cron, elasticsearch, etc.)"
+        echo "  • Running containers"
+        echo ""
+        echo "Examples:"
+        echo "  ./phpharbor service list myblog"
+        exit 0
+    fi
+    
+    local project=$1
+    
+    # Validate arguments
+    if [ -z "$project" ]; then
+        print_error "Project name required"
+        echo "Usage: ./phpharbor service list <project>"
+        exit 1
+    fi
+    
+    # Check project exists
+    local project_path="$PROJECTS_DIR/$project"
+    if [ ! -d "$project_path" ]; then
+        print_error "Project '$project' not found"
+        exit 1
+    fi
+    
+    # Get project info
+    local project_type=$(grep "^PROJECT_TYPE=" "$project_path/.env" 2>/dev/null | cut -d'=' -f2)
+    local compose_profiles=$(grep "^COMPOSE_PROFILES=" "$project_path/.env" 2>/dev/null | cut -d'=' -f2)
+    
+    print_title "Services for Project: $project"
+    echo ""
+    echo "Type: $project_type"
+    echo ""
+    
+    # Core services (always active)
+    print_info "Core Services (always active):"
+    echo "  • app - PHP application container"
+    echo "  • nginx - Web server"
+    
+    # Optional services from profiles
+    echo ""
+    print_info "Optional Services:"
+    
+    local has_optional=false
+    if [ -n "$compose_profiles" ]; then
+        for profile in $compose_profiles; do
+            case $profile in
+                app)
+                    # Skip - already shown in core services
+                    ;;
+                queue)
+                    echo "  • queue - Laravel queue worker"
+                    has_optional=true
+                    ;;
+                scheduler)
+                    echo "  • scheduler - Laravel scheduler"
+                    has_optional=true
+                    ;;
+                mysql-dedicated)
+                    echo "  • mysql-dedicated - Dedicated MySQL database"
+                    has_optional=true
+                    ;;
+                mariadb-dedicated)
+                    echo "  • mariadb-dedicated - Dedicated MariaDB database"
+                    has_optional=true
+                    ;;
+                redis-dedicated)
+                    echo "  • redis-dedicated - Dedicated Redis cache"
+                    has_optional=true
+                    ;;
+                *)
+                    echo "  • $profile"
+                    has_optional=true
+                    ;;
+            esac
+        done
+    fi
+    
+    if [ "$has_optional" = false ]; then
+        echo "  (none)"
+    fi
+    
+    # Check for templates (docker-compose.override.yml)
+    echo ""
+    if [ -f "$project_path/docker-compose.override.yml" ]; then
+        print_info "Custom Templates (docker-compose.override.yml):"
+        
+        # Extract template labels from override file
+        local templates=$(grep "phpharbor.template=" "$project_path/docker-compose.override.yml" 2>/dev/null | sed 's/.*phpharbor.template=//' | sort -u)
+        
+        if [ -n "$templates" ]; then
+            while IFS= read -r template; do
+                echo "  • $template"
+            done <<< "$templates"
+        else
+            echo "  • Custom services (no template label)"
+        fi
+    else
+        print_info "Custom Templates: (none)"
+    fi
+    
+    # Show running containers
+    echo ""
+    print_info "Running Containers:"
+    local containers=$(docker ps --filter "name=${project}-" --format "{{.Names}}" 2>/dev/null)
+    
+    if [ -z "$containers" ]; then
+        echo "  (no containers running)"
+    else
+        while IFS= read -r container; do
+            local short_name=$(echo "$container" | sed "s/^${project}-//")
+            local status=$(docker inspect --format='{{.State.Status}}' "$container" 2>/dev/null)
+            local uptime=$(docker inspect --format='{{.State.StartedAt}}' "$container" 2>/dev/null | xargs -I {} date -j -f "%Y-%m-%dT%H:%M:%S" {} "+%Y-%m-%d %H:%M" 2>/dev/null || echo "running")
+            echo "  • $short_name ($status)"
+        done <<< "$containers"
+    fi
+    
+    echo ""
+    print_info "Manage services:"
+    echo "  Add:    ./phpharbor service add $project <service>"
+    echo "  Remove: ./phpharbor service remove $project <service>"
+    echo "  Templates: ./phpharbor service templates"
 }
 
 # Validate service for project type
@@ -523,8 +716,8 @@ cmd_list_templates() {
     done
     
     echo ""
-    print_info "Use: ./phpharbor add-template <project> <template>"
-    print_info "Help: ./phpharbor add-template --help"
+    print_info "Use: ./phpharbor service add-template <project> <template>"
+    print_info "Help: ./phpharbor service add-template --help"
 }
 
 cmd_add_template() {
@@ -586,12 +779,23 @@ echo "  elasticsearch    Search engine"
         print_error "Template '$template' not found"
         echo ""
         echo "Available templates:"
-        ./phpharbor list-templates
+        ./phpharbor service templates
         exit 1
     fi
     
-    # Check if override file already exists
+    # Check if template is already installed
     local override_file="$project_path/docker-compose.override.yml"
+    if [ -f "$override_file" ]; then
+        if grep -q "phpharbor.template=$template" "$override_file" 2>/dev/null; then
+            print_warning "Template '$template' is already installed in project '$project'"
+            echo ""
+            print_info "To reinstall, first remove it with:"
+            echo "  ./phpharbor service remove-template $project $template"
+            exit 0
+        fi
+    fi
+    
+    # Check if override file already exists
     local backup_needed=false
     
     if [ -f "$override_file" ]; then
@@ -775,6 +979,24 @@ cmd_remove_template() {
     if [ ! -d "$project_path" ]; then
         print_error "Project '$project' not found"
         exit 1
+    fi
+    
+    # Check if template is actually installed
+    local override_file="$project_path/docker-compose.override.yml"
+    if [ ! -f "$override_file" ]; then
+        print_warning "No custom templates installed in project '$project'"
+        echo ""
+        print_info "Available templates:"
+        echo "  ./phpharbor service templates"
+        exit 0
+    fi
+    
+    if ! grep -q "phpharbor.template=$template" "$override_file" 2>/dev/null; then
+        print_warning "Template '$template' is not installed in project '$project'"
+        echo ""
+        print_info "Installed templates:"
+        grep "phpharbor.template=" "$override_file" 2>/dev/null | sed 's/.*phpharbor.template=/  • /' || echo "  (none)"
+        exit 0
     fi
     
     # Stop and remove container
