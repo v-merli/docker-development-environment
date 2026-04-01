@@ -474,3 +474,346 @@ show_service_instructions() {
             ;;
     esac
 }
+
+# ============================================
+# TEMPLATE COMMANDS
+# ============================================
+
+cmd_list_templates() {
+    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+        echo "Usage: ./phpharbor list-templates"
+        echo ""
+        echo "List available service templates that can be added to projects."
+        echo ""
+        echo "Templates are pre-configured services like:"
+        echo "  • mailhog - Email testing tool"
+        echo "  • wp-cron - WordPress cron worker"
+        echo "  • elasticsearch - Search engine"
+        echo "  • node-worker - Node.js background service"
+        echo "  • redis-commander - Redis web UI"
+        echo ""
+        echo "Use 'add-template' to add a template to a project."
+        exit 0
+    fi
+    
+    local templates_dir="$SCRIPT_DIR/shared/service-templates"
+    
+    print_title "Available Service Templates"
+    echo ""
+    
+    if [ ! -d "$templates_dir" ]; then
+        print_error "Templates directory not found"
+        exit 1
+    fi
+    
+    # List templates with descriptions
+    for template_dir in "$templates_dir"/*; do
+        if [ -d "$template_dir" ]; then
+            local template_name=$(basename "$template_dir")
+            local readme="$template_dir/README.md"
+            
+            # Extract first line of README as description
+            local description=""
+            if [ -f "$readme" ]; then
+                description=$(head -n 1 "$readme" | sed 's/^# //')
+            fi
+            
+            printf "  ${GREEN}%-20s${NC} %s\n" "$template_name" "$description"
+        fi
+    done
+    
+    echo ""
+    print_info "Use: ./phpharbor add-template <project> <template>"
+    print_info "Help: ./phpharbor add-template --help"
+}
+
+cmd_add_template() {
+    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+        echo "Usage: ./phpharbor add-template <project> <template>"
+        echo ""
+        echo "Add a pre-configured service template to a project."
+        echo ""
+        echo "Arguments:"
+        echo "  <project>    Project name"
+        echo "  <template>   Template name (see list-templates)"
+        echo ""
+        echo "Available templates:"
+        echo "  mailhog          Email testing tool (Web UI + SMTP)"
+        echo "  wp-cron          WordPress cron worker"
+echo "  elasticsearch    Search engine"
+        echo "  node-worker      Node.js background service"
+        echo "  redis-commander  Redis web UI"
+        echo ""
+        echo "The template will be copied to the project's docker-compose.override.yml"
+        echo "and the project will be restarted automatically."
+        echo ""
+        echo "Examples:"
+        echo "  ./phpharbor add-template myblog mailhog"
+        echo "  ./phpharbor add-template mysite wp-cron"
+        echo "  ./phpharbor add-template myapp node-worker"
+        exit 0
+    fi
+    
+    local project=$1
+    local template=$2
+    
+    # Validate arguments
+    if [ -z "$project" ]; then
+        print_error "Project name required"
+        echo "Usage: ./phpharbor add-template <project> <template>"
+        exit 1
+    fi
+    
+    if [ -z "$template" ]; then
+        print_error "Template name required"
+        echo "Usage: ./phpharbor add-template <project> <template>"
+        echo "Use './phpharbor list-templates' to see available templates"
+        exit 1
+    fi
+    
+    # Check project exists
+    local project_path="$PROJECTS_DIR/$project"
+    if [ ! -d "$project_path" ]; then
+        print_error "Project '$project' not found"
+        exit 1
+    fi
+    
+    # Check template exists
+    local templates_dir="$SCRIPT_DIR/shared/service-templates"
+    local template_path="$templates_dir/$template"
+    
+    if [ ! -d "$template_path" ]; then
+        print_error "Template '$template' not found"
+        echo ""
+        echo "Available templates:"
+        ./phpharbor list-templates
+        exit 1
+    fi
+    
+    # Check if override file already exists
+    local override_file="$project_path/docker-compose.override.yml"
+    local backup_needed=false
+    
+    if [ -f "$override_file" ]; then
+        backup_needed=true
+    fi
+    
+    # Show confirmation
+    print_title "Add Service Template"
+    echo ""
+    echo "Project:      $project"
+    echo "Template:     $template"
+    echo "Target:       docker-compose.override.yml"
+    
+    if [ "$backup_needed" = true ]; then
+        echo ""
+        print_warning "Existing override file will be backed up"
+        echo "Backup:       docker-compose.override.yml.backup"
+    fi
+    
+    echo ""
+    print_info "The project will be restarted after adding the template"
+    echo ""
+    
+    read -p "Continue? (yes/no): " confirm
+    if [ "$confirm" != "yes" ]; then
+        print_error "Operation cancelled"
+        exit 0
+    fi
+    
+    # Backup existing override if needed
+    if [ "$backup_needed" = true ]; then
+        print_info "Backing up existing override file..."
+        cp "$override_file" "$override_file.backup"
+        print_success "Backup created: docker-compose.override.yml.backup"
+    fi
+    
+    # Copy template
+    print_info "Copying template to project..."
+    
+    local template_override="$template_path/docker-compose.override.yml"
+    local template_readme="$template_path/README.md"
+    
+    if [ ! -f "$template_override" ]; then
+        print_error "Template docker-compose.override.yml not found"
+        exit 1
+    fi
+    
+    # If backup exists, merge templates
+    if [ "$backup_needed" = true ]; then
+        print_info "Merging with existing services..."
+        
+        # Create a temporary file with merged content
+        local temp_file="$override_file.temp"
+        
+        # Step 1: Copy everything from existing file EXCEPT the networks section
+        awk '/^networks:/,0{next} {print}' "$override_file.backup" > "$temp_file"
+        
+        # Step 2: Add header for new template
+        echo "" >> "$temp_file"
+        echo "# ============================================" >> "$temp_file"
+        echo "# Template: $template (added $(date +%Y-%m-%d))" >> "$temp_file"
+        echo "# ============================================" >> "$temp_file"
+        
+        # Step 3: Extract only the service definition from template (skip 'services:' and 'networks:' lines)
+        awk '/^services:/,/^networks:/{if (!/^services:/ && !/^networks:/) print}' "$template_override" >> "$temp_file"
+        
+        # Step 4: Add back the networks section from the template
+        echo "" >> "$temp_file"
+        awk '/^networks:/,0{print}' "$template_override" >> "$temp_file"
+        
+        # Replace original file with merged version
+        mv "$temp_file" "$override_file"
+        
+        print_success "Template merged with existing services"
+    else
+        # Just copy the template
+        cp "$template_override" "$override_file"
+        print_success "Template copied successfully"
+    fi
+    
+    # Copy README if available
+    if [ -f "$template_readme" ]; then
+        cp "$template_readme" "$project_path/SERVICE-${template}-README.md"
+        print_success "Documentation copied: SERVICE-${template}-README.md"
+    fi
+    
+    # Restart project
+    print_info "Restarting project..."
+    cd "$project_path"
+    
+    $DOCKER_COMPOSE down --remove-orphans 2>/dev/null || true
+    $DOCKER_COMPOSE up -d
+    
+    cd "$SCRIPT_DIR"
+    
+    print_success "Template '$template' added successfully!"
+    echo ""
+    print_info "Project: $project"
+    echo "URL: https://$project.test"
+    echo ""
+    
+    if [ -f "$project_path/SERVICE-${template}-README.md" ]; then
+        print_info "Documentation: projects/$project/SERVICE-${template}-README.md"
+    fi
+    
+    # Show template-specific instructions
+    case $template in
+        mailhog)
+            echo ""
+            echo "Mailhog instructions:"
+            echo "  • Web UI: http://localhost:8025"
+            echo "  • SMTP: mailhog:1025 (from containers)"
+            echo "  • Configure your app to use these SMTP settings"
+            ;;
+        wp-cron)
+            echo ""
+            echo "WP-Cron instructions:"
+            echo "  • Add to wp-config.php: define('DISABLE_WP_CRON', true);"
+            echo "  • View logs: docker logs ${project}-wp-cron -f"
+            ;;
+        elasticsearch)
+            echo ""
+            echo "ElasticSearch instructions:"
+            echo "  • HTTP API: http://localhost:9200"
+            echo "  • Host (from containers): elasticsearch:9200"
+            echo "  • Check health: curl http://localhost:9200"
+            ;;
+        node-worker)
+            echo ""
+            echo "Node.js Worker instructions:"
+            echo "  • Edit command in docker-compose.override.yml"
+            echo "  • Access: http://localhost:3000"
+            echo "  • Logs: docker logs ${project}-node-worker -f"
+            ;;
+        redis-commander)
+            echo ""
+            echo "Redis Commander instructions:"
+            echo "  • Web UI: http://localhost:8081"
+            echo "  • Browse and manage Redis data"
+            ;;
+    esac
+}
+
+cmd_remove_template() {
+    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+        echo "Usage: ./phpharbor remove-template <project> <template>"
+        echo ""
+        echo "Remove a service template from a project."
+        echo ""
+        echo "Arguments:"
+        echo "  <project>    Project name"
+        echo "  <template>   Template name"
+        echo ""
+        echo "Note: This command will help you remove the template service,"
+        echo "but you may need to manually edit docker-compose.override.yml"
+        echo "if you have other custom services defined."
+        echo ""
+        echo "Examples:"
+        echo "  ./phpharbor remove-template myblog mailhog"
+        exit 0
+    fi
+    
+    local project=$1
+    local template=$2
+    
+    # Validate arguments
+    if [ -z "$project" ]; then
+        print_error "Project name required"
+        echo "Usage: ./phpharbor remove-template <project> <template>"
+        exit 1
+    fi
+    
+    if [ -z "$template" ]; then
+        print_error "Template name required"
+        echo "Usage: ./phpharbor remove-template <project> <template>"
+        exit 1
+    fi
+    
+    # Check project exists
+    local project_path="$PROJECTS_DIR/$project"
+    if [ ! -d "$project_path" ]; then
+        print_error "Project '$project' not found"
+        exit 1
+    fi
+    
+    # Stop and remove container
+    print_title "Remove Service Template"
+    echo ""
+    echo "Project:      $project"
+    echo "Template:     $template"
+    echo ""
+    print_warning "This will stop and remove the template's container"
+    print_info "You may need to manually edit docker-compose.override.yml"
+    echo ""
+    
+    read -p "Continue? (yes/no): " confirm
+    if [ "$confirm" != "yes" ]; then
+        print_error "Operation cancelled"
+        exit 0
+    fi
+    
+    # Determine container name based on template
+    local container_name="${project}-${template}"
+    
+    print_info "Stopping container..."
+    docker stop "$container_name" 2>/dev/null || true
+    docker rm "$container_name" 2>/dev/null || true
+    
+    print_success "Container removed"
+    
+    # Remove README if exists
+    local readme_file="$project_path/SERVICE-${template}-README.md"
+    if [ -f "$readme_file" ]; then
+        rm "$readme_file"
+        print_success "Documentation removed"
+    fi
+    
+    echo ""
+    print_warning "Manual cleanup required:"
+    echo "  1. Edit: projects/$project/docker-compose.override.yml"
+    echo "  2. Remove the '$template' service definition"
+    echo "  3. Restart: cd projects/$project && docker-compose up -d"
+    echo ""
+    print_info "Or delete the entire override file if this was the only custom service"
+}

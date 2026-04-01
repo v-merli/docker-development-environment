@@ -1,0 +1,129 @@
+# Custom Services Examples for PHPHarbor Projects
+# Copy sections to docker-compose.override.yml in your project
+
+# ============================================
+# Example 1: Mailhog (Email Testing)
+# ============================================
+services:
+  mailhog:
+    image: mailhog/mailhog
+    container_name: ${PROJECT_NAME}-mailhog
+    restart: unless-stopped
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP
+    networks:
+      - backend
+    labels:
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.custom=mailhog
+
+# ============================================
+# Example 2: Custom PHP Worker (Generic)
+# ============================================
+  custom-worker:
+    image: ${PROJECT_NAME}-app
+    container_name: ${PROJECT_NAME}-worker
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./app:/var/www/html
+    environment:
+      DB_HOST: ${DB_HOST:-}
+      REDIS_HOST: ${REDIS_HOST:-}
+    networks:
+      - backend
+    # Customize this command
+    command: php /var/www/html/bin/custom-processor.php
+    labels:
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.custom=worker
+
+# ============================================
+# Example 3: ElasticSearch (For WooCommerce)
+# ============================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: ${PROJECT_NAME}-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - ../../volumes/elasticsearch/${PROJECT_NAME}:/usr/share/elasticsearch/data
+    networks:
+      - backend
+    labels:
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.custom=elasticsearch
+
+# ============================================
+# Example 4: Node.js Background Service
+# ============================================
+  node-worker:
+    image: node:20-alpine
+    container_name: ${PROJECT_NAME}-node-worker
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./app:/app
+    command: node scripts/background-worker.js
+    environment:
+      NODE_ENV: development
+    networks:
+      - backend
+    labels:
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.custom=node-worker
+
+# ============================================
+# Example 5: Cron Job with Schedule
+# ============================================
+  cron-hourly:
+    image: ${PROJECT_NAME}-app
+    container_name: ${PROJECT_NAME}-cron-hourly
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./app:/var/www/html
+    environment:
+      DB_HOST: ${DB_HOST:-}
+    networks:
+      - backend
+    # Runs every hour
+    command: >
+      sh -c "while true; do
+        echo '[Cron] Running hourly task at $(date)';
+        php /var/www/html/scripts/hourly-task.php;
+        sleep 3600;
+      done"
+    labels:
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.custom=cron
+
+# ============================================
+# Example 6: Selenium (For Testing)
+# ============================================
+  selenium:
+    image: selenium/standalone-chrome:latest
+    container_name: ${PROJECT_NAME}-selenium
+    restart: unless-stopped
+    ports:
+      - "4444:4444"
+      - "7900:7900"  # VNC viewer
+    shm_size: 2gb
+    networks:
+      - backend
+    labels:
+      - phpharbor.project=phpharbor-app-${PROJECT_NAME}
+      - phpharbor.custom=selenium
+
+# Note: Remember to add networks section
+networks:
+  phpharbor-proxy:
+    external: true
+  backend:
+    external: false

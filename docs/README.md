@@ -63,6 +63,12 @@ Complete documentation for PHPHarbor.
   - Supervisor configuration
   - Workers debugging
 
+- **[Custom Services](custom-services.md)** - Add custom containers
+  - Using docker-compose.override.yml
+  - WordPress WP-Cron example
+  - Mailhog, ElasticSearch, Node.js workers
+  - Best practices and troubleshooting
+
 - **[Utilities](utilities.md)** - Utilities and helpers
   - Utility scripts
   - Helper functions

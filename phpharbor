@@ -184,6 +184,11 @@ COMMANDS:
     add-service <name> <service>    Add optional service (queue/scheduler/redis/mysql/mariadb)
     remove-service <name> <service> Remove optional service
     
+  Service Templates:
+    list-templates              List available service templates
+    add-template <name> <tmpl>  Add pre-configured service (mailhog/wp-cron/etc)
+    remove-template <name> <tmpl> Remove service template
+    
   Development Tools:
     shell <name>          Open shell in PHP container
     artisan <name> <cmd>  Run artisan command
@@ -252,6 +257,11 @@ EXAMPLES:
   ./phpharbor add-service myblog queue
   ./phpharbor add-service myapp redis
   ./phpharbor remove-service myblog scheduler
+  
+  # Add service templates
+  ./phpharbor list-templates
+  ./phpharbor add-template myblog mailhog
+  ./phpharbor add-template mysite wp-cron
   
   # Shared services
   ./phpharbor shared start
@@ -337,6 +347,18 @@ case $COMMAND in
     remove-service)
         load_module "services"
         cmd_remove_service "$@"
+        ;;
+    list-templates)
+        load_module "services"
+        cmd_list_templates "$@"
+        ;;
+    add-template)
+        load_module "services"
+        cmd_add_template "$@"
+        ;;
+    remove-template)
+        load_module "services"
+        cmd_remove_template "$@"
         ;;
     shell|bash)
         load_module "dev"
