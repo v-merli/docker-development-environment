@@ -6,60 +6,79 @@ These templates work like **plugins** - they're ready-to-use Docker services tha
 
 ## Available Templates
 
-### mailhog
-**Email Testing Tool** - Captures all outgoing emails without sending them.
-- Web UI for viewing emails
-- SMTP server for your application
-- Perfect for development/testing
-
 ### wp-cron
 **WordPress Cron Worker** - Dedicated container for WordPress cron jobs.
 - Runs wp-cron.php independently
 - Better performance than default WP cron
 - Customizable schedule
+- No exposed ports
 
 ### elasticsearch
 **Search Engine** - Powerful full-text search.
 - For WooCommerce advanced search
 - Laravel Scout integration
 - Log aggregation
+- Dynamic port assignment (default: 9200)
 
 ### node-worker
 **Node.js Background Service** - Run Node.js alongside PHP.
 - WebSocket servers (Socket.io)
 - Background job processing
 - API services
+- Dynamic port assignment (default: 3000)
 
 ### redis-commander
 **Redis Web UI** - Visual interface for Redis data.
 - Browse keys and values
 - Monitor Redis in real-time
 - Debug cache and sessions
+- Dynamic port assignment (default: 8081)
+
+## Dynamic Port Assignment
+
+Templates with exposed ports automatically receive dynamic port assignments to avoid conflicts between projects.
+
+When you add a template:
+1. PHPHarbor finds an available port starting from the default
+2. The port is saved to your project's `.env` file
+3. The service uses the assigned port
+
+**Example:**
+- Project A adds `elasticsearch` → gets port 9200
+- Project B adds `elasticsearch` → gets port 9201 (9200 already in use)
+
+Ports are stored in `.env` as:
+```bash
+ELASTICSEARCH_PORT=9200
+NODE_WORKER_PORT=3000
+REDIS_COMMANDER_PORT=8081
+```
 
 ## Usage
 
 ### List available templates
 
 ```bash
-./phpharbor list-templates
+./phpharbor service templates
 ```
 
 ### Add a template to a project
 
 ```bash
-./phpharbor add-template <project> <template>
+./phpharbor service add-template <project> <template>
 ```
 
 **Example:**
 ```bash
-./phpharbor add-template myblog mailhog
-./phpharbor add-template mysite wp-cron
+./phpharbor service add-template mysite wp-cron
+./phpharbor service add-template myblog elasticsearch
+./phpharbor service add-template myapp node-worker
 ```
 
 ### Remove a template
 
 ```bash
-./phpharbor remove-template <project> <template>
+./phpharbor service remove-template <project> <template>
 ```
 
 ## How It Works

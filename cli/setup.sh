@@ -475,6 +475,153 @@ setup_proxy() {
     fi
 }
 
+setup_mailpit_project() {
+    print_info "Setting up MailPit project..."
+    
+    local mailpit_path="$PROJECTS_DIR/mailpit"
+    
+    # Check if already exists
+    if [ -d "$mailpit_path" ]; then
+        print_warning "MailPit project already exists, skipping"
+        return 0
+    fi
+    
+    # Create directory
+    mkdir -p "$mailpit_path/app"
+    
+    # Create docker-compose.yml
+    cat > "$mailpit_path/docker-compose.yml" << 'EOF'
+services:
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    restart: unless-stopped
+    environment:
+      VIRTUAL_HOST: ${DOMAIN}
+      VIRTUAL_PORT: 8025
+      LETSENCRYPT_HOST: ${DOMAIN}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+    networks:
+      - phpharbor-proxy
+    labels:
+      - phpharbor.project=phpharbor-system-mailpit
+      - phpharbor.type=system
+
+networks:
+  phpharbor-proxy:
+    external: true
+EOF
+    
+    # Create .env
+    cat > "$mailpit_path/.env" << 'EOF'
+# ============================================
+# PROJECT BASICS
+# ============================================
+PROJECT_NAME=mailpit
+DOMAIN=mailpit.test
+LETSENCRYPT_EMAIL=dev@localhost
+
+# ============================================
+# MAILPIT CONFIGURATION
+# ============================================
+# Web UI: https://mailpit.test:HTTPS_PORT_PLACEHOLDER
+# SMTP (from containers): mailpit:1025
+EOF
+    
+    # Replace placeholder with actual port
+    sed -i '' "s/HTTPS_PORT_PLACEHOLDER/${HTTPS_PORT}/" "$mailpit_path/.env"
+    
+    # Create README
+    cat > "$mailpit_path/app/README.md" << 'EOF'
+# MailPit - Email Testing Tool
+
+MailPit is a global service for testing email functionality in PHPHarbor projects.
+Modern replacement for MailHog with additional features like message search and tagging.
+
+## Access
+
+- **Web UI**: https://mailpit.test:HTTPS_PORT_PLACEHOLDER
+- **SMTP Server** (from containers): `mailpit:1025`
+
+> **Note**: Access MailPit using your configured HTTPS port (default: 8443)
+
+## Configure Your Application
+
+### Laravel
+
+In `.env`:
+```bash
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS=noreply@yourapp.test
+```
+
+### WordPress
+
+In `wp-config.php`:
+```php
+define('SMTP_HOST', 'mailpit');
+define('SMTP_PORT', 1025);
+```
+
+Or use a plugin like WP Mail SMTP with these settings.
+
+### PHP
+
+```php
+ini_set('SMTP', 'mailpit');
+ini_set('smtp_port', 1025);
+```
+
+## Notes
+
+- All emails are captured and displayed in the web UI
+- No emails are actually sent to real addresses
+- Perfect for development and testing
+- Supports message search, tagging, and filtering
+- Modern interface with better performance than MailHog
+EOF
+    
+    # Replace placeholder with actual port in README
+    sed -i '' "s/HTTPS_PORT_PLACEHOLDER/${HTTPS_PORT}/" "$mailpit_path/app/README.md"
+    
+    # Mark as system project
+    cat > "$mailpit_path/.system" << 'EOF'
+# PHPHarbor System Project
+# This is a system/infrastructure project, not a user project
+# It will be excluded from project listings and statistics
+EOF
+    
+    print_success "MailPit project created"
+    
+    # Generate SSL certificate
+    print_info "Generating SSL certificate for mailpit.test..."
+    "$SCRIPT_DIR/phpharbor" ssl generate mailpit.test 2>/dev/null || {
+        print_warning "SSL certificate generation skipped (mkcert may not be configured)"
+    }
+    
+    # Start container
+    print_info "Starting MailPit..."
+    cd "$mailpit_path"
+    $DOCKER_COMPOSE up -d
+    cd "$SCRIPT_DIR"
+    
+    # Wait for it to be ready
+    sleep 2
+    
+    if docker ps | grep -q mailpit; then
+        print_success "MailPit is ready!"
+        echo ""
+        echo "  🌐 Web UI: https://mailpit.test:${HTTPS_PORT}"
+        echo "  📧 SMTP: mailpit:1025 (from containers)"
+        echo ""
+    else
+        print_warning "MailPit may not have started correctly"
+    fi
+}
+
 setup_init() {
     print_title "PHPHarbor Initialization"
     echo ""
@@ -603,6 +750,14 @@ EOF
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         setup_proxy
         echo ""
+        
+        # Setup MailPit project automatically
+        read -p "Install MailPit email testing tool? [Y/n] " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            setup_mailpit_project
+            echo ""
+        fi
     fi
     
     # Install mkcert if not present

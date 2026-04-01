@@ -8,6 +8,56 @@ LARAVEL_SERVICES="queue scheduler redis mysql mariadb"
 WORDPRESS_SERVICES="redis mysql mariadb"
 PHP_SERVICES="redis mysql mariadb"
 
+# ==================================================
+# HELPER FUNCTIONS
+# ==================================================
+
+# Find an available port starting from the given port
+# Usage: find_available_port <start_port> <max_attempts>
+# Returns: Available port number
+find_available_port() {
+    local start_port=${1:-8080}
+    local max_attempts=${2:-100}
+    local port=$start_port
+    local attempt=0
+    
+    while [ $attempt -lt $max_attempts ]; do
+        # Check if port is in use (works on macOS and Linux)
+        if ! lsof -iTCP:"$port" -sTCP:LISTEN -t >/dev/null 2>&1; then
+            echo "$port"
+            return 0
+        fi
+        
+        port=$((port + 1))
+        attempt=$((attempt + 1))
+    done
+    
+    # If no port found, return the start port anyway
+    echo "$start_port"
+    return 1
+}
+
+# Extract port variables from a docker-compose template
+# Usage: extract_port_variables <template_file>
+# Returns: Space-separated list of port variable names (e.g., "ELASTICSEARCH_PORT NODE_WORKER_PORT")
+extract_port_variables() {
+    local template_file=$1
+    
+    if [ ! -f "$template_file" ]; then
+        return 1
+    fi
+    
+    # Extract ${VAR_PORT:-default} patterns and return just the variable names
+    grep -oE '\$\{[A-Z_]+_PORT:-[0-9]+\}' "$template_file" 2>/dev/null | \
+        sed 's/\${\([A-Z_]*_PORT\):-[0-9]*}/\1/g' | \
+        sort -u | \
+        tr '\n' ' '
+}
+
+# ==================================================
+# MAIN SERVICE COMMAND
+# ==================================================
+
 # Main service command (unified interface)
 cmd_service() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]] || [ $# -eq 0 ]; then
@@ -731,19 +781,19 @@ cmd_add_template() {
         echo "  <template>   Template name (see list-templates)"
         echo ""
         echo "Available templates:"
-        echo "  mailhog          Email testing tool (Web UI + SMTP)"
         echo "  wp-cron          WordPress cron worker"
-echo "  elasticsearch    Search engine"
+        echo "  elasticsearch    Search engine"
         echo "  node-worker      Node.js background service"
         echo "  redis-commander  Redis web UI"
         echo ""
         echo "The template will be copied to the project's docker-compose.override.yml"
         echo "and the project will be restarted automatically."
+        echo "Dynamic port assignment will be used to avoid conflicts."
         echo ""
         echo "Examples:"
-        echo "  ./phpharbor add-template myblog mailhog"
         echo "  ./phpharbor add-template mysite wp-cron"
         echo "  ./phpharbor add-template myapp node-worker"
+        echo "  ./phpharbor add-template myblog elasticsearch"
         exit 0
     fi
     
@@ -795,6 +845,38 @@ echo "  elasticsearch    Search engine"
         fi
     fi
     
+    # Extract and assign dynamic ports
+    local template_override="$template_path/docker-compose.override.yml"
+    if [ ! -f "$template_override" ]; then
+        print_error "Template docker-compose.override.yml not found"
+        exit 1
+    fi
+    
+    # Get list of port variables needed by this template
+    local port_vars=$(extract_port_variables "$template_override")
+    local port_assignments=()
+    local env_additions=""
+    
+    if [ -n "$port_vars" ]; then
+        print_info "Assigning dynamic ports for template..."
+        
+        for port_var in $port_vars; do
+            # Extract default port from the template
+            local default_port=$(grep -oE "\\\$\{${port_var}:-([0-9]+)\}" "$template_override" | grep -oE '[0-9]+' | head -1)
+            
+            # Find available port starting from default
+            local assigned_port=$(find_available_port "$default_port" 100)
+            
+            # Store assignment for display and env file
+            port_assignments+=("$port_var=$assigned_port")
+            env_additions="${env_additions}${port_var}=${assigned_port}\n"
+            
+            print_success "  $port_var: $assigned_port (default: $default_port)"
+        done
+        
+        echo ""
+    fi
+    
     # Check if override file already exists
     local backup_needed=false
     
@@ -815,6 +897,14 @@ echo "  elasticsearch    Search engine"
         echo "Backup:       docker-compose.override.yml.backup"
     fi
     
+    if [ ${#port_assignments[@]} -gt 0 ]; then
+        echo ""
+        print_info "Port assignments:"
+        for assignment in "${port_assignments[@]}"; do
+            echo "  • $assignment"
+        done
+    fi
+    
     echo ""
     print_info "The project will be restarted after adding the template"
     echo ""
@@ -823,6 +913,30 @@ echo "  elasticsearch    Search engine"
     if [ "$confirm" != "yes" ]; then
         print_error "Operation cancelled"
         exit 0
+    fi
+    
+    # Add port variables to .env if needed
+    if [ -n "$env_additions" ]; then
+        print_info "Adding port variables to .env..."
+        
+        local env_file="$project_path/.env"
+        
+        # Check if .env exists
+        if [ ! -f "$env_file" ]; then
+            print_error ".env file not found in project"
+            exit 1
+        fi
+        
+        # Add a section header and port variables
+        {
+            echo ""
+            echo "# ============================================"
+            echo "# SERVICE TEMPLATE: $template (added $(date +%Y-%m-%d))"
+            echo "# ============================================"
+            printf "$env_additions"
+        } >> "$env_file"
+        
+        print_success "Port variables added to .env"
     fi
     
     # Backup existing override if needed
@@ -901,15 +1015,8 @@ echo "  elasticsearch    Search engine"
         print_info "Documentation: projects/$project/SERVICE-${template}-README.md"
     fi
     
-    # Show template-specific instructions
+    # Show template-specific instructions with dynamic ports
     case $template in
-        mailhog)
-            echo ""
-            echo "Mailhog instructions:"
-            echo "  • Web UI: http://localhost:8025"
-            echo "  • SMTP: mailhog:1025 (from containers)"
-            echo "  • Configure your app to use these SMTP settings"
-            ;;
         wp-cron)
             echo ""
             echo "WP-Cron instructions:"
@@ -917,23 +1024,44 @@ echo "  elasticsearch    Search engine"
             echo "  • View logs: docker logs ${project}-wp-cron -f"
             ;;
         elasticsearch)
+            # Extract assigned port from port_assignments
+            local es_port=""
+            for assignment in "${port_assignments[@]}"; do
+                if [[ "$assignment" == "ELASTICSEARCH_PORT="* ]]; then
+                    es_port="${assignment#*=}"
+                fi
+            done
             echo ""
             echo "ElasticSearch instructions:"
-            echo "  • HTTP API: http://localhost:9200"
+            echo "  • HTTP API: http://localhost:${es_port:-9200}"
             echo "  • Host (from containers): elasticsearch:9200"
-            echo "  • Check health: curl http://localhost:9200"
+            echo "  • Check health: curl http://localhost:${es_port:-9200}"
             ;;
         node-worker)
+            # Extract assigned port
+            local node_port=""
+            for assignment in "${port_assignments[@]}"; do
+                if [[ "$assignment" == "NODE_WORKER_PORT="* ]]; then
+                    node_port="${assignment#*=}"
+                fi
+            done
             echo ""
             echo "Node.js Worker instructions:"
             echo "  • Edit command in docker-compose.override.yml"
-            echo "  • Access: http://localhost:3000"
+            echo "  • Access: http://localhost:${node_port:-3000}"
             echo "  • Logs: docker logs ${project}-node-worker -f"
             ;;
         redis-commander)
+            # Extract assigned port
+            local rc_port=""
+            for assignment in "${port_assignments[@]}"; do
+                if [[ "$assignment" == "REDIS_COMMANDER_PORT="* ]]; then
+                    rc_port="${assignment#*=}"
+                fi
+            done
             echo ""
             echo "Redis Commander instructions:"
-            echo "  • Web UI: http://localhost:8081"
+            echo "  • Web UI: http://localhost:${rc_port:-8081}"
             echo "  • Browse and manage Redis data"
             ;;
     esac

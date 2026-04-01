@@ -33,6 +33,11 @@ cmd_list() {
     
     for dir in "$PROJECTS_DIR"/*/ ; do
         if [ -d "$dir" ]; then
+            # Skip system projects (e.g., mailhog)
+            if [ -f "$dir/.system" ]; then
+                continue
+            fi
+            
             project=$(basename "$dir")
             env_file="$dir/.env"
             

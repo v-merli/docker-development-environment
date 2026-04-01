@@ -95,13 +95,20 @@ stats_disk() {
     docker system df
     echo ""
     
-        # PHPHarbor images (from containers with compose project 'phpharbor-proxy')
-        echo -e "${YELLOW}🐳 PHPHarbor images (phpharbor-proxy):${NC}"
+        # PHPHarbor images (system services and proxy)
+        echo -e "${YELLOW}🐳 PHPHarbor images (system + proxy):${NC}"
         echo "───────────────────────────────────────────────────────────────────────"
         printf "%-30s %-15s %-15s\n" "REPOSITORY" "TAG" "SIZE"
-        docker ps -a --filter 'label=phpharbor.project=phpharbor-proxy' --format '{{.Image}}' | \
-            sort | uniq | \
+        
+        # Get images from both proxy and system containers
+        local all_images=$(
+            docker ps -a --filter 'label=phpharbor.project=phpharbor-proxy' --format '{{.Image}}'
+            docker ps -a --filter 'label=phpharbor.type=system' --format '{{.Image}}'
+        )
+        
+        echo "$all_images" | sort | uniq | \
             while read img; do
+                [ -z "$img" ] && continue
                 if [[ "$img" == *:* ]]; then
                     repo="${img%%:*}"
                     tag="${img#*:}"

@@ -1,10 +1,15 @@
 # Custom Services Guide
 
-PHPHarbor provides built-in commands for managing standard services (queue, scheduler, redis, mysql, mariadb), but you can also add **custom containers** to any project using Docker Compose override files.
+PHPHarbor provides built-in commands for managing standard services (queue, scheduler, redis, mysql, mariadb). You can also:
+
+1. **Use pre-configured templates** - Quick and easy service additions (Elasticsearch, Node.js workers, etc.)
+2. **Create custom services** - Full flexibility using Docker Compose override files
 
 ## Table of Contents
 
-- [Quick Start](#quick-start)
+- [Service Templates](#service-templates) **(Recommended)**
+- [MailPit - Global Email Testing](#mailpit---global-email-testing)
+- [Quick Start (Custom Services)](#quick-start-custom-services)
 - [Using docker-compose.override.yml](#using-docker-composeoverrideyml)
 - [Examples](#examples)
 - [Managing Custom Services](#managing-custom-services)
@@ -12,7 +17,134 @@ PHPHarbor provides built-in commands for managing standard services (queue, sche
 
 ---
 
-## Quick Start
+## Service Templates
+
+**Recommended approach** for common services like Elasticsearch, Redis Commander, Node.js workers, etc.
+
+Pre-configured templates that work like **plugins** - ready to use with automatic port management.
+
+### Available Templates
+
+```bash
+./phpharbor service templates
+```
+
+- **wp-cron** - WordPress cron worker
+- **elasticsearch** - Search engine (dynamic port)
+- **node-worker** - Node.js background service (dynamic port)
+- **redis-commander** - Redis web UI (dynamic port)
+
+### Add a Template
+
+```bash
+./phpharbor service add-template <project> <template>
+```
+
+**Example:**
+```bash
+./phpharbor service add-template myblog elasticsearch
+```
+
+PHPHarbor will:
+1. Find an available port (to avoid conflicts)
+2. Add port variables to your `.env` file
+3. Copy the template to `docker-compose.override.yml`
+4. Restart the project automatically
+
+### Dynamic Port Assignment
+
+Templates with exposed ports receive automatic port assignment:
+
+```bash
+# First project adds elasticsearch → port 9200
+# Second project adds elasticsearch → port 9201 (9200 in use)
+```
+
+Assigned ports are saved in `.env`:
+```bash
+ELASTICSEARCH_PORT=9200
+NODE_WORKER_PORT=3000
+REDIS_COMMANDER_PORT=8081
+```
+
+### Remove a Template
+
+```bash
+./phpharbor service remove-template <project> <template>
+```
+
+**Note:** Manual cleanup of `.env` port variables is recommended after removal.
+
+---
+
+## MailPit - Global Email Testing
+
+MailPit is available **globally** to all projects as a dedicated PHPHarbor application.
+Modern replacement for MailHog with additional features like message search and tagging.
+
+Installed automatically during `./phpharbor setup init` and accessible via HTTPS.
+
+### Access MailPit
+
+- **Web UI**: https://mailpit.test:PORT
+- **SMTP Server**: `mailpit:1025` (from any container)
+
+> **Note**: Use your configured HTTPS port (default: 8443). Check your PHPHarbor configuration with `./phpharbor setup ports`.
+
+### Configure Your Application
+
+**Laravel** (`.env`):
+```bash
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS=noreply@yourapp.test
+```
+
+**WordPress** (`wp-config.php`):
+```php
+define('SMTP_HOST', 'mailpit');
+define('SMTP_PORT', 1025);
+```
+
+Or use a plugin like WP Mail SMTP with these settings.
+
+**PHP**:
+```php
+ini_set('SMTP', 'mailpit');
+ini_set('smtp_port', 1025);
+```
+
+### Features
+
+✅ **Secure HTTPS access** - Uses standard SSL certificate like any PHPHarbor project  
+✅ **No configuration needed** - Works out of the box for all projects  
+✅ **Network isolation** - SMTP accessible only from Docker containers  
+✅ **Persistent** - Runs as a dedicated project, managed like any other app  
+✅ **Message search** - Full-text search across all captured emails  
+✅ **Tagging & filtering** - Organize and filter messages easily  
+✅ **Modern interface** - Better performance and UX than MailHog  
+
+### Managing MailPit
+
+```bash
+# Restart MailPit
+cd projects/mailpit && docker-compose restart
+
+# View logs
+cd projects/mailpit && docker-compose logs -f
+
+# Stop temporarily
+cd projects/mailpit && docker-compose stop
+
+# Start again
+cd projects/mailpit && docker-compose up -d
+```
+
+---
+
+## Quick Start (Custom Services)
 
 ### 1. Create override file
 
@@ -132,15 +264,17 @@ networks:
     external: false
 ```
 
-### Example 2: Mailhog (Email Testing)
+### Example 2: MailPit (Email Testing)
+
+**Note**: MailPit is now available as a global system service. This example shows how it could be added per-project if needed.
 
 Test emails locally without sending real emails:
 
 ```yaml
 services:
-  mailhog:
-    image: mailhog/mailhog
-    container_name: ${PROJECT_NAME}-mailhog
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ${PROJECT_NAME}-mailpit
     restart: unless-stopped
     ports:
       - "8025:8025"  # Web UI at http://localhost:8025
@@ -158,7 +292,7 @@ networks:
 **Usage:**
 - Web UI: http://localhost:8025
 - SMTP settings in your app:
-  - Host: `mailhog`
+  - Host: `mailpit`
   - Port: `1025`
 
 ### Example 3: Custom PHP Worker

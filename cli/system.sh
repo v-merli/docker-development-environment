@@ -18,9 +18,16 @@ cmd_stats() {
         echo ""
         echo "Examples:"
         echo "  ./phpharbor stats              # Show CPU/RAM resources"
+        echo "  ./phpharbor stats resources    # Same as above"
         echo "  ./phpharbor stats disk         # Basic disk analysis"
         echo "  ./phpharbor stats disk --cleanup   # Clean orphans"
         exit 0
+    fi
+    
+    # Default to resources if no command specified
+    if [ $# -eq 0 ]; then
+        stats_resources
+        return
     fi
     
     local subcmd=$1
@@ -31,10 +38,9 @@ cmd_stats() {
             # Load the stats module for disk analysis
             source "$SCRIPT_DIR/cli/stats.sh"
             stats_disk "$@"
-            return
             ;;
-        resources|"")
-            # Default: show resources (CPU/RAM)
+        resources)
+            # Show resources (CPU/RAM)
             stats_resources "$@"
             ;;
         *)
@@ -62,17 +68,47 @@ stats_resources() {
         return
     fi
     
-    # Active Containers
-    echo -e "${YELLOW}📦 Active containers:${NC}"
+    # System Services (proxy, mailhog, shared services)
+    echo -e "${YELLOW}⚙️  System Services:${NC}"
     echo "────────────────────────────────────────────────────────────"
     printf "%-25s %-20s %s\n" "NAME" "STATUS" "UPTIME"
     echo "────────────────────────────────────────────────────────────"
-    docker ps --filter 'label=phpharbor.project' --format '{{.Names}}\t{{.Status}}' | \
-        while IFS=$'\t' read -r name status; do
-            # Extract uptime from status (e.g., "Up 2 hours" -> "2 hours")
+    
+    # Get system containers (those with phpharbor.type=system or phpharbor-proxy)
+    local system_output=$(docker ps --filter 'label=phpharbor.type=system' --format '{{.Names}}\t{{.Status}}' 2>/dev/null)
+    system_output="$system_output
+$(docker ps --filter 'label=phpharbor.project=phpharbor-proxy' --format '{{.Names}}\t{{.Status}}' 2>/dev/null)"
+    
+    if [ -z "$(echo "$system_output" | tr -d '\n' | tr -d ' ')" ]; then
+        echo "No system services running"
+    else
+        echo "$system_output" | while IFS=$'\t' read -r name status; do
+            [ -z "$name" ] && continue
             uptime=$(echo "$status" | sed 's/Up //')
             printf "%-25s %-20s %s\n" "$name" "Running" "$uptime"
         done
+    fi
+    echo ""
+    
+    # User Projects (exclude system containers)
+    echo -e "${YELLOW}📦 User Projects:${NC}"
+    echo "────────────────────────────────────────────────────────────"
+    printf "%-25s %-20s %s\n" "NAME" "STATUS" "UPTIME"
+    echo "────────────────────────────────────────────────────────────"
+    
+    local user_output=$(docker ps --filter 'label=phpharbor.project' --format '{{.Names}}\t{{.Labels}}\t{{.Status}}' 2>/dev/null | \
+        grep -v "phpharbor.type=system" | \
+        grep -v "phpharbor.project=phpharbor-proxy")
+    
+    if [ -z "$user_output" ]; then
+        echo "No user projects running"
+    else
+        echo "$user_output" | while IFS=$'\t' read -r name labels status; do
+            [ -z "$name" ] && continue
+            uptime=$(echo "$status" | sed 's/Up //')
+            printf "%-25s %-20s %s\n" "$name" "Running" "$uptime"
+        done
+    fi
     echo ""
     
     # Resource Usage (CPU/RAM)
