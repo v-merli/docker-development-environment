@@ -43,6 +43,39 @@ cli/
 ./phpharbor remove myshop
 ```
 
+### Service Management
+
+Manage optional services and templates for projects.
+
+```bash
+# Standard services (queue, scheduler, redis, mysql, mariadb)
+./phpharbor service add myblog queue           # Add Laravel queue worker
+./phpharbor service add myapp redis            # Add dedicated Redis
+./phpharbor service remove myblog scheduler    # Remove scheduler
+./phpharbor service list myblog                # List active services
+
+# Service templates (mailhog, wp-cron, elasticsearch, etc.)
+./phpharbor service templates                   # List available templates
+./phpharbor service add-template myblog mailhog # Install mailhog
+./phpharbor service remove-template myblog mailhog
+```
+
+**Standard services:**
+- `queue` - Laravel queue worker (Laravel only)
+- `scheduler` - Laravel scheduler (Laravel only)
+- `redis` - Dedicated Redis cache (all types)
+- `mysql` - Dedicated MySQL database (all types)
+- `mariadb` - Dedicated MariaDB database (all types)
+
+**Available templates:**
+- `mailhog` - Email testing tool (Web UI + SMTP)
+- `wp-cron` - WordPress cron worker
+- `elasticsearch` - Search engine
+- `node-worker` - Node.js background service
+- `redis-commander` - Redis web UI
+
+> See [Custom Services Guide](custom-services.md) for manual customization
+
 ### Development Tools
 
 ```bash

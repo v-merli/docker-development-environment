@@ -36,7 +36,8 @@ open https://myapp.test
 - 🎯 Multi-project (Laravel, WordPress, HTML, PHP)
 - 🐘 Multi-version PHP (7.3 → 8.5)
 - 💾 Cherry-pick shared services (RAM savings)
-- 🔒 Automatic HTTPS with local certificates
+- � Add/remove services and templates on-the-fly
+- �🔒 Automatic HTTPS with local certificates
 - 🌐 Local wildcard DNS `*.test`
 - 🎨 Interactive CLI or command mode
 
