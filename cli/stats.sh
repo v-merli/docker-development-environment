@@ -308,9 +308,9 @@ stats_disk() {
         projects_count=$(find "$PROJECTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
     fi
     
-    # Containers count
-    local containers_count=$(docker ps -a --filter "name=phpharbor" --format "{{.Names}}" 2>/dev/null | wc -l | tr -d ' ')
-    local containers_running=$(docker ps --filter "name=phpharbor" --format "{{.Names}}" 2>/dev/null | wc -l | tr -d ' ')
+    # Containers count (only project containers, not proxy infrastructure)
+    local containers_count=$(docker ps -a --filter 'label=phpharbor.project' --format '{{.Label "phpharbor.project"}}' 2>/dev/null | grep '^phpharbor-app-' | wc -l | tr -d ' ')
+    local containers_running=$(docker ps --filter 'label=phpharbor.project' --format '{{.Label "phpharbor.project"}}' 2>/dev/null | grep '^phpharbor-app-' | wc -l | tr -d ' ')
     
     echo -e "${YELLOW}📁 Project statistics:${NC}"
     echo "───────────────────────────────────────────────────────────────────────"
@@ -329,22 +329,42 @@ stats_disk() {
                 local project_name=$(basename "$project_dir")
                 local app_size=$(du -sh "$project_dir" 2>/dev/null | cut -f1)
                 
-                # Check if project has dedicated containers
-                local dedicated_containers=$(docker ps -a --filter "name=${project_name}" --format "{{.Names}}" 2>/dev/null | wc -l | tr -d ' ')
+                # Check if project has containers (using label)
+                local project_containers=$(docker ps -a --filter "label=phpharbor.project=phpharbor-app-${project_name}" --format "{{.Names}}" 2>/dev/null | wc -l | tr -d ' ')
                 
                 echo "  📦 $project_name"
                 echo "      App files:        $app_size"
-                echo "      Containers:       $dedicated_containers"
+                echo "      Containers:       $project_containers"
                 
                 # Check project type from .env
                 if [ -f "$project_dir/.env" ]; then
                     local project_type=$(grep "^PROJECT_TYPE=" "$project_dir/.env" 2>/dev/null | cut -d'=' -f2)
-                    local php_shared=$(grep "^PHP_SHARED=" "$project_dir/.env" 2>/dev/null | cut -d'=' -f2)
-                    local mysql_shared=$(grep "^MYSQL_SHARED=" "$project_dir/.env" 2>/dev/null | cut -d'=' -f2)
+                    
+                    # Check if using shared PHP (USE_SHARED_PHP=true means unified mode with shared PHP)
+                    local use_shared_php=$(grep "^USE_SHARED_PHP=" "$project_dir/.env" 2>/dev/null | cut -d'=' -f2)
+                    local php_shared="false"
+                    if [ "$use_shared_php" = "true" ]; then
+                        php_shared="true"
+                    fi
+                    
+                    # Check if using shared DB (detecting *-shared in service names)
+                    local db_service=$(grep "^DB_SERVICE=" "$project_dir/.env" 2>/dev/null | cut -d'=' -f2)
+                    local mysql_shared="false"
+                    if [[ "$db_service" == *"-shared" ]]; then
+                        mysql_shared="true"
+                    fi
+                    
+                    # Check if using shared Redis
+                    local redis_service=$(grep "^REDIS_SERVICE=" "$project_dir/.env" 2>/dev/null | cut -d'=' -f2)
+                    local redis_shared="false"
+                    if [[ "$redis_service" == *"-shared" ]]; then
+                        redis_shared="true"
+                    fi
                     
                     echo "      Type:             ${project_type:-unknown}"
-                    echo "      PHP shared:       ${php_shared:-false}"
-                    echo "      MySQL shared:     ${mysql_shared:-false}"
+                    echo "      PHP shared:       ${php_shared}"
+                    echo "      MySQL shared:     ${mysql_shared}"
+                    echo "      Redis shared:     ${redis_shared}"
                 fi
                 echo ""
             fi
