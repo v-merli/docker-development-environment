@@ -222,7 +222,6 @@ COMMANDS:
         resources           Show CPU/RAM usage (default)
         disk                Disk usage analysis
         disk --detailed     Per-project breakdown
-        disk --compare      Compare shared vs dedicated
         disk --cleanup      Remove orphan volumes and images
     info <name>           Project information
     reset <command>       Reset Docker environment
@@ -260,7 +259,7 @@ EXAMPLES:
   
   # Statistics
   ./phpharbor stats disk
-  ./phpharbor stats disk --compare
+  ./phpharbor stats disk --detailed
 
 For specific help: ./phpharbor <command> --help
 

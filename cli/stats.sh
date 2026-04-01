@@ -28,13 +28,11 @@ cmd_stats() {
         echo "Commands:"
         echo "  disk              Show disk usage analysis (default)"
         echo "  disk --detailed   Detailed breakdown per project"
-        echo "  disk --compare    Compare shared vs dedicated architecture"
         echo "  disk --cleanup    Interactive cleanup of orphan volumes and images"
         echo ""
         echo "Examples:"
         echo "  ./phpharbor stats disk              # Basic disk analysis"
         echo "  ./phpharbor stats disk --detailed   # Per-project breakdown"
-        echo "  ./phpharbor stats disk --compare    # Savings simulation"
         echo "  ./phpharbor stats disk --cleanup    # Remove orphan volumes"
         exit 0
     fi
@@ -60,7 +58,6 @@ cmd_stats() {
 
 stats_disk() {
     local detailed=false
-    local compare=false
     local cleanup=false
     
     # Parse options
@@ -68,10 +65,6 @@ stats_disk() {
         case $1 in
             --detailed)
                 detailed=true
-                shift
-                ;;
-            --compare)
-                compare=true
                 shift
                 ;;
             --cleanup)
@@ -371,75 +364,10 @@ stats_disk() {
         done
     fi
     
-    # Savings calculation
-    if [ "$compare" = true ] || [ $projects_count -gt 1 ]; then
-        echo -e "${YELLOW}💰 Estimated savings with shared architecture:${NC}"
-        echo "───────────────────────────────────────────────────────────────────────"
-        
-        if [ $projects_count -eq 0 ]; then
-            echo "  No project found to calculate savings"
-        else
-            # Estimates in MB (based on actual measurements)
-            local dedicated_per_project=2350  # MB per project (all dedicated)
-            local shared_per_project=150      # MB per project (only app files)
-            local shared_infrastructure=2170  # MB (one-time shared services)
-            
-            local dedicated_total=$((projects_count * dedicated_per_project))
-            local shared_total=$((projects_count * shared_per_project + shared_infrastructure))
-            local saving=$((dedicated_total - shared_total))
-            local percent=0
-            
-            if [ $dedicated_total -gt 0 ]; then
-                percent=$((saving * 100 / dedicated_total))
-            fi
-            
-            echo "  Projects analyzed:  $projects_count"
-            echo ""
-            echo "  ALL DEDICATED:"
-            echo "    ${projects_count} projects × 2.35 GB = $(echo "scale=2; $dedicated_total / 1000" | bc) GB"
-            echo ""
-            echo "  ALL SHARED:"
-            echo "    App files:    ${projects_count} × 0.15 GB = $(echo "scale=2; $projects_count * 150 / 1000" | bc) GB"
-            echo "    Shared infra: (one-time) = 2.17 GB"
-            echo "    ─────────────────────────────────"
-            echo "    Total:        $(echo "scale=2; $shared_total / 1000" | bc) GB"
-            echo ""
-            echo -e "  ${GREEN}✨ SAVINGS: $(echo "scale=2; $saving / 1000" | bc) GB (${percent}%)${NC}"
-            echo ""
-            
-            # RAM estimation
-            local ram_dedicated=$((projects_count * 600))  # ~600 MB per project
-            local ram_shared=650  # ~650 MB total infrastructure
-            local ram_saving=$((ram_dedicated - ram_shared))
-            
-            if [ $projects_count -gt 1 ]; then
-                echo "  📊 Bonus - Estimated RAM savings:"
-                echo "    Dedicated:   $(echo "scale=2; $ram_dedicated / 1000" | bc) GB"
-                echo "    Shared:      $(echo "scale=2; $ram_shared / 1000" | bc) GB"
-                echo -e "    ${GREEN}Savings:  $(echo "scale=2; $ram_saving / 1000" | bc) GB${NC}"
-                echo ""
-            fi
-            
-            # Recommendations
-            if [ $projects_count -eq 1 ]; then
-                echo -e "  ${BLUE}💡 With 1 project, the difference is minimal${NC}"
-                echo "     Consider shared for easier management"
-            elif [ $projects_count -lt 5 ]; then
-                echo -e "  ${BLUE}💡 With $projects_count projects, moderate savings${NC}"
-                echo "     Shared is already worth it from 2+ projects"
-            else
-                echo -e "  ${GREEN}💡 With $projects_count projects, significant savings!${NC}"
-                echo "     Shared is highly recommended (75%+ savings)"
-            fi
-        fi
-        echo ""
-    fi
-    
     # Quick tips
     echo -e "${YELLOW}💡 Tips:${NC}"
     echo "───────────────────────────────────────────────────────────────────────"
     echo "  • Use --detailed to see per-project breakdown"
-    echo "  • Use --compare for shared vs dedicated savings simulation"
     echo "  • Use --cleanup to remove orphan volumes and images"
     echo "  • docker image prune -a cleans all unused images"
     echo "  • docker volume prune cleans dangling volumes"
