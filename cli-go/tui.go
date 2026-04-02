@@ -15,7 +15,9 @@ var (
 	newHeaderStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#00d4ff")).
 			Bold(true).
-			Padding(0, 1)
+			PaddingTop(1).
+			PaddingLeft(1).
+			PaddingRight(1)
 
 	// Content area
 	newContentStyle = lipgloss.NewStyle().
@@ -171,10 +173,10 @@ func (m tuiModel) View() string {
 	}
 
 	// Calculate heights
-	headerHeight := 10
-	commandBarHeight := 5
+	headerHeight := 12
+	commandBarHeight := 1
 	statusBarHeight := 1
-	contentHeight := m.height - headerHeight - commandBarHeight - statusBarHeight - 3
+	contentHeight := m.height - headerHeight - commandBarHeight - statusBarHeight
 
 	// Header
 	header := m.renderHeader()
