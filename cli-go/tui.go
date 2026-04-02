@@ -42,6 +42,31 @@ var (
 
 	newHintStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#00d4ff"))
+
+	// Status bar styles
+	statusBarInfoStyle = lipgloss.NewStyle().
+				Background(lipgloss.Color("#666666")).
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Padding(0, 2).
+				Bold(true)
+
+	statusBarSuccessStyle = lipgloss.NewStyle().
+				Background(lipgloss.Color("#00AA00")).
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Padding(0, 2).
+				Bold(true)
+
+	statusBarWarningStyle = lipgloss.NewStyle().
+				Background(lipgloss.Color("#CCAA00")).
+				Foreground(lipgloss.Color("#000000")).
+				Padding(0, 2).
+				Bold(true)
+
+	statusBarDangerStyle = lipgloss.NewStyle().
+				Background(lipgloss.Color("#CC0000")).
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Padding(0, 2).
+				Bold(true)
 )
 
 // View types
@@ -51,6 +76,16 @@ const (
 	viewHome     viewType = "home"
 	viewProjects viewType = "projects"
 	viewStats    viewType = "stats"
+)
+
+// Status types
+type statusType string
+
+const (
+	statusInfo    statusType = "info"
+	statusSuccess statusType = "success"
+	statusWarning statusType = "warning"
+	statusDanger  statusType = "danger"
 )
 
 // Commands available
@@ -69,12 +104,14 @@ var commands = []struct {
 
 // Main TUI model
 type tuiModel struct {
-	width   int
-	height  int
-	input   textinput.Model
-	view    viewType
-	message string
-	err     error
+	width         int
+	height        int
+	input         textinput.Model
+	view          viewType
+	message       string
+	err           error
+	statusType    statusType
+	statusMessage string
 }
 
 func newTUIModel() tuiModel {
@@ -85,8 +122,10 @@ func newTUIModel() tuiModel {
 	ti.Width = 50
 
 	return tuiModel{
-		input: ti,
-		view:  viewHome,
+		input:         ti,
+		view:          viewHome,
+		statusType:    statusInfo,
+		statusMessage: "Ready",
 	}
 }
 
@@ -130,7 +169,8 @@ func (m tuiModel) View() string {
 	// Calculate heights
 	headerHeight := 10
 	commandBarHeight := 5
-	contentHeight := m.height - headerHeight - commandBarHeight - 2
+	statusBarHeight := 1
+	contentHeight := m.height - headerHeight - commandBarHeight - statusBarHeight - 3
 
 	// Header
 	header := m.renderHeader()
@@ -141,12 +181,16 @@ func (m tuiModel) View() string {
 	// Command bar
 	commandBar := m.renderCommandBar()
 
+	// Status bar
+	statusBar := m.renderStatusBar()
+
 	// Join all parts vertically
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		header,
 		content,
 		commandBar,
+		statusBar,
 	)
 }
 
@@ -291,6 +335,36 @@ func (m tuiModel) renderCommandBar() string {
 	return newCommandBarContainerStyle.Render(b.String())
 }
 
+func (m tuiModel) renderStatusBar() string {
+	if m.statusMessage == "" {
+		return ""
+	}
+
+	// Select style based on status type
+	var style lipgloss.Style
+	var icon string
+
+	switch m.statusType {
+	case statusSuccess:
+		style = statusBarSuccessStyle
+		icon = "✓"
+	case statusWarning:
+		style = statusBarWarningStyle
+		icon = "⚠"
+	case statusDanger:
+		style = statusBarDangerStyle
+		icon = "✗"
+	default: // statusInfo
+		style = statusBarInfoStyle
+		icon = "ℹ"
+	}
+
+	message := fmt.Sprintf("%s  %s", icon, m.statusMessage)
+	
+	// Make it full width
+	return style.Width(m.width).Render(message)
+}
+
 func (m tuiModel) getHint() string {
 	input := strings.TrimSpace(m.input.Value())
 
@@ -320,23 +394,34 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 	case "list", "projects":
 		m.view = viewProjects
 		m.message = "✓ Showing projects"
+		m.statusType = statusSuccess
+		m.statusMessage = "Projects view loaded successfully"
 	case "stats", "statistics":
 		m.view = viewStats
 		m.message = "✓ Showing statistics"
+		m.statusType = statusInfo
+		m.statusMessage = "System statistics displayed"
 	case "home":
 		m.view = viewHome
 		m.message = "✓ Back to home"
+		m.statusType = statusInfo
+		m.statusMessage = "Navigated to home"
 	case "help":
 		m.view = viewHome
 		m.message = "✓ Showing help"
+		m.statusType = statusInfo
+		m.statusMessage = "Help information displayed"
 	case "quit", "exit":
 		m.message = "👋 Goodbye!"
-		// Could return tea.Quit here
+		m.statusType = statusWarning
+		m.statusMessage = "Use ESC or Ctrl+C to exit"
 	case "":
 		// Empty command, do nothing
 		return m
 	default:
 		m.message = fmt.Sprintf("❌ Unknown command: '%s'. Type 'help' for available commands.", cmd)
+		m.statusType = statusDanger
+		m.statusMessage = fmt.Sprintf("Command not found: '%s'", cmd)
 	}
 
 	return m
