@@ -474,6 +474,9 @@ cmd_create() {
         html)
             NGINX_CONF="html.conf"
             cp "$SCRIPT_DIR/shared/templates/docker-compose-html.yml" "$PROJECT_PATH/docker-compose.yml"
+            
+            # Replace PROJECT_NAME_PLACEHOLDER in docker-compose.yml
+            sed -i '' "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" "$PROJECT_PATH/docker-compose.yml"
             ;;
         *)
             # Laravel, WordPress, PHP use the unified template
@@ -503,6 +506,9 @@ cmd_create() {
             
             # Copy unified template
             cp "$SCRIPT_DIR/shared/templates/docker-compose-unified.yml" "$PROJECT_PATH/docker-compose.yml"
+            
+            # Replace PROJECT_NAME_PLACEHOLDER in docker-compose.yml
+            sed -i '' "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" "$PROJECT_PATH/docker-compose.yml"
             
             # Generate nginx.conf for shared PHP projects
             if [[ "$USE_SHARED_PHP" == true ]]; then

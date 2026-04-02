@@ -41,7 +41,8 @@ cmd_shell() {
     cd "$project_path"
     
     # Always use app container for consistent UX
-    $DOCKER_COMPOSE exec app bash
+    # Use -it for interactive terminal with proper TTY allocation
+    $DOCKER_COMPOSE exec -it app bash
 }
 
 cmd_artisan() {
