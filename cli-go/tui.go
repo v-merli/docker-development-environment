@@ -540,36 +540,45 @@ func (m tuiModel) renderCommandBar() string {
 }
 
 func (m tuiModel) renderStatusBar() string {
+	// Check if user is actively typing
+	currentInput := strings.TrimSpace(m.input.Value())
+	isTyping := currentInput != ""
+
 	// Select style based on status type
 	var style lipgloss.Style
 	var icon string
 	var message string
 
-	switch m.statusType {
-	case statusSuccess:
-		style = statusBarSuccessStyle
-		icon = "✓"
-	case statusWarning:
-		style = statusBarWarningStyle
-		icon = "⚠"
-	case statusDanger:
-		style = statusBarDangerStyle
-		icon = "✗"
-	default: // statusInfo
+	// If user is typing, always show hints with info style
+	if isTyping {
 		style = statusBarInfoStyle
 		icon = "ℹ"
-	}
-
-	// If we're in idle state (Ready), add hint
-	if m.statusMessage == "Ready" {
 		hint := m.getHint()
-		message = fmt.Sprintf("%s  %s - %s", icon, m.statusMessage, hint)
-	} else if m.statusMessage != "" {
-		message = fmt.Sprintf("%s  %s", icon, m.statusMessage)
+		message = fmt.Sprintf("%s  %s", icon, hint)
 	} else {
-		// No message, show hint by default
-		hint := m.getHint()
-		message = fmt.Sprintf("%s  Ready - %s", icon, hint)
+		// Not typing - show status message
+		switch m.statusType {
+		case statusSuccess:
+			style = statusBarSuccessStyle
+			icon = "✓"
+		case statusWarning:
+			style = statusBarWarningStyle
+			icon = "⚠"
+		case statusDanger:
+			style = statusBarDangerStyle
+			icon = "✗"
+		default: // statusInfo
+			style = statusBarInfoStyle
+			icon = "ℹ"
+		}
+
+		// Show message or default hint
+		if m.statusMessage == "Ready" || m.statusMessage == "" {
+			hint := m.getHint()
+			message = fmt.Sprintf("%s  Ready - %s", icon, hint)
+		} else {
+			message = fmt.Sprintf("%s  %s", icon, m.statusMessage)
+		}
 	}
 
 	// Make it full width
