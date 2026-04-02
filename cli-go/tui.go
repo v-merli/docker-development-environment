@@ -27,9 +27,13 @@ var (
 
 	// Command bar (bottom area)
 	newCommandBarContainerStyle = lipgloss.NewStyle().
-					BorderTop(true).
-					BorderBottom(true).
-					BorderForeground(lipgloss.Color("#FF0000")).
+					Border(lipgloss.Border{
+						Top:    "─",
+						Bottom: "─",
+						Left:   "",
+						Right:  "",
+					}).
+					BorderForeground(lipgloss.Color("#FFFFFF")).
 					Padding(0, 1)
 
 	newCommandPromptStyle = lipgloss.NewStyle().
