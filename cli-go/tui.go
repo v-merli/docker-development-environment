@@ -122,6 +122,7 @@ type tuiModel struct {
 	statusMessage string
 	exitConfirm   bool
 	scrollOffset  int
+	maxScroll     int // Maximum scroll offset for current content
 }
 
 func newTUIModel() tuiModel {
@@ -150,6 +151,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		// Recalculate maxScroll when window size changes
+		m.maxScroll = m.calculateMaxScroll()
 		return m, nil
 
 	case tea.KeyMsg:
@@ -176,6 +179,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.statusMessage = "Navigated back to home"
 			m.exitConfirm = false
 			m.scrollOffset = 0
+			m.maxScroll = m.calculateMaxScroll()
 			return m, nil
 
 		case "enter":
@@ -193,11 +197,17 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.scrollOffset > 0 {
 				m.scrollOffset--
 			}
+			m.exitConfirm = false
 			return m, nil
 
 		case "down", "j":
-			// Scroll down
+			// Scroll down (will be clamped in render)
 			m.scrollOffset++
+			// Limit to reasonable maximum to avoid overflow
+			if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
+				m.scrollOffset = m.maxScroll
+			}
+			m.exitConfirm = false
 			return m, nil
 
 		case "pgup":
@@ -206,21 +216,29 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.scrollOffset < 0 {
 				m.scrollOffset = 0
 			}
+			m.exitConfirm = false
 			return m, nil
 
 		case "pgdown":
 			// Page down (scroll down by 10 lines)
 			m.scrollOffset += 10
+			// Limit to reasonable maximum to avoid overflow
+			if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
+				m.scrollOffset = m.maxScroll
+			}
+			m.exitConfirm = false
 			return m, nil
 
 		case "home":
 			// Go to top
 			m.scrollOffset = 0
+			m.exitConfirm = false
 			return m, nil
 
 		case "end":
-			// Go to bottom (will be clamped in renderContent)
-			m.scrollOffset = 9999
+			// Go to bottom
+			m.scrollOffset = m.maxScroll
+			m.exitConfirm = false
 			return m, nil
 
 		default:
@@ -269,6 +287,51 @@ func (m tuiModel) View() string {
 		commandBar,
 		statusBar,
 	)
+}
+
+// Helper to calculate maxScroll based on current content
+func (m tuiModel) calculateMaxScroll() int {
+	if m.width == 0 || m.height == 0 {
+		return 0
+	}
+
+	// Calculate content height
+	headerHeight := 12
+	commandBarHeight := 1
+	statusBarHeight := 1
+	contentHeight := m.height - headerHeight - commandBarHeight - statusBarHeight
+
+	// Get raw content
+	var content string
+	switch m.view {
+	case viewHome:
+		content = m.renderHomeView()
+	case viewProjects:
+		content = m.renderProjectsView()
+	case viewStats:
+		content = m.renderStatsView()
+	case viewLongOutput:
+		content = m.renderLongOutputView()
+	default:
+		content = "Unknown view"
+	}
+
+	if m.message != "" {
+		content = m.message + "\n\n" + content
+	}
+
+	lines := strings.Split(content, "\n")
+	totalLines := len(lines)
+	visibleLines := contentHeight - 4
+	if visibleLines < 1 {
+		visibleLines = 1
+	}
+
+	maxScroll := totalLines - visibleLines
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	return maxScroll
 }
 
 func (m tuiModel) renderHeader() string {
@@ -603,6 +666,9 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		m.statusType = statusDanger
 		m.statusMessage = fmt.Sprintf("Command not found: '/%s'", cmd)
 	}
+
+	// Recalculate maxScroll after view change
+	m.maxScroll = m.calculateMaxScroll()
 
 	return m
 }
