@@ -589,18 +589,10 @@ func (m model) View() string {
 	}
 
 	// Normal view mode - render main TUI
-	// Header with logo - full width
+	// Header with logo
 	header := headerStyle.Width(m.width).Render(logoStyle.Render(m.logo))
 
-	// Projects list - use focused style if focused, full width
-	var projectsView string
-	if m.focusedSection == focusProjects {
-		projectsView = projectListFocusedStyle.Width(m.width).Render(m.projects.View())
-	} else {
-		projectsView = projectListStyle.Width(m.width).Render(m.projects.View())
-	}
-
-	// Command input - use focused style if focused
+	// Command bar - always at bottom (above status bar)
 	var commandView string
 	if m.focusedSection == focusCommand {
 		commandView = commandBarFocusedStyle.Width(m.width).Render(m.textInput.View())
@@ -608,19 +600,34 @@ func (m model) View() string {
 		commandView = commandBarStyle.Width(m.width).Render(m.textInput.View())
 	}
 
-	// Show autocomplete suggestions menu (Copilot CLI style)
-	var suggestionsView string
-	if m.showSuggestions && len(m.filteredCommands) > 0 && m.focusedSection == focusCommand {
-		var suggestions []string
+	// Status bar
+	var statusBar string
+	if m.errorMsg != "" {
+		statusBar = statusBarStyle.Width(m.width).Render(
+			errorStyle.Render("✗ ") + m.errorMsg,
+		)
+	} else if m.exitConfirm {
+		statusBar = statusBarStyle.Width(m.width).Render(
+			errorStyle.Render("⚠ Press Esc again to quit, or any other key to cancel"),
+		)
+	} else if m.statusMsg != "" {
+		statusBar = statusBarStyle.Width(m.width).Render(m.statusMsg)
+	} else {
+		statusBar = statusBarStyle.Width(m.width).Render("Type / to see commands | ↑↓ Navigate suggestions | Tab/Enter: Complete | Esc twice: Quit")
+	}
 
-		// Fixed window of 5 visible items with scrolling
-		maxVisible := 5
+	// Main content area - either projects list OR hints
+	var mainContent string
+
+	if m.showSuggestions && len(m.filteredCommands) > 0 && m.focusedSection == focusCommand {
+		// Show hints instead of projects
+		var suggestions []string
+		maxVisible := 8
 		totalItems := len(m.filteredCommands)
 
-		// Calculate scroll window - keep selected item visible
+		// Calculate visible window
 		startIdx := 0
 		if totalItems > maxVisible {
-			// Center the selected item in the window when possible
 			startIdx = m.selectedCmd - (maxVisible / 2)
 			if startIdx < 0 {
 				startIdx = 0
@@ -635,75 +642,45 @@ func (m model) View() string {
 			endIdx = totalItems
 		}
 
-		// Render visible window
+		// Render hints
 		for i := startIdx; i < endIdx; i++ {
 			cmd := m.filteredCommands[i]
 			var line string
 
 			if i == m.selectedCmd {
-				// Selected command - show with marker and highlighted
 				marker := suggestionItemMarker.Render("▋")
 				cmdText := suggestionItemSelectedStyle.Render(fmt.Sprintf("/%s", cmd.cmd))
 				desc := suggestionDescStyle.Render(cmd.desc)
 				line = fmt.Sprintf("  %s %s\t%s", marker, cmdText, desc)
 			} else {
-				// Unselected command - no marker, just spacing
 				cmdText := suggestionItemStyle.Render(fmt.Sprintf("/%s", cmd.cmd))
 				desc := suggestionDescStyle.Render(cmd.desc)
 				line = fmt.Sprintf("    %s\t%s", cmdText, desc)
 			}
-
 			suggestions = append(suggestions, line)
 		}
 
-		// Show scroll indicators
 		if totalItems > maxVisible {
-			scrollInfo := fmt.Sprintf("    (%d/%d - use ↑↓ to scroll)", m.selectedCmd+1, totalItems)
+			scrollInfo := fmt.Sprintf("    (%d/%d)", m.selectedCmd+1, totalItems)
 			suggestions = append(suggestions, suggestionDescStyle.Render(scrollInfo))
 		}
 
-		suggestionsView = strings.Join(suggestions, "\n")
-	}
-
-	// Status bar - show error if present, otherwise status message
-	var statusBar string
-	if m.errorMsg != "" {
-		statusBar = statusBarStyle.Width(m.width).Render(
-			errorStyle.Render("✗ ") + m.errorMsg,
-		)
-	} else if m.exitConfirm {
-		// Show exit confirmation message
-		statusBar = statusBarStyle.Width(m.width).Render(
-			errorStyle.Render("⚠ Press Esc again to quit, or any other key to cancel"),
-		)
-	} else if m.statusMsg != "" {
-		statusBar = statusBarStyle.Width(m.width).Render(m.statusMsg)
+		mainContent = strings.Join(suggestions, "\n")
 	} else {
-		statusBar = statusBarStyle.Width(m.width).Render("Ready")
+		// Show projects list
+		if m.focusedSection == focusProjects {
+			mainContent = m.projects.View()
+		} else {
+			mainContent = m.projects.View()
+		}
 	}
 
-	// Combine all sections - always show in same order with fixed layout
-	// Reserve space for hints area (6 lines) to keep layout stable
-	var hintsArea string
-	if suggestionsView != "" {
-		hintsArea = suggestionsView
-	} else {
-		// Empty space to maintain layout consistency
-		hintsArea = strings.Repeat("\n", 5)
-	}
-
-	content := lipgloss.JoinVertical(
-		lipgloss.Left,
-		header,
-		projectsView,
-		commandView,
-		hintsArea,
-	)
-
-	// Add status bar at bottom
+	// Final layout: header, content, command bar, status
 	fullView := lipgloss.JoinVertical(
 		lipgloss.Left,
-		content,
+		header,
+		mainContent,
+		commandView,
 		statusBar,
 	)
 
