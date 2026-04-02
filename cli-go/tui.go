@@ -49,6 +49,22 @@ var (
 	newHintStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#00d4ff"))
 
+	// Suggestions area styles
+	suggestionsContainerStyle = lipgloss.NewStyle().
+					Padding(0, 2).
+					MarginTop(0)
+
+	suggestionItemStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#CCCCCC"))
+
+	suggestionItemSelectedStyle = lipgloss.NewStyle().
+					Foreground(lipgloss.Color("#00d4ff")).
+					Background(lipgloss.Color("#333333")).
+					Bold(true)
+
+	suggestionDescStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#888888"))
+
 	// Status bar styles
 	statusBarInfoStyle = lipgloss.NewStyle().
 				Background(lipgloss.Color("#666666")).
@@ -112,17 +128,20 @@ var commands = []struct {
 
 // Main TUI model
 type tuiModel struct {
-	width         int
-	height        int
-	input         textinput.Model
-	view          viewType
-	message       string
-	err           error
-	statusType    statusType
-	statusMessage string
-	exitConfirm   bool
-	scrollOffset  int
-	maxScroll     int // Maximum scroll offset for current content
+	width                   int
+	height                  int
+	input                   textinput.Model
+	view                    viewType
+	message                 string
+	err                     error
+	statusType              statusType
+	statusMessage           string
+	exitConfirm             bool
+	scrollOffset            int
+	maxScroll               int // Maximum scroll offset for current content
+	showSuggestions         bool
+	selectedSuggestionIndex int
+	suggestions             []string
 }
 
 func newTUIModel() tuiModel {
@@ -186,14 +205,47 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Cancel exit confirmation on any input
 			m.exitConfirm = false
 
+			// If suggestions are shown and one is selected, use it
+			if m.showSuggestions && len(m.suggestions) > 0 {
+				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				m.showSuggestions = false
+				m.suggestions = nil
+				m.selectedSuggestionIndex = 0
+				return m, nil
+			}
+
 			// Execute command
 			command := strings.TrimSpace(m.input.Value())
 			m = m.executeCommand(command)
 			m.input.SetValue("")
+			m.showSuggestions = false
+			m.suggestions = nil
+			m.selectedSuggestionIndex = 0
+			return m, nil
+
+		case "tab":
+			// Navigate suggestions with Tab
+			if m.showSuggestions && len(m.suggestions) > 0 {
+				m.selectedSuggestionIndex = (m.selectedSuggestionIndex + 1) % len(m.suggestions)
+				// Update input with selected suggestion
+				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				return m, nil
+			}
 			return m, nil
 
 		case "up", "k":
-			// Scroll up
+			// If suggestions visible, navigate them instead of scrolling
+			if m.showSuggestions && len(m.suggestions) > 0 {
+				m.selectedSuggestionIndex--
+				if m.selectedSuggestionIndex < 0 {
+					m.selectedSuggestionIndex = len(m.suggestions) - 1
+				}
+				// Update input with selected suggestion
+				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				return m, nil
+			}
+
+			// Normal scroll up
 			if m.scrollOffset > 0 {
 				m.scrollOffset--
 			}
@@ -201,7 +253,15 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "down", "j":
-			// Scroll down (will be clamped in render)
+			// If suggestions visible, navigate them instead of scrolling
+			if m.showSuggestions && len(m.suggestions) > 0 {
+				m.selectedSuggestionIndex = (m.selectedSuggestionIndex + 1) % len(m.suggestions)
+				// Update input with selected suggestion
+				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				return m, nil
+			}
+
+			// Normal scroll down (will be clamped in render)
 			m.scrollOffset++
 			// Limit to reasonable maximum to avoid overflow
 			if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
@@ -252,7 +312,17 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Update input
+	oldValue := m.input.Value()
 	m.input, cmd = m.input.Update(msg)
+	newValue := m.input.Value()
+
+	// Update suggestions if input changed
+	if oldValue != newValue {
+		m.suggestions = m.getSuggestions()
+		m.showSuggestions = len(m.suggestions) > 0
+		m.selectedSuggestionIndex = 0
+	}
+
 	return m, cmd
 }
 
@@ -265,7 +335,15 @@ func (m tuiModel) View() string {
 	headerHeight := 12
 	commandBarHeight := 1
 	statusBarHeight := 1
-	contentHeight := m.height - headerHeight - commandBarHeight - statusBarHeight
+
+	// Calculate suggestions area height (0 if hidden)
+	suggestionsHeight := 0
+	if m.showSuggestions && len(m.suggestions) > 0 {
+		// Base height: 1 (top padding) + suggestions + 1 (bottom padding) + 1 (help text)
+		suggestionsHeight = 1 + len(m.suggestions) + 2
+	}
+
+	contentHeight := m.height - headerHeight - commandBarHeight - statusBarHeight - suggestionsHeight
 
 	// Header
 	header := m.renderHeader()
@@ -276,8 +354,23 @@ func (m tuiModel) View() string {
 	// Command bar
 	commandBar := m.renderCommandBar()
 
+	// Suggestions area (if visible)
+	suggestionsArea := m.renderSuggestionsArea()
+
 	// Status bar
 	statusBar := m.renderStatusBar()
+
+	// Join all parts vertically
+	if suggestionsArea != "" {
+		return lipgloss.JoinVertical(
+			lipgloss.Left,
+			header,
+			content,
+			commandBar,
+			suggestionsArea,
+			statusBar,
+		)
+	}
 
 	// Join all parts vertically
 	return lipgloss.JoinVertical(
@@ -539,6 +632,48 @@ func (m tuiModel) renderCommandBar() string {
 	return newCommandBarContainerStyle.Width(m.width).Render(content)
 }
 
+func (m tuiModel) renderSuggestionsArea() string {
+	if !m.showSuggestions || len(m.suggestions) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString("\n")
+
+	// Get command descriptions for display
+	cmdDescriptions := make(map[string]string)
+	for _, cmd := range commands {
+		cmdDescriptions["/"+cmd.name] = cmd.desc
+	}
+
+	// Render each suggestion
+	for i, suggestion := range m.suggestions {
+		var line string
+		desc := cmdDescriptions[suggestion]
+
+		if i == m.selectedSuggestionIndex {
+			// Selected item
+			line = suggestionItemSelectedStyle.Render(fmt.Sprintf("  ▸ %-12s", suggestion))
+			if desc != "" {
+				line += suggestionItemSelectedStyle.Render(fmt.Sprintf("  %s", desc))
+			}
+		} else {
+			// Normal item
+			line = suggestionItemStyle.Render(fmt.Sprintf("    %-12s", suggestion))
+			if desc != "" {
+				line += suggestionDescStyle.Render(fmt.Sprintf("  %s", desc))
+			}
+		}
+
+		b.WriteString(line + "\n")
+	}
+
+	b.WriteString("\n")
+	b.WriteString(suggestionDescStyle.Render("  ↑/↓ or Tab to navigate | Enter to select | Type to filter"))
+
+	return suggestionsContainerStyle.Render(b.String())
+}
+
 func (m tuiModel) renderStatusBar() string {
 	// Check if user is actively typing
 	currentInput := strings.TrimSpace(m.input.Value())
@@ -594,19 +729,11 @@ func (m tuiModel) getHint() string {
 
 	// Check if input starts with "/"
 	if strings.HasPrefix(input, "/") {
-		// Remove the "/" for matching
-		searchTerm := strings.TrimPrefix(input, "/")
+		// Get suggestions
+		suggestions := m.getSuggestions()
 
-		// Find matching commands
-		var matches []string
-		for _, cmd := range commands {
-			if strings.HasPrefix(cmd.name, searchTerm) {
-				matches = append(matches, "/"+cmd.name)
-			}
-		}
-
-		if len(matches) > 0 {
-			return fmt.Sprintf("Suggestions: %s", strings.Join(matches, ", "))
+		if len(suggestions) > 0 {
+			return fmt.Sprintf("Suggestions: %s", strings.Join(suggestions, ", "))
 		}
 
 		return "Press Enter to execute | ESC to quit"
@@ -614,6 +741,28 @@ func (m tuiModel) getHint() string {
 
 	// If no "/" prefix, suggest adding it
 	return "Commands must start with '/' (e.g., /help, /list)"
+}
+
+// getSuggestions returns matching command suggestions based on current input
+func (m tuiModel) getSuggestions() []string {
+	input := strings.TrimSpace(m.input.Value())
+
+	if input == "" || !strings.HasPrefix(input, "/") {
+		return nil
+	}
+
+	// Remove the "/" for matching
+	searchTerm := strings.ToLower(strings.TrimPrefix(input, "/"))
+
+	// Find matching commands
+	var matches []string
+	for _, cmd := range commands {
+		if strings.HasPrefix(cmd.name, searchTerm) {
+			matches = append(matches, "/"+cmd.name)
+		}
+	}
+
+	return matches
 }
 
 func (m tuiModel) executeCommand(cmd string) tuiModel {
