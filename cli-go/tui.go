@@ -29,8 +29,8 @@ var (
 	newCommandBarContainerStyle = lipgloss.NewStyle().
 					BorderTop(true).
 					BorderBottom(true).
-					BorderForeground(lipgloss.Color("#00d4ff")).
-					BorderStyle(lipgloss.DoubleBorder())
+					BorderForeground(lipgloss.Color("#FF0000")).
+					Padding(0, 1)
 
 	newCommandPromptStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#00d4ff")).
@@ -319,35 +319,18 @@ func (m tuiModel) renderStatsView() string {
 }
 
 func (m tuiModel) renderCommandBar() string {
-	var b strings.Builder
-
-	// Add top padding manually (since we removed it from style)
-	b.WriteString("\n")
-
 	// Command input with prompt
 	prompt := newCommandPromptStyle.Render(" ➜ ")
+	content := prompt + m.input.View()
 	
-	b.WriteString(prompt)
-	b.WriteString(m.input.View())
-	b.WriteString("\n\n")
-
-	// Status/hints
-	hint := m.getHint()
-	b.WriteString(" ")
-	b.WriteString(newStatusStyle.Render(hint))
-	b.WriteString("\n")
-
-	return newCommandBarContainerStyle.Render(b.String())
+	return newCommandBarContainerStyle.Width(m.width).Render(content)
 }
 
 func (m tuiModel) renderStatusBar() string {
-	if m.statusMessage == "" {
-		return ""
-	}
-
 	// Select style based on status type
 	var style lipgloss.Style
 	var icon string
+	var message string
 
 	switch m.statusType {
 	case statusSuccess:
@@ -364,7 +347,17 @@ func (m tuiModel) renderStatusBar() string {
 		icon = "ℹ"
 	}
 
-	message := fmt.Sprintf("%s  %s", icon, m.statusMessage)
+	// If we're in idle state (Ready), add hint
+	if m.statusMessage == "Ready" {
+		hint := m.getHint()
+		message = fmt.Sprintf("%s  %s - %s", icon, m.statusMessage, hint)
+	} else if m.statusMessage != "" {
+		message = fmt.Sprintf("%s  %s", icon, m.statusMessage)
+	} else {
+		// No message, show hint by default
+		hint := m.getHint()
+		message = fmt.Sprintf("%s  Ready - %s", icon, hint)
+	}
 	
 	// Make it full width
 	return style.Width(m.width).Render(message)
@@ -374,7 +367,7 @@ func (m tuiModel) getHint() string {
 	input := strings.TrimSpace(m.input.Value())
 
 	if input == "" {
-		return "💡 Hint: Type 'help' to see all commands | ESC to quit"
+		return "Type 'help' to see all commands | ESC to quit"
 	}
 
 	// Find matching commands
@@ -386,10 +379,10 @@ func (m tuiModel) getHint() string {
 	}
 
 	if len(matches) > 0 {
-		return fmt.Sprintf("💡 Suggestions: %s", strings.Join(matches, ", "))
+		return fmt.Sprintf("Suggestions: %s", strings.Join(matches, ", "))
 	}
 
-	return "💡 Press Enter to execute | ESC to quit"
+	return "Press Enter to execute | ESC to quit"
 }
 
 func (m tuiModel) executeCommand(cmd string) tuiModel {
