@@ -28,9 +28,9 @@ var (
 	// Command bar (bottom area)
 	newCommandBarContainerStyle = lipgloss.NewStyle().
 					BorderTop(true).
-					BorderForeground(lipgloss.Color("#874BFD")).
-					Padding(1, 2).
-					MarginTop(1)
+					BorderBottom(true).
+					BorderForeground(lipgloss.Color("#00d4ff")).
+					BorderStyle(lipgloss.DoubleBorder())
 
 	newCommandPromptStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#00d4ff")).
@@ -321,8 +321,11 @@ func (m tuiModel) renderStatsView() string {
 func (m tuiModel) renderCommandBar() string {
 	var b strings.Builder
 
+	// Add top padding manually (since we removed it from style)
+	b.WriteString("\n")
+
 	// Command input with prompt
-	prompt := newCommandPromptStyle.Render("➜ ")
+	prompt := newCommandPromptStyle.Render(" ➜ ")
 	
 	b.WriteString(prompt)
 	b.WriteString(m.input.View())
@@ -330,7 +333,9 @@ func (m tuiModel) renderCommandBar() string {
 
 	// Status/hints
 	hint := m.getHint()
+	b.WriteString(" ")
 	b.WriteString(newStatusStyle.Render(hint))
+	b.WriteString("\n")
 
 	return newCommandBarContainerStyle.Render(b.String())
 }
