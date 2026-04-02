@@ -118,6 +118,7 @@ type tuiModel struct {
 	err           error
 	statusType    statusType
 	statusMessage string
+	exitConfirm   bool
 }
 
 func newTUIModel() tuiModel {
@@ -150,15 +151,46 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "esc":
+		case "ctrl+c":
 			return m, tea.Quit
 
+		case "esc":
+			// If already in home view, require double ESC to quit
+			if m.view == viewHome {
+				if m.exitConfirm {
+					return m, tea.Quit
+				}
+				m.exitConfirm = true
+				m.statusType = statusWarning
+				m.statusMessage = "Press ESC again to quit, or any other key to cancel"
+				return m, nil
+			}
+
+			// If in other views, navigate back to home
+			m.view = viewHome
+			m.message = ""
+			m.statusType = statusInfo
+			m.statusMessage = "Navigated back to home"
+			m.exitConfirm = false
+			return m, nil
+
 		case "enter":
+			// Cancel exit confirmation on any input
+			m.exitConfirm = false
+
 			// Execute command
 			command := strings.TrimSpace(m.input.Value())
 			m = m.executeCommand(command)
 			m.input.SetValue("")
 			return m, nil
+
+		default:
+			// Cancel exit confirmation on any other key
+			if m.exitConfirm {
+				m.exitConfirm = false
+				m.statusType = statusInfo
+				m.statusMessage = "Ready"
+			}
 		}
 	}
 
