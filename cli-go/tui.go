@@ -79,9 +79,10 @@ var (
 type viewType string
 
 const (
-	viewHome     viewType = "home"
-	viewProjects viewType = "projects"
-	viewStats    viewType = "stats"
+	viewHome       viewType = "home"
+	viewProjects   viewType = "projects"
+	viewStats      viewType = "stats"
+	viewLongOutput viewType = "longoutput"
 )
 
 // Status types
@@ -101,6 +102,7 @@ var commands = []struct {
 }{
 	{"list", "List all projects"},
 	{"stats", "Show system statistics"},
+	{"test", "Test long output (simulates ls)"},
 	{"create", "Create a new project"},
 	{"start", "Start a project"},
 	{"stop", "Stop a project"},
@@ -119,6 +121,7 @@ type tuiModel struct {
 	statusType    statusType
 	statusMessage string
 	exitConfirm   bool
+	scrollOffset  int
 }
 
 func newTUIModel() tuiModel {
@@ -172,6 +175,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.statusType = statusInfo
 			m.statusMessage = "Navigated back to home"
 			m.exitConfirm = false
+			m.scrollOffset = 0
 			return m, nil
 
 		case "enter":
@@ -182,6 +186,41 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			command := strings.TrimSpace(m.input.Value())
 			m = m.executeCommand(command)
 			m.input.SetValue("")
+			return m, nil
+
+		case "up", "k":
+			// Scroll up
+			if m.scrollOffset > 0 {
+				m.scrollOffset--
+			}
+			return m, nil
+
+		case "down", "j":
+			// Scroll down
+			m.scrollOffset++
+			return m, nil
+
+		case "pgup":
+			// Page up (scroll up by 10 lines)
+			m.scrollOffset -= 10
+			if m.scrollOffset < 0 {
+				m.scrollOffset = 0
+			}
+			return m, nil
+
+		case "pgdown":
+			// Page down (scroll down by 10 lines)
+			m.scrollOffset += 10
+			return m, nil
+
+		case "home":
+			// Go to top
+			m.scrollOffset = 0
+			return m, nil
+
+		case "end":
+			// Go to bottom (will be clamped in renderContent)
+			m.scrollOffset = 9999
 			return m, nil
 
 		default:
@@ -256,6 +295,8 @@ func (m tuiModel) renderContent(height int) string {
 		content = m.renderProjectsView()
 	case viewStats:
 		content = m.renderStatsView()
+	case viewLongOutput:
+		content = m.renderLongOutputView()
 	default:
 		content = "Unknown view"
 	}
@@ -265,9 +306,47 @@ func (m tuiModel) renderContent(height int) string {
 		content = m.message + "\n\n" + content
 	}
 
+	// Handle scrolling for long content
+	lines := strings.Split(content, "\n")
+	totalLines := len(lines)
+
+	// Calculate visible area (subtract borders and padding)
+	visibleLines := height - 4
+	if visibleLines < 1 {
+		visibleLines = 1
+	}
+
+	// Clamp scroll offset
+	maxScroll := totalLines - visibleLines
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	if m.scrollOffset > maxScroll {
+		m.scrollOffset = maxScroll
+	}
+	if m.scrollOffset < 0 {
+		m.scrollOffset = 0
+	}
+
+	// Get visible lines
+	endLine := m.scrollOffset + visibleLines
+	if endLine > totalLines {
+		endLine = totalLines
+	}
+
+	visibleContent := strings.Join(lines[m.scrollOffset:endLine], "\n")
+
+	// Add scroll indicators
+	var scrollInfo string
+	if totalLines > visibleLines {
+		scrollInfo = fmt.Sprintf("\n\n  [%d-%d of %d lines | ↑/↓ or j/k to scroll | PgUp/PgDn | Home/End]",
+			m.scrollOffset+1, endLine, totalLines)
+		visibleContent += scrollInfo
+	}
+
 	// Set height for content
 	style := newContentStyle.Copy().Height(height)
-	return style.Render(content)
+	return style.Render(visibleContent)
 }
 
 func (m tuiModel) renderHomeView() string {
@@ -352,6 +431,39 @@ func (m tuiModel) renderStatsView() string {
 
 	b.WriteString("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 	b.WriteString("\nType 'help' for more commands.")
+
+	return b.String()
+}
+
+func (m tuiModel) renderLongOutputView() string {
+	var b strings.Builder
+
+	b.WriteString("📁 Long Output Test (Simulated ls -la)\n")
+	b.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+
+	// Generate 100 fake file entries to test scrolling/overflow
+	for i := 1; i <= 100; i++ {
+		permissions := "-rw-r--r--"
+		if i%7 == 0 {
+			permissions = "drwxr-xr-x"
+		}
+		size := fmt.Sprintf("%6d", 1024*(i%50+1))
+		date := "Apr  2 17:30"
+		filename := fmt.Sprintf("file_%03d.txt", i)
+
+		if i%7 == 0 {
+			filename = fmt.Sprintf("directory_%03d/", i)
+		} else if i%13 == 0 {
+			filename = fmt.Sprintf("very_long_filename_with_many_characters_%03d.config.backup.old", i)
+		}
+
+		b.WriteString(fmt.Sprintf("%s  1 user  staff  %s  %s  %s\n",
+			permissions, size, date, filename))
+	}
+
+	b.WriteString("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+	b.WriteString("\nTotal: 100 items\n")
+	b.WriteString("Type '/help' to go back or ESC to navigate back")
 
 	return b.String()
 }
@@ -457,21 +569,31 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		m.message = "✓ Showing projects"
 		m.statusType = statusSuccess
 		m.statusMessage = "Projects view loaded successfully"
+		m.scrollOffset = 0
 	case "stats", "statistics":
 		m.view = viewStats
 		m.message = "✓ Showing statistics"
 		m.statusType = statusInfo
 		m.statusMessage = "System statistics displayed"
+		m.scrollOffset = 0
+	case "test", "longoutput":
+		m.view = viewLongOutput
+		m.message = "✓ Showing long output test"
+		m.statusType = statusWarning
+		m.statusMessage = "Long output test - scroll to see overflow behavior"
+		m.scrollOffset = 0
 	case "home":
 		m.view = viewHome
 		m.message = "✓ Back to home"
 		m.statusType = statusInfo
 		m.statusMessage = "Navigated to home"
+		m.scrollOffset = 0
 	case "help":
 		m.view = viewHome
 		m.message = "✓ Showing help"
 		m.statusType = statusInfo
 		m.statusMessage = "Help information displayed"
+		m.scrollOffset = 0
 	case "quit", "exit":
 		m.message = "👋 Goodbye!"
 		m.statusType = statusWarning
