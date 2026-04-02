@@ -28,13 +28,13 @@ var (
 	// Command bar (bottom area)
 	newCommandBarContainerStyle = lipgloss.NewStyle().
 					Border(lipgloss.Border{
-						Top:    "─",
-						Bottom: "─",
-						Left:   "",
-						Right:  "",
-					}).
-					BorderForeground(lipgloss.Color("#FFFFFF")).
-					Padding(0, 1)
+			Top:    "─",
+			Bottom: "─",
+			Left:   "",
+			Right:  "",
+		}).
+		BorderForeground(lipgloss.Color("#FFFFFF")).
+		Padding(0, 1)
 
 	newCommandPromptStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#00d4ff")).
@@ -120,7 +120,7 @@ type tuiModel struct {
 
 func newTUIModel() tuiModel {
 	ti := textinput.New()
-	ti.Placeholder = "Type a command (try 'help')"
+	ti.Placeholder = "Type a command (try '/help')"
 	ti.Focus()
 	ti.CharLimit = 50
 	ti.Width = 50
@@ -254,7 +254,7 @@ func (m tuiModel) renderHomeView() string {
 	b.WriteString("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
 
 	for _, cmd := range commands {
-		b.WriteString(fmt.Sprintf("     %-12s  →  %s\n", cmd.name, cmd.desc))
+		b.WriteString(fmt.Sprintf("     /%-11s  →  %s\n", cmd.name, cmd.desc))
 	}
 
 	b.WriteString("\n  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
@@ -326,7 +326,7 @@ func (m tuiModel) renderCommandBar() string {
 	// Command input with prompt
 	prompt := newCommandPromptStyle.Render(" ➜ ")
 	content := prompt + m.input.View()
-	
+
 	return newCommandBarContainerStyle.Width(m.width).Render(content)
 }
 
@@ -362,7 +362,7 @@ func (m tuiModel) renderStatusBar() string {
 		hint := m.getHint()
 		message = fmt.Sprintf("%s  Ready - %s", icon, hint)
 	}
-	
+
 	// Make it full width
 	return style.Width(m.width).Render(message)
 }
@@ -371,26 +371,51 @@ func (m tuiModel) getHint() string {
 	input := strings.TrimSpace(m.input.Value())
 
 	if input == "" {
-		return "Type 'help' to see all commands | ESC to quit"
+		return "Type '/help' to see all commands | ESC to quit"
 	}
 
-	// Find matching commands
-	var matches []string
-	for _, cmd := range commands {
-		if strings.HasPrefix(cmd.name, input) {
-			matches = append(matches, cmd.name)
+	// Check if input starts with "/"
+	if strings.HasPrefix(input, "/") {
+		// Remove the "/" for matching
+		searchTerm := strings.TrimPrefix(input, "/")
+
+		// Find matching commands
+		var matches []string
+		for _, cmd := range commands {
+			if strings.HasPrefix(cmd.name, searchTerm) {
+				matches = append(matches, "/"+cmd.name)
+			}
 		}
+
+		if len(matches) > 0 {
+			return fmt.Sprintf("Suggestions: %s", strings.Join(matches, ", "))
+		}
+
+		return "Press Enter to execute | ESC to quit"
 	}
 
-	if len(matches) > 0 {
-		return fmt.Sprintf("Suggestions: %s", strings.Join(matches, ", "))
-	}
-
-	return "Press Enter to execute | ESC to quit"
+	// If no "/" prefix, suggest adding it
+	return "Commands must start with '/' (e.g., /help, /list)"
 }
 
 func (m tuiModel) executeCommand(cmd string) tuiModel {
-	cmd = strings.ToLower(strings.TrimSpace(cmd))
+	cmd = strings.TrimSpace(cmd)
+
+	// Empty command, do nothing
+	if cmd == "" {
+		return m
+	}
+
+	// Check if command starts with "/"
+	if !strings.HasPrefix(cmd, "/") {
+		m.message = "❌ Commands must start with '/'"
+		m.statusType = statusDanger
+		m.statusMessage = "Invalid command format. Use '/' prefix (e.g., /help, /list)"
+		return m
+	}
+
+	// Remove leading "/" and convert to lowercase
+	cmd = strings.ToLower(strings.TrimPrefix(cmd, "/"))
 
 	switch cmd {
 	case "list", "projects":
@@ -417,13 +442,10 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		m.message = "👋 Goodbye!"
 		m.statusType = statusWarning
 		m.statusMessage = "Use ESC or Ctrl+C to exit"
-	case "":
-		// Empty command, do nothing
-		return m
 	default:
-		m.message = fmt.Sprintf("❌ Unknown command: '%s'. Type 'help' for available commands.", cmd)
+		m.message = fmt.Sprintf("❌ Unknown command: '/%s'. Type '/help' for available commands.", cmd)
 		m.statusType = statusDanger
-		m.statusMessage = fmt.Sprintf("Command not found: '%s'", cmd)
+		m.statusMessage = fmt.Sprintf("Command not found: '/%s'", cmd)
 	}
 
 	return m
