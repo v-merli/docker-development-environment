@@ -421,48 +421,48 @@ func (m setupWizardModel) BuildSetupCommand() *exec.Cmd {
 	}
 
 	projectRoot := filepath.Dir(bashScriptPath)
-	
+
 	// Build command with configuration from wizard
 	// We'll call setup init with appropriate flags
 	args := []string{bashScriptPath, "setup", "init"}
-	
+
 	// Add non-interactive flag if we want to skip prompts
 	// (since wizard already collected the config)
 	// args = append(args, "--non-interactive")
-	
+
 	cmd := exec.Command("bash", args...)
 	cmd.Dir = projectRoot
-	
+
 	// IMPORTANT: Set stdin/stdout/stderr to use the terminal directly
 	// This allows sudo prompts and progress to be visible
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	// Set environment variables based on wizard answers
 	env := os.Environ()
-	
+
 	// Projects directory
 	if dir, ok := m.answers["projects_dir"]; ok {
 		env = append(env, fmt.Sprintf("PHPHARBOR_PROJECTS_DIR=%s", dir))
 	}
-	
+
 	// DNS enable/disable flag
 	if dns, ok := m.answers["dns_enable"]; ok && dns == "yes" {
 		env = append(env, "PHPHARBOR_SETUP_DNS=1")
 	}
-	
+
 	// Proxy enable/disable
 	if proxy, ok := m.answers["proxy_enable"]; ok && proxy == "yes" {
 		env = append(env, "PHPHARBOR_SETUP_PROXY=1")
 	}
-	
+
 	// MailPit enable/disable
 	if mailpit, ok := m.answers["mailpit_enable"]; ok && mailpit == "yes" {
 		env = append(env, "PHPHARBOR_SETUP_MAILPIT=1")
 	}
-	
+
 	cmd.Env = env
-	
+
 	return cmd
 }

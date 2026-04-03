@@ -296,10 +296,10 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						// Run pre-flight checks first
 						m.wizardActive = false
 						m.wizard = nil
-						
+
 						// Execute pre-flight checks
 						preflightOutput, err := wm.ExecuteSetup()
-						
+
 						if err != nil {
 							// Pre-flight checks failed, show error and return to home
 							m.view = viewHome
@@ -309,7 +309,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							m.scrollOffset = 0
 							return m, nil
 						}
-						
+
 						// Pre-flight checks passed, now launch setup with full terminal control
 						cmd := wm.BuildSetupCommand()
 						if cmd == nil {
@@ -320,7 +320,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							m.scrollOffset = 0
 							return m, nil
 						}
-						
+
 						// Suspend TUI and execute setup with tea.ExecProcess
 						return m, tea.ExecProcess(cmd, func(err error) tea.Msg {
 							if err != nil {
