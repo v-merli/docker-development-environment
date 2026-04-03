@@ -19,13 +19,11 @@ var (
 			PaddingLeft(1).
 			PaddingRight(1)
 
-	// Content area
+	// Content area (full-width, no horizontal padding to avoid width issues)
 	newContentStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("#874BFD")).
-			Padding(1, 2).
-			MarginLeft(2).
-			MarginRight(2)
+			Padding(1, 1)
 
 	// Command bar (bottom area)
 	newCommandBarContainerStyle = lipgloss.NewStyle().
@@ -598,8 +596,8 @@ func (m tuiModel) renderContent(height int) string {
 				visibleContent += scrollInfo
 			}
 
-			// Set height for content
-			style := newContentStyle.Copy().Height(height)
+			// Set height and width for content (full-width minus borders)
+			style := newContentStyle.Copy().Height(height).Width(m.width - 2)
 			return style.Render(visibleContent)
 		}
 		content = "Service wizard not initialized"
@@ -650,8 +648,8 @@ func (m tuiModel) renderContent(height int) string {
 		visibleContent += scrollInfo
 	}
 
-	// Set height for content
-	style := newContentStyle.Copy().Height(height)
+	// Set height and width for content (full-width minus borders)
+	style := newContentStyle.Copy().Height(height).Width(m.width - 2)
 	return style.Render(visibleContent)
 }
 
@@ -661,7 +659,7 @@ func (m tuiModel) renderHomeView() string {
 	b.WriteString("\n")
 	b.WriteString("  ╭────────────────────────────────────────────────────────────╮\n")
 	b.WriteString("  │                                                            │\n")
-	b.WriteString("  │  Welcome to PHPHarbor Terminal User Interface!            │\n")
+	b.WriteString("  │  Welcome to PHPHarbor Terminal User Interface!             │\n")
 	b.WriteString("  │                                                            │\n")
 	b.WriteString("  │  Manage your Docker-based PHP development projects         │\n")
 	b.WriteString("  │  with ease using this interactive interface.               │\n")
