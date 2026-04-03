@@ -223,7 +223,18 @@ func (m createWizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "esc":
+		case "ctrl+c":
+			m.cancelled = true
+			return m, nil
+
+		case "esc":
+			if m.reviewMode {
+				// In review mode, ESC goes back to editing
+				m.reviewMode = false
+				m.currentStep = 0
+				m.steps[m.currentStep].input.Focus()
+				return m, nil
+			}
 			m.cancelled = true
 			return m, nil
 
@@ -234,8 +245,8 @@ func (m createWizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			if m.reviewMode {
-				// Exit review mode
-				m.reviewMode = false
+				// In review mode, Enter confirms and completes
+				m.completed = true
 				return m, nil
 			}
 
@@ -252,12 +263,13 @@ func (m createWizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = ""
 			m.answers[currentStep.id] = value
 
-			// Move to next step or complete
+			// Move to next step or enter review mode
 			if m.currentStep < len(m.steps)-1 {
 				m.currentStep++
 				m.steps[m.currentStep].input.Focus()
 			} else {
-				m.completed = true
+				// All steps completed, enter review mode
+				m.reviewMode = true
 			}
 			return m, nil
 
@@ -315,11 +327,56 @@ func (m createWizardModel) View() string {
 func (m createWizardModel) renderStep() string {
 	var b strings.Builder
 
-	// Progress
-	progress := wizardProgressStyle.Render(
+	// Header with wizard title
+	header := wizardHeaderStyle.Render("🚀 PROJECT CREATION WIZARD")
+	b.WriteString(header + "\n\n")
+
+	// Visual progress bar with step indicators
+	var progressSteps []string
+	for i := range m.steps {
+		stepNum := fmt.Sprintf("%d", i+1)
+
+		if i < m.currentStep {
+			// Completed step
+			progressSteps = append(progressSteps,
+				wizardStepCompletedStyle.Render("✓ "+stepNum))
+		} else if i == m.currentStep {
+			// Current step
+			progressSteps = append(progressSteps,
+				wizardStepCurrentStyle.Render("▶ "+stepNum))
+		} else {
+			// Future step
+			progressSteps = append(progressSteps,
+				wizardStepFutureStyle.Render("○ "+stepNum))
+		}
+	}
+	progressBar := strings.Join(progressSteps, " ")
+	b.WriteString(progressBar + "\n\n")
+
+	// Step counter
+	stepLabel := wizardProgressStyle.Render(
 		fmt.Sprintf("Step %d of %d", m.currentStep+1, len(m.steps)),
 	)
-	b.WriteString(progress + "\n\n")
+	b.WriteString(stepLabel + "\n\n")
+
+	// Show previous answers (last 2 steps)
+	if m.currentStep > 0 {
+		b.WriteString(wizardLabelStyle.Render("Previous answers:") + "\n")
+
+		startIdx := m.currentStep - 2
+		if startIdx < 0 {
+			startIdx = 0
+		}
+
+		for i := startIdx; i < m.currentStep; i++ {
+			if answer, exists := m.answers[m.steps[i].id]; exists {
+				b.WriteString(fmt.Sprintf("  %s: %s\n",
+					wizardLabelStyle.Render(m.steps[i].title),
+					wizardAnswerStyle.Render(answer)))
+			}
+		}
+		b.WriteString("\n")
+	}
 
 	// Current step
 	step := m.steps[m.currentStep]
@@ -356,19 +413,36 @@ func (m createWizardModel) renderStep() string {
 func (m createWizardModel) renderReview() string {
 	var b strings.Builder
 
-	b.WriteString(wizardTitleStyle.Render("📋 Review Configuration") + "\n\n")
+	// Header
+	header := wizardHeaderStyle.Render("📋 REVIEW YOUR CONFIGURATION")
+	b.WriteString(header + "\n\n")
+
+	// All progress steps as completed
+	var progressSteps []string
+	for i := range m.steps {
+		stepNum := fmt.Sprintf("%d", i+1)
+		progressSteps = append(progressSteps,
+			wizardStepCompletedStyle.Render("✓ "+stepNum))
+	}
+	progressBar := strings.Join(progressSteps, " ")
+	b.WriteString(progressBar + "\n\n")
+
+	b.WriteString(wizardLabelStyle.Render("Please review your answers:") + "\n\n")
 
 	for i, step := range m.steps {
 		value := m.answers[step.id]
 		if value == "" {
-			value = lipgloss.NewStyle().Foreground(lipgloss.Color("#666666")).Render("(not set)")
+			value = wizardLabelStyle.Render("(not set)")
 		} else {
-			value = wizardSuccessStyle.Render(value)
+			value = wizardAnswerStyle.Render(value)
 		}
-		b.WriteString(fmt.Sprintf("  %d. %s: %s\n", i+1, step.title, value))
+		b.WriteString(fmt.Sprintf("%s. %s\n   %s\n\n",
+			wizardProgressStyle.Render(fmt.Sprintf("%d", i+1)),
+			wizardTitleStyle.Render(step.title),
+			value))
 	}
 
-	b.WriteString("\n" + wizardDescStyle.Render("Press any key to continue editing"))
+	b.WriteString("\n" + wizardDescStyle.Render("Press Esc to edit • Enter to confirm and create project"))
 	return b.String()
 }
 

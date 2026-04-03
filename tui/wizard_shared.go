@@ -48,6 +48,33 @@ var (
 	wizardSuccessStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#00FF00")).
 				Bold(true)
+
+	// Enhanced styles for progress bar
+	wizardStepCompletedStyle = lipgloss.NewStyle().
+					Foreground(lipgloss.Color("#00FF88")).
+					Bold(true)
+
+	wizardStepCurrentStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(lipgloss.Color("#874BFD")).
+				Bold(true).
+				Padding(0, 1)
+
+	wizardStepFutureStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#666666"))
+
+	wizardLabelStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#888888"))
+
+	wizardAnswerStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#00FF88")).
+				Bold(true)
+
+	wizardHeaderStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(lipgloss.Color("#874BFD")).
+				Padding(0, 2)
 )
 
 // createTextInput creates a new text input with default settings
