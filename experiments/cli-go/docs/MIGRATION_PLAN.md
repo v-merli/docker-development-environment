@@ -1,8 +1,257 @@
-# PHPHarbor - Piano di Migrazione da Bash a Go/TUI
+# PHPHarbor TUI - Piano di Implementazione
 
 ## Stato Attuale
 
-✅ **Completato nella fase sperimentale:**
+✅ **Fase Sperimentale Completata:**
+- TUI base funzionante con Bubble Tea
+- Sistema di wizard multi-step
+- Integrazione bash wrapper (tutti i comandi funzionano)
+- Scrolling verticale con scrollbar
+- Tabelle con lipgloss
+- Router CLI/TUI
+
+---
+
+## 🎯 Obiettivo: TUI come Interfaccia Grafica
+
+**Approccio:** TUI = Interfaccia grafica sopra PHPHarbor bash esistente
+
+### Filosofia
+
+```
+┌─────────────────────────────────────┐
+│          TUI (Go + Bubble Tea)      │
+│  - UI/UX ricca                      │
+│  - Wizard multi-step                │
+│  - Tables, scrolling, colors        │
+└──────────────┬──────────────────────┘
+               │ Wraps
+               ↓
+┌─────────────────────────────────────┐
+│       PHPHarbor Bash Scripts        │
+│  - Business logic esistente         │
+│  - Docker management                │
+│  - SSL, networking, etc.            │
+└─────────────────────────────────────┘
+```
+
+**NON riscriviamo funzionalità esistenti.**  
+**Miglioriamo solo l'interfaccia utente.**
+
+---
+
+## 📋 Piano di Implementazione (1-2 Settimane)
+
+### Settimana 1: Core TUI + Create Wizard
+
+**Obiettivi:**
+- ✅ Cleanup wizard (unificare in create_wizard.go)
+- ✅ Create wizard funzionante per `phpharbor create`
+- ✅ Migliorare visualizzazione output comandi
+- ✅ Testing base
+
+**Tasks:**
+- [ ] Rimuovere `advanced_wizard.go` (service wizard non essenziale)
+- [ ] Creare `create_wizard.go` semplificato
+- [ ] Integrare wizard in `phpharbor create`
+- [ ] Migliorare view per output comandi (formatting)
+- [ ] Test su progetti reali
+
+**Deliverable:** TUI con wizard create funzionante
+
+---
+
+### Settimana 2: Polish & Release
+
+**Obiettivi:**
+- Migliorare UX generale
+- Gestire edge cases
+- Documentazione finale
+- Preparare per merge
+
+**Tasks:**
+- [ ] Indicatori di loading per comandi lunghi
+- [ ] Gestione errori migliorata (colorata, human-readable)
+- [ ] Keybindings documentation
+- [ ] Cross-platform testing (macOS/Linux)
+- [ ] Release notes
+- [ ] Merge su main branch
+
+**Deliverable:** Release v0.1.0 pronta per produzione
+
+---
+
+## 🏗️ Architettura Finale
+
+```
+experiments/cli-go/
+├── main.go              # Entry point, router CLI/TUI
+├── tui.go               # TUI principale
+├── create_wizard.go     # Wizard per create (unico wizard)
+├── go.mod
+├── go.sum
+└── docs/
+    ├── README.md
+    ├── MIGRATION_PLAN.md         # Questo file
+    ├── GO_NATIVE_ROADMAP.md      # Piano futuro (Go nativo)
+    └── ...
+```
+
+**Totale file Go:** 3 (main, tui, create_wizard)  
+**Complessità:** BASSA
+
+---
+
+## 🎯 Feature Matrix
+
+| Feature | Implementazione | Priorità | Status |
+|---------|-----------------|----------|--------|
+| **TUI Core** | Bubble Tea | P0 | ✅ Done |
+| **Create wizard** | Go wizard + bash create.sh | P0 | 🚧 Todo |
+| **List projects** | Bash wrapper | P0 | ✅ Done |
+| **Start/stop** | Bash wrapper | P0 | ✅ Done |
+| **Stats** | Bash wrapper | P1 | ✅ Done |
+| **Shell/artisan** | Bash wrapper | P1 | ⏭️ Future |
+| **Service wizard** | ❌ Removed (not essential) | P3 | - |
+| **Go native** | ❌ See GO_NATIVE_ROADMAP.md | P4 | - |
+
+---
+
+## 💡 Miglioramenti UX (Opzionali ma nice-to-have)
+
+### Output Formatting
+
+**Ora:**
+```
+Command output:
+$ phpharbor list
+
+━━━ Available Projects ━━━
+
+○ Stopped  laravel-1
+       URL: http://laravel-1.test:8080
+...
+```
+
+**Miglioramento possibile:**
+- Parsing output e rendering come tabella lipgloss
+- Color coding (green=running, red=stopped)
+
+**Effort:** 1-2 ore
+
+---
+
+### Loading Indicators
+
+**Ora:**
+```
+⏳ Executing: phpharbor start myproject
+Please wait...
+```
+
+**Miglioramento:**
+- Spinner animato
+- Progress bar se possibile
+
+**Effort:** 1 ora
+
+---
+
+### Interactive Commands
+
+**Challenge:** Comandi come `phpharbor shell myproject` richiedono TTY interattivo
+
+**Soluzione attuale:** Non gestiti (user usa CLI normale)
+
+**Soluzione futura:**
+- Passthrough stdin/stdout/stderr
+- Uscire temporaneamente da TUI
+
+**Effort:** 3-4 ore
+
+---
+
+## 🚀 Release Process
+
+### v0.1.0 - TUI Wrapper (Settimana 2)
+
+**Include:**
+- TUI funzionante
+- Create wizard
+- Bash integration completa
+- Cross-platform builds (macOS, Linux)
+- Documentazione
+
+**Testing:**
+- Manual testing su progetti reali
+- macOS + Linux compatibility
+- Smooth upgrade da bash CLI
+
+**Release:**
+```bash
+# Build multi-platform
+GOOS=darwin GOARCH=amd64 go build -o phpharbor-darwin-amd64
+GOOS=darwin GOARCH=arm64 go build -o phpharbor-darwin-arm64
+GOOS=linux GOARCH=amd64 go build -o phpharbor-linux-amd64
+
+# Create release tarball
+tar czf phpharbor-v0.1.0-darwin-amd64.tar.gz phpharbor-darwin-amd64
+...
+
+# Upload to GitHub releases
+```
+
+---
+
+## 📊 Timeline Realistica
+
+| Settimana | Focus | Output |
+|-----------|-------|--------|
+| **1** | Create wizard + cleanup | Wizard funzionante |
+| **2** | Polish + testing | Release candidate |
+| **3** (buffer) | Bug fixes + docs | v0.1.0 final |
+
+**Totale:** 2-3 settimane max
+
+---
+
+## 🎓 Lessons Learned
+
+### Cosa Funziona
+
+✅ **Bash wrapper approach:** Riusa codice testato, zero regressions  
+✅ **Bubble Tea:** Framework TUI maturo e stabile  
+✅ **Single binary:** Deploy semplice  
+✅ **Incrementale:** Focus su UX invece di refactoring
+
+### What's Next
+
+🔮 **Futuro (se necessario):**
+- Go native implementation (vedi GO_NATIVE_ROADMAP.md)
+- Streaming real-time output
+- Plugin system
+- Remote project management
+
+---
+
+## 📝 Note Finali
+
+**Questo piano è realistico perché:**
+1. Non riscriviamo codice esistente
+2. Focus solo su UI/UX
+3. Riusiamo script bash testati
+4. Scope limitato e chiaro
+
+**Se emergono problemi di performance/manutenibilità:**
+→ Consultare GO_NATIVE_ROADMAP.md per porting completo
+
+---
+
+**Versione:** 2.0 (Rivisto)  
+**Data:** 3 Aprile 2026  
+**Status:** 🚀 PRONTO PER IMPLEMENTAZIONE  
+**Tempo Stimato:** 2-3 settimane  
+**Complessità:** BASSA-MEDIA
 - TUI base con Bubble Tea
 - Sistema di wizard interattivo multi-step
 - Integrazione con comandi bash esistenti (wrapper)

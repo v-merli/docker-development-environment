@@ -614,6 +614,10 @@ func (m advancedWizardModel) WasCancelled() bool {
 	return m.cancelled
 }
 
+func (m advancedWizardModel) IsInReviewMode() bool {
+	return m.reviewMode
+}
+
 // RenderForTUI renders the wizard content without external borders
 // to fit within the TUI's standard layout (with header and status bar)
 func (m advancedWizardModel) RenderForTUI() string {

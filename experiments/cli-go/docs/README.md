@@ -23,17 +23,19 @@ Modern Go implementation of PHPHarbor with full Terminal User Interface (TUI) us
 cli-go/
 ├── main.go              # Entry point, Cobra commands, routing
 ├── tui.go               # Main TUI application (Bubble Tea)
-├── advanced_wizard.go   # Service configuration wizard
-├── wizard.go            # Project creation wizard
-├── table.go             # Table rendering utilities
+├── create_wizard.go     # Project creation wizard (3-step)
 ├── docs/                # Documentation
-│   ├── MIGRATION_PLAN.md     # Complete migration roadmap
-│   ├── BASH_INTEGRATION.md   # Bash wrapper documentation
-│   ├── TUI_FEATURES.md       # TUI capabilities
-│   └── WIZARD_GUIDE.md       # Wizard usage guide
+│   ├── README.md              # This file
+│   ├── MIGRATION_PLAN.md      # Implementation roadmap (2-3 weeks)
+│   ├── GO_NATIVE_ROADMAP.md   # Future Go native porting (optional)
+│   ├── BASH_INTEGRATION.md    # Bash wrapper documentation
+│   ├── TUI_FEATURES.md        # TUI capabilities
+│   └── WIZARD_GUIDE.md        # Wizard usage guide
 ├── go.mod
 └── go.sum
 ```
+
+**Total:** 3 Go files, ~1,600 lines of code
 
 ## Dependencies
 

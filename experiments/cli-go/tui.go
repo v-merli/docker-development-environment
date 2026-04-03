@@ -100,7 +100,7 @@ const (
 	viewProjects      viewType = "projects"
 	viewStats         viewType = "stats"
 	viewLongOutput    viewType = "longoutput"
-	viewServiceWizard viewType = "servicewizard"
+	viewWizard        viewType = "wizard"
 	viewTable         viewType = "table"
 	viewCommandOutput viewType = "commandoutput"
 )
@@ -148,7 +148,7 @@ type tuiModel struct {
 	showSuggestions         bool
 	selectedSuggestionIndex int
 	suggestions             []string
-	wizard                  *advancedWizardModel // Embedded wizard
+	wizard                  tea.Model // Embedded wizard (can be createWizardModel or advancedWizardModel)
 	wizardActive            bool
 	commandOutput           string // Output from executed bash commands
 	commandRunning          bool   // True if a command is currently running
@@ -177,81 +177,108 @@ func (m tuiModel) Init() tea.Cmd {
 func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	// If wizard is active, delegate to wizard Update
+	// If wizard is active, handle special cases
 	if m.wizardActive && m.wizard != nil {
-		// Handle window size for wizard
-		if msg, ok := msg.(tea.WindowSizeMsg); ok {
-			m.width = msg.Width
-			m.height = msg.Height
-			m.wizard.width = msg.Width
-			m.wizard.height = msg.Height
+		// Handle window resize for wizard
+		if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
+			m.width = wsMsg.Width
+			m.height = wsMsg.Height
 			m.maxScroll = m.calculateMaxScroll()
+			// Also forward to wizard
+			wizardModel, wizardCmd := m.wizard.Update(msg)
+			m.wizard = wizardModel
+			return m, wizardCmd
 		}
 
-		// Handle scrolling keys BEFORE wizard (arrows are for scrolling, not text input cursor)
-		// Wizard uses Tab/Shift+Tab for navigation between steps
+		// Handle key messages
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			// ALWAYS handle scrolling keys in TUI, never delegate to wizard
 			switch keyMsg.String() {
 			case "up":
-				// Scroll up one line
 				if m.scrollOffset > 0 {
 					m.scrollOffset--
 				}
 				return m, nil
 			case "down":
-				// Scroll down one line
 				if m.scrollOffset < m.maxScroll {
 					m.scrollOffset++
 				}
 				return m, nil
 			case "pgup":
-				// Page up (scroll up by 10 lines)
 				m.scrollOffset -= 10
 				if m.scrollOffset < 0 {
 					m.scrollOffset = 0
 				}
 				return m, nil
 			case "pgdown":
-				// Page down (scroll down by 10 lines)
 				m.scrollOffset += 10
 				if m.scrollOffset > m.maxScroll {
 					m.scrollOffset = m.maxScroll
 				}
 				return m, nil
-				// Note: Home/End are NOT intercepted here so they can be used
-				// in the text input field to move cursor to start/end of line
+			case "home":
+				m.scrollOffset = 0
+				return m, nil
+			case "end":
+				m.scrollOffset = m.maxScroll
+				return m, nil
+			default:
+				// All other keys go to wizard
+				wizardModel, wizardCmd := m.wizard.Update(msg)
+				m.wizard = wizardModel
+
+				// Recalculate maxScroll as wizard content may have changed
+				m.maxScroll = m.calculateMaxScroll()
+
+				// Check completion/cancellation
+				if wm, ok := wizardModel.(createWizardModel); ok {
+					if wm.WasCompleted() {
+						m.wizardActive = false
+						m.view = viewHome
+						m.message = "✓ Project wizard completed!"
+						m.statusType = statusSuccess
+						m.statusMessage = "Create wizard completed successfully"
+						m.wizard = nil
+						m.scrollOffset = 0
+						return m, nil
+					} else if wm.WasCancelled() {
+						m.wizardActive = false
+						m.view = viewHome
+						m.message = "⚠ Wizard cancelled"
+						m.statusType = statusWarning
+						m.statusMessage = "Create wizard cancelled"
+						m.wizard = nil
+						m.scrollOffset = 0
+						return m, nil
+					}
+				} else if wm, ok := wizardModel.(advancedWizardModel); ok {
+					if wm.completed {
+						m.wizardActive = false
+						m.view = viewHome
+						m.message = "✓ Advanced service wizard completed!"
+						m.statusType = statusSuccess
+						m.statusMessage = "Advanced wizard completed successfully"
+						m.wizard = nil
+						m.scrollOffset = 0
+						return m, nil
+					} else if wm.cancelled {
+						m.wizardActive = false
+						m.view = viewHome
+						m.message = "⚠ Wizard cancelled"
+						m.statusType = statusWarning
+						m.statusMessage = "Advanced wizard cancelled"
+						m.wizard = nil
+						m.scrollOffset = 0
+						return m, nil
+					}
+				}
+				return m, wizardCmd
 			}
 		}
 
-		// Update wizard (will receive Tab/Shift+Tab, Enter, Esc, etc. but not arrows)
+		// Other messages (not key or window), delegate to wizard
 		wizardModel, wizardCmd := m.wizard.Update(msg)
-		if wm, ok := wizardModel.(advancedWizardModel); ok {
-			m.wizard = &wm
-
-			// Recalculate scroll when wizard state changes
-			m.maxScroll = m.calculateMaxScroll()
-
-			// Check if wizard is completed or cancelled
-			if m.wizard.WasCompleted() {
-				m.wizardActive = false
-				m.view = viewHome
-				m.message = "✓ Service configuration completed!"
-				m.statusType = statusSuccess
-				m.statusMessage = "Service wizard completed successfully"
-				m.wizard = nil
-				m.scrollOffset = 0
-				return m, nil
-			} else if m.wizard.WasCancelled() {
-				m.wizardActive = false
-				m.view = viewHome
-				m.message = "⚠ Service wizard cancelled"
-				m.statusType = statusWarning
-				m.statusMessage = "Wizard cancelled, returned to home"
-				m.wizard = nil
-				m.scrollOffset = 0
-				return m, nil
-			}
-		}
+		m.wizard = wizardModel
 		return m, wizardCmd
 	}
 
@@ -400,7 +427,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Update input (only if wizard is not active)
+	// Update input and track changes for suggestions (only if wizard not active)
 	if !m.wizardActive {
 		oldValue := m.input.Value()
 		m.input, cmd = m.input.Update(msg)
@@ -430,7 +457,7 @@ func (m tuiModel) View() string {
 	// Calculate suggestions area height (0 if hidden)
 	// Note: when wizard is active, we don't show suggestions
 	suggestionsHeight := 0
-	if !m.wizardActive && m.showSuggestions && len(m.suggestions) > 0 {
+	if m.showSuggestions && len(m.suggestions) > 0 {
 		// Base height: 1 (top padding) + suggestions + 1 (bottom padding) + 1 (help text)
 		suggestionsHeight = 1 + len(m.suggestions) + 2
 	}
@@ -477,7 +504,6 @@ func (m tuiModel) View() string {
 	)
 }
 
-// Helper to calculate maxScroll based on current content
 func (m tuiModel) calculateMaxScroll() int {
 	if m.width == 0 || m.height == 0 {
 		return 0
@@ -504,10 +530,9 @@ func (m tuiModel) calculateMaxScroll() int {
 		content = m.renderCommandOutputView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
-	case viewServiceWizard:
-		// Render wizard to calculate its actual height (especially important in review mode)
+	case viewWizard:
 		if m.wizard != nil {
-			content = m.wizard.RenderForTUI()
+			content = m.wizard.View()
 		} else {
 			content = ""
 		}
@@ -563,77 +588,12 @@ func (m tuiModel) renderContent(height int) string {
 		content = m.renderCommandOutputView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
-	case viewServiceWizard:
-		// Render wizard integrated in TUI layout
+	case viewWizard:
 		if m.wizard != nil {
-			// Don't add the message prefix for wizard view
-			wizardContent := m.wizard.RenderForTUI()
-
-			// Handle scrolling for wizard content
-			lines := strings.Split(wizardContent, "\n")
-			totalLines := len(lines)
-			visibleLines := height - 4
-			if visibleLines < 1 {
-				visibleLines = 1
-			}
-
-			// Apply scrolling if needed
-			startLine := m.scrollOffset
-			endLine := startLine + visibleLines
-
-			if endLine > totalLines {
-				endLine = totalLines
-			}
-			if startLine >= totalLines {
-				startLine = totalLines - 1
-				if startLine < 0 {
-					startLine = 0
-				}
-			}
-
-			var visibleContent string
-			if startLine < totalLines {
-				visibleContentLines := lines[startLine:endLine]
-				visibleContent = strings.Join(visibleContentLines, "\n")
-			}
-
-			// Prepare final content with optional vertical scrollbar
-			var finalContent string
-
-			if totalLines > visibleLines {
-				// Create vertical scrollbar
-				scrollbar := m.renderVerticalScrollbar(visibleLines, totalLines, startLine)
-
-				// Add scroll info at bottom
-				scrollInfo := fmt.Sprintf("\n\n%s Scroll: %d-%d of %d lines (↑/↓)",
-					newHintStyle.Render("↕"),
-					startLine+1,
-					endLine,
-					totalLines)
-				contentWithInfo := visibleContent + scrollInfo
-
-				// Calculate widths
-				scrollbarWidth := 2
-				contentWidth := m.width - 2 - scrollbarWidth - 2
-
-				// Style content and scrollbar as separate columns
-				contentStyle := lipgloss.NewStyle().Width(contentWidth)
-				scrollbarStyle := lipgloss.NewStyle().Width(scrollbarWidth).Align(lipgloss.Right)
-
-				styledContent := contentStyle.Render(contentWithInfo)
-				styledScrollbar := scrollbarStyle.Render(scrollbar)
-
-				// Join horizontally
-				finalContent = lipgloss.JoinHorizontal(lipgloss.Top, styledContent, styledScrollbar)
-			} else {
-				finalContent = visibleContent
-			}
-
-			// Apply border and final styling
-			style := newContentStyle.Copy().Height(height).Width(m.width - 2)
-			return style.Render(finalContent)
+			content = m.wizard.View()
+		} else {
+			content = ""
 		}
-		content = "Service wizard not initialized"
 	default:
 		content = "Unknown view"
 	}
@@ -1033,10 +993,8 @@ func (m tuiModel) renderCommandBar() string {
 		return newCommandBarContainerStyle.Width(m.width).Render(content)
 	}
 
-	// Command input with prompt
 	prompt := newCommandPromptStyle.Render(" ➜ ")
 	content := prompt + m.input.View()
-
 	return newCommandBarContainerStyle.Width(m.width).Render(content)
 }
 
@@ -1086,8 +1044,8 @@ func (m tuiModel) renderStatusBar() string {
 	// If wizard is active, show wizard-specific status
 	if m.wizardActive {
 		style := statusBarInfoStyle
-		icon := "🔧"
-		message := fmt.Sprintf("%s  Service Configuration Wizard Active - Use arrow keys to navigate", icon)
+		icon := "🧪"
+		message := fmt.Sprintf("%s  Wizard - Tab/Shift+Tab: navigate • Ctrl+R: review • ↑↓/PgUp/PgDn: scroll • Esc: cancel", icon)
 		return style.Width(m.width).Render(message)
 	}
 
@@ -1208,7 +1166,7 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 	args := parts[1:]
 
 	// Check if it's a PHPHarbor CLI command (delegate to binary)
-	cliCommands := []string{"list", "create", "start", "stop", "update", "reset", "setup", "projects"}
+	cliCommands := []string{"list", "start", "stop", "update", "reset", "setup", "projects"}
 	for _, cliCmd := range cliCommands {
 		if command == cliCmd {
 			return m.executePHPHarborCLI(command, args)
@@ -1229,17 +1187,29 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		m.statusType = statusSuccess
 		m.statusMessage = "PHP versions table displayed"
 		m.scrollOffset = 0
-	case "service", "wizard":
-		// Launch the service configuration wizard
+	case "service":
+		// Launch the advanced 8-step service wizard
 		wizard := newAdvancedServiceWizard()
 		wizard.width = m.width
 		wizard.height = m.height
-		m.wizard = &wizard
+		m.wizard = wizard
 		m.wizardActive = true
-		m.view = viewServiceWizard
+		m.view = viewWizard
 		m.message = ""
 		m.statusType = statusInfo
-		m.statusMessage = "Service wizard launched"
+		m.statusMessage = "Advanced service wizard launched (8 steps)"
+		m.scrollOffset = 0
+	case "wizard", "create":
+		// Launch the simple 3-step create wizard
+		wizard := newCreateWizard()
+		wizard.width = m.width
+		wizard.height = m.height
+		m.wizard = wizard
+		m.wizardActive = true
+		m.view = viewWizard
+		m.message = ""
+		m.statusType = statusInfo
+		m.statusMessage = "Project creation wizard launched (3 steps)"
 		m.scrollOffset = 0
 	case "test", "longoutput":
 		m.view = viewLongOutput
