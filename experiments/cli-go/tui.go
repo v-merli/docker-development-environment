@@ -181,47 +181,46 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.maxScroll = m.calculateMaxScroll()
 		}
 
-		// Intercept scrolling keys when wizard is in scrollable mode
+		// Intercept scrolling keys for wizard view
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
-			// Allow scrolling with Page Up/Down or j/k when wizard is scrollable
-			if m.wizard.IsScrollable() {
-				switch keyMsg.String() {
-				case "pgup", "K":
-					// Page up (scroll up by 10 lines)
-					m.scrollOffset -= 10
-					if m.scrollOffset < 0 {
-						m.scrollOffset = 0
-					}
-					return m, nil
-				case "pgdown", "J":
-					// Page down (scroll down by 10 lines)
-					m.scrollOffset += 10
-					if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
-						m.scrollOffset = m.maxScroll
-					}
-					return m, nil
-				case "k":
-					// Scroll up one line
-					if m.scrollOffset > 0 {
-						m.scrollOffset--
-					}
-					return m, nil
-				case "j":
-					// Scroll down one line
-					m.scrollOffset++
-					if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
-						m.scrollOffset = m.maxScroll
-					}
-					return m, nil
-				case "home", "g":
-					// Go to top
-					m.scrollOffset = 0
-					return m, nil
-				case "end", "G":
-					// Go to bottom
-					m.scrollOffset = m.maxScroll
-					return m, nil
+			// Allow scrolling with arrows, Page Up/Down, j/k, etc.
+			// Since wizard uses Tab/Shift+Tab for navigation, arrows are free for scrolling
+			switch keyMsg.String() {
+			case "up", "k":
+				// Scroll up one line
+				if m.scrollOffset > 0 {
+					m.scrollOffset--
 				}
+				return m, nil
+			case "down", "j":
+				// Scroll down one line
+				m.scrollOffset++
+				if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
+					m.scrollOffset = m.maxScroll
+				}
+				return m, nil
+			case "pgup", "K":
+				// Page up (scroll up by 10 lines)
+				m.scrollOffset -= 10
+				if m.scrollOffset < 0 {
+					m.scrollOffset = 0
+				}
+				return m, nil
+			case "pgdown", "J":
+				// Page down (scroll down by 10 lines)
+				m.scrollOffset += 10
+				if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
+					m.scrollOffset = m.maxScroll
+				}
+				return m, nil
+			case "home", "g":
+				// Go to top
+				m.scrollOffset = 0
+				return m, nil
+			case "end", "G":
+				// Go to bottom
+				m.scrollOffset = m.maxScroll
+				return m, nil
 			}
 		}
 
@@ -588,8 +587,8 @@ func (m tuiModel) renderContent(height int) string {
 			}
 
 			// Add scroll indicator if content is scrollable
-			if totalLines > visibleLines && m.wizard.IsScrollable() {
-				scrollInfo := fmt.Sprintf("\n\n%s Scroll: %d-%d of %d lines (PgUp/PgDn or j/k)",
+			if totalLines > visibleLines {
+				scrollInfo := fmt.Sprintf("\n\n%s Scroll: %d-%d of %d lines (↑/↓ arrows or PgUp/PgDn)",
 					newHintStyle.Render("↕"),
 					startLine+1,
 					endLine,

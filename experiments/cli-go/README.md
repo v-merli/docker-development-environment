@@ -72,11 +72,11 @@ The advanced wizard provides a professional UX for configuring custom services:
 ```
 
 **Key Features:**
-- 🔄 **Bidirectional Navigation**: Move forward/backward between questions
+- 🔄 **Bidirectional Navigation**: Tab/Shift+Tab to move between questions
 - ✏️ **Edit Answers**: Go back to modify previous responses
 - ✅ **Live Validation**: Instant feedback on input validity
 - 📋 **Review Mode**: See all answers before confirming (Ctrl+R)
-- 📜 **Smart Scrolling**: Vertical scrolling for long content (PgUp/PgDn, j/k)
+- 📜 **Always-On Scrolling**: Arrow keys for vertical scrolling at any time
 - 🎨 **Rich UI**: Progress indicators, color coding, clear feedback
 - 🚀 **Zero Context Switch**: Fully integrated in TUI, no separate commands
 

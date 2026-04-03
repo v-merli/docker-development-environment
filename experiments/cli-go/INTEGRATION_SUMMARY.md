@@ -130,24 +130,34 @@ if !m.wizardActive {
 
 ## Funzionalità di Scrolling
 
-Il wizard implementa un sistema di scrolling intelligente:
+Il wizard implementa un sistema di scrolling **sempre disponibile** con separazione chiara tra navigazione e scrolling:
 
-### Quando è Attivo
-Lo scrolling è disponibile quando il wizard è in:
-- **Review Mode** (Ctrl+R) - per vedere tutte le domande e risposte
-- **Final Summary** - per vedere configurazione completa e docker-compose
+### Navigazione tra Step
+- **Tab**: Avanti al prossimo step
+- **Shift+Tab**: Indietro allo step precedente  
+- **Enter**: Conferma risposta e procedi
+- **Ctrl+R**: Review Mode (vedi tutte le risposte)
 
-### Comandi di Scrolling
-- **Page Up/Page Down**: Scorri di 10 righe
+### Scrolling Verticale (sempre attivo)
+- **↑/↓**: Scorri di 1 riga
+- **Page Up/Down**: Scorri di 10 righe
 - **j/k**: Scorri di 1 riga (stile Vim)
 - **g/G** o **Home/End**: Vai all'inizio/fine
-- **↕ Indicatore**: Mostra "Scroll: X-Y of Z lines" quando disponibile
+- **↕ Indicatore**: Mostra "Scroll: X-Y of Z lines" quando necessario
+
+### Perché Questo Design?
+
+1. **Tab è standard** - Tutti i form usano Tab per navigare tra campi
+2. **Frecce sono naturali** - Movimento verticale intuitivo
+3. **Sempre disponibile** - Non serve aspettare la review mode per scrollare
+4. **Nessun conflitto** - Ogni tasto ha un significato univoco e costante
+5. **Prevedibile** - Il comportamento non cambia mai
 
 ### Implementazione Tecnica
-1. Flag `IsScrollable()` nel wizard indica quando lo scrolling è possibile
-2. TUI intercetta i tasti di scrolling solo in modalità scrollable
-3. Le frecce ↑/↓ continuano a funzionare per navigare tra step
-4. Indicatore visivo appare automaticamente quando il contenuto supera lo spazio
+1. Wizard non gestisce più le frecce ↑/↓
+2. TUI intercetta **sempre** le frecce per scrolling (non condizionale)
+3. Indicatore visivo appare quando `totalLines > visibleLines`
+4. Metodi `IsScrollable()` rimossi (non più necessari)
 
 ## Come Testare
 

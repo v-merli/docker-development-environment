@@ -276,7 +276,7 @@ func (m advancedWizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-		case "up", "shift+tab":
+		case "shift+tab":
 			if m.reviewMode {
 				return m, nil // No navigation in review mode
 			}
@@ -302,7 +302,7 @@ func (m advancedWizardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-		case "down", "tab":
+		case "tab":
 			if m.reviewMode {
 				return m, nil // No navigation in review mode
 			}
@@ -447,7 +447,7 @@ func (m advancedWizardModel) renderStep() string {
 
 	// Help text with enhanced navigation
 	help := wizardHelpStyle.Render(
-		"↑/↓: Navigate | Enter: Next/Confirm | Ctrl+R: Review All | Esc: Cancel",
+		"Tab/Shift+Tab: Navigate | Enter: Confirm | ↑/↓: Scroll | Ctrl+R: Review | Esc: Cancel",
 	)
 
 	// Combine all sections
@@ -614,21 +614,6 @@ func (m advancedWizardModel) WasCancelled() bool {
 	return m.cancelled
 }
 
-// IsScrollable returns true if the wizard is in a state where content might need scrolling
-func (m advancedWizardModel) IsScrollable() bool {
-	return m.reviewMode || m.completed
-}
-
-// IsReviewMode returns true if in review mode
-func (m advancedWizardModel) IsReviewMode() bool {
-	return m.reviewMode
-}
-
-// IsCompleted returns the completed state
-func (m advancedWizardModel) IsCompleted() bool {
-	return m.completed
-}
-
 // RenderForTUI renders the wizard content without external borders
 // to fit within the TUI's standard layout (with header and status bar)
 func (m advancedWizardModel) RenderForTUI() string {
@@ -726,7 +711,7 @@ func (m advancedWizardModel) renderStepForTUI() string {
 
 	// Help text with enhanced navigation
 	help := wizardHelpStyle.Render(
-		"↑/↓: Navigate | Enter: Next/Confirm | Ctrl+R: Review All | Esc: Cancel",
+		"Tab/Shift+Tab: Navigate | Enter: Confirm | ↑/↓: Scroll | Ctrl+R: Review | Esc: Cancel",
 	)
 
 	// Combine all sections (no external border)
@@ -779,7 +764,7 @@ func (m advancedWizardModel) renderReviewForTUI() string {
 
 	// Help text with scroll info
 	help := wizardHelpStyle.Render(
-		"Enter: Confirm & Create | Esc: Go Back & Edit | PgUp/PgDn: Scroll",
+		"Enter: Confirm & Create | Esc: Go Back & Edit | ↑/↓ or PgUp/PgDn: Scroll",
 	)
 
 	content := lipgloss.JoinVertical(
@@ -858,7 +843,7 @@ func (m advancedWizardModel) renderFinalSummaryForTUI() string {
 	}
 
 	// Next steps
-	nextSteps := "\n" + wizardHelpStyle.Render("Press ESC to return to home (PgUp/PgDn to scroll)")
+	nextSteps := "\n" + wizardHelpStyle.Render("Press ESC to return to home (↑/↓ or PgUp/PgDn to scroll)")
 
 	return successMsg + summary + dockerCompose + nextSteps
 }
