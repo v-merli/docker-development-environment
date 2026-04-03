@@ -541,6 +541,11 @@ func (m tuiModel) calculateMaxScroll() int {
 	statusBarHeight := 1
 	contentHeight := m.height - headerHeight - commandBarHeight - statusBarHeight
 
+	// Interactive confirm modal is not scrollable
+	if m.view == viewInteractiveConfirm {
+		return 0
+	}
+
 	// Get raw content
 	var content string
 	switch m.view {
@@ -556,8 +561,6 @@ func (m tuiModel) calculateMaxScroll() int {
 		content = m.renderCommandOutputView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
-	case viewInteractiveConfirm:
-		content = m.renderInteractiveConfirmModal()
 	case viewWizard:
 		if m.wizard != nil {
 			content = m.wizard.View()
@@ -619,10 +622,10 @@ func (m tuiModel) renderContent(height int) string {
 	case viewInteractiveConfirm:
 		// Render modal centered in content area with dark background
 		modal := m.renderInteractiveConfirmModal()
-		
+
 		// Place modal centered in available content area (no scrolling needed)
 		centeredModal := lipgloss.Place(m.width-2, height, lipgloss.Center, lipgloss.Center, modal, lipgloss.WithWhitespaceChars(" "), lipgloss.WithWhitespaceForeground(lipgloss.Color("#1a1a1a")))
-		
+
 		// Return immediately without scrolling logic
 		style := newContentStyle.Copy().Height(height).Width(m.width - 2)
 		return style.Render(centeredModal)
