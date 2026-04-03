@@ -1252,14 +1252,34 @@ func executePHPHarborCommand(command string, args ...string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get executable path: %w", err)
 	}
+	execPath, err = filepath.EvalSymlinks(execPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve symlinks: %w", err)
+	}
+	baseDir := filepath.Dir(execPath)
 
-	// Execute the phpharbor command (e.g., "./phpharbor list")
-	cmdArgs := append([]string{command}, args...)
-	cmd := exec.Command(execPath, cmdArgs...)
+	// Find phpharbor bash script by searching up the directory tree
+	bashScriptPath := ""
+	searchDir := baseDir
+	for i := 0; i < 5; i++ { // Search up to 5 levels
+		candidatePath := filepath.Join(searchDir, "phpharbor")
+		if _, err := os.Stat(candidatePath); err == nil {
+			bashScriptPath = candidatePath
+			break
+		}
+		searchDir = filepath.Dir(searchDir)
+	}
+
+	if bashScriptPath == "" {
+		return "", fmt.Errorf("phpharbor script not found (searched from %s)", baseDir)
+	}
+
+	// Execute the phpharbor bash script with command and args
+	cmdArgs := append([]string{bashScriptPath, command}, args...)
+	cmd := exec.Command("bash", cmdArgs...)
 
 	// Set working directory to project root
-	baseDir := filepath.Dir(execPath)
-	cmd.Dir = filepath.Join(baseDir, "..", "..")
+	cmd.Dir = filepath.Dir(bashScriptPath)
 
 	// Disable banner when called from TUI
 	cmd.Env = append(os.Environ(), "PHPHARBOR_NO_BANNER=1")

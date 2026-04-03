@@ -42,15 +42,32 @@ func executeBashScript(command string, args ...string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
+	execPath, err = filepath.EvalSymlinks(execPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve symlinks: %w", err)
+	}
 	baseDir := filepath.Dir(execPath)
 
-	// Path to main phpharbor bash script at project root
-	bashScriptPath := filepath.Join(baseDir, "..", "..", "phpharbor")
+	// Find phpharbor script by searching up the directory tree
+	bashScriptPath := ""
+	searchDir := baseDir
+	for i := 0; i < 5; i++ { // Search up to 5 levels
+		candidatePath := filepath.Join(searchDir, "phpharbor")
+		if _, err := os.Stat(candidatePath); err == nil {
+			bashScriptPath = candidatePath
+			break
+		}
+		searchDir = filepath.Dir(searchDir)
+	}
+
+	if bashScriptPath == "" {
+		return fmt.Errorf("phpharbor script not found (searched from %s)", baseDir)
+	}
 
 	// Execute the main phpharbor script with command and args
 	scriptArgs := append([]string{command}, args...)
 	cmd := exec.Command("bash", append([]string{bashScriptPath}, scriptArgs...)...)
-	cmd.Dir = filepath.Join(baseDir, "..", "..") // Run from project root
+	cmd.Dir = filepath.Dir(bashScriptPath) // Run from project root
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
