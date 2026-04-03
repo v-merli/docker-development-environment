@@ -30,21 +30,64 @@ func newCreateWizard() createWizardModel {
 			title:       "Project Name",
 			description: "Enter project name (lowercase, numbers, hyphens only)",
 			input:       createTextInput("my-project", 40),
+			options:     []string{},
 			validate:    validateProjectName,
 		},
 		{
 			id:          "type",
 			title:       "Project Type",
-			description: "Choose: laravel, wordpress, php, html",
+			description: "Choose one: laravel, wordpress, php, html",
 			input:       createTextInput("laravel", 40),
+			options:     []string{"laravel", "wordpress", "php", "html"},
 			validate:    validateProjectType,
 		},
 		{
 			id:          "php",
 			title:       "PHP Version",
-			description: "Choose: 7.3, 7.4, 8.1, 8.2, 8.3, 8.4, 8.5",
+			description: "Choose PHP version (skip for html)",
 			input:       createTextInput("8.3", 40),
+			options:     []string{"8.5", "8.4", "8.3", "8.2", "8.1", "7.4", "7.3", "skip"},
 			validate:    validatePHPVersion,
+		},
+		{
+			id:          "node",
+			title:       "Node.js Version (Laravel only)",
+			description: "Choose Node.js version or 'skip'",
+			input:       createTextInput("20", 40),
+			options:     []string{"20", "21", "18", "skip"},
+			validate:    validateNodeVersion,
+		},
+		{
+			id:          "database",
+			title:       "Database Configuration",
+			description: "Choose: none, shared, mysql, mariadb",
+			input:       createTextInput("mysql", 40),
+			options:     []string{"mysql", "mariadb", "shared", "none"},
+			validate:    validateDatabaseType,
+		},
+		{
+			id:          "db_version",
+			title:       "Database Version",
+			description: "Enter version or 'skip' (MySQL: 8.0/8.4/5.7, MariaDB: 11.4/10.11/10.6)",
+			input:       createTextInput("8.0", 40),
+			options:     []string{"8.0", "8.4", "5.7", "11.4", "10.11", "10.6", "skip"},
+			validate:    validateDatabaseVersion,
+		},
+		{
+			id:          "redis",
+			title:       "Redis Cache",
+			description: "Include dedicated Redis? (yes/no)",
+			input:       createTextInput("no", 40),
+			options:     []string{"no", "yes"},
+			validate:    validateYesNo,
+		},
+		{
+			id:          "ssl",
+			title:       "SSL Certificate",
+			description: "Generate SSL certificate? (yes/no)",
+			input:       createTextInput("yes", 40),
+			options:     []string{"yes", "no"},
+			validate:    validateYesNo,
 		},
 	}
 
@@ -85,6 +128,10 @@ func validateProjectType(ptype string) error {
 }
 
 func validatePHPVersion(version string) error {
+	version = strings.ToLower(strings.TrimSpace(version))
+	if version == "skip" {
+		return nil
+	}
 	valid := map[string]bool{
 		"7.3": true,
 		"7.4": true,
@@ -95,7 +142,68 @@ func validatePHPVersion(version string) error {
 		"8.5": true,
 	}
 	if !valid[version] {
-		return fmt.Errorf("invalid PHP version")
+		return fmt.Errorf("invalid PHP version (choose: 7.3-8.5 or 'skip')")
+	}
+	return nil
+}
+
+func validateNodeVersion(version string) error {
+	version = strings.ToLower(strings.TrimSpace(version))
+	if version == "skip" {
+		return nil
+	}
+	valid := map[string]bool{
+		"18": true,
+		"20": true,
+		"21": true,
+	}
+	if !valid[version] {
+		return fmt.Errorf("invalid Node version (choose: 18, 20, 21 or 'skip')")
+	}
+	return nil
+}
+
+func validateDatabaseType(dbtype string) error {
+	dbtype = strings.ToLower(strings.TrimSpace(dbtype))
+	valid := map[string]bool{
+		"none":    true,
+		"shared":  true,
+		"mysql":   true,
+		"mariadb": true,
+	}
+	if !valid[dbtype] {
+		return fmt.Errorf("invalid database type (choose: none, shared, mysql, mariadb)")
+	}
+	return nil
+}
+
+func validateDatabaseVersion(version string) error {
+	version = strings.ToLower(strings.TrimSpace(version))
+	if version == "skip" {
+		return nil
+	}
+	valid := map[string]bool{
+		// MySQL versions
+		"5.7": true,
+		"8.0": true,
+		"8.4": true,
+		// MariaDB versions
+		"10.4":  true,
+		"10.5":  true,
+		"10.6":  true,
+		"10.11": true,
+		"11.4":  true,
+	}
+	if !valid[version] {
+		return fmt.Errorf("invalid DB version (MySQL: 5.7/8.0/8.4, MariaDB: 10.4-11.4 or 'skip')")
+	}
+	return nil
+}
+
+func validateYesNo(answer string) error {
+	answer = strings.ToLower(strings.TrimSpace(answer))
+	if answer != "yes" && answer != "no" {
+		return fmt.Errorf("answer must be 'yes' or 'no'")
 	}
 	return nil
 }
@@ -217,16 +325,30 @@ func (m createWizardModel) renderStep() string {
 	step := m.steps[m.currentStep]
 	b.WriteString(wizardTitleStyle.Render(step.title) + "\n")
 	b.WriteString(wizardDescStyle.Render(step.description) + "\n")
+
+	// Show options if available
+	if len(step.options) > 0 {
+		optionsStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#00d4ff")).
+			Italic(true)
+		b.WriteString("\n" + optionsStyle.Render("Options: "+strings.Join(step.options, ", ")) + "\n")
+	}
+
 	b.WriteString(wizardInputStyle.Render(step.input.View()) + "\n")
 
 	// Error if any
 	if m.err != "" {
 		b.WriteString("\n" + wizardErrorStyle.Render("✗ "+m.err) + "\n")
+	} else if strings.TrimSpace(step.input.Value()) != "" {
+		// Show validation success if valid
+		if step.validate != nil && step.validate(strings.TrimSpace(step.input.Value())) == nil {
+			b.WriteString("\n" + wizardSuccessStyle.Render("✓ Valid") + "\n")
+		}
 	}
 
 	// Help
 	b.WriteString("\n")
-	b.WriteString(wizardDescStyle.Render("Tab: next • Shift+Tab: back • Ctrl+R: review • Esc: cancel"))
+	b.WriteString(wizardDescStyle.Render("Tab: next • Shift+Tab: back • Ctrl+R: review • Enter: confirm • Esc: cancel"))
 
 	return b.String()
 }
@@ -279,4 +401,71 @@ func (m createWizardModel) GetAnswers() map[string]string {
 
 func (m createWizardModel) IsInReviewMode() bool {
 	return m.reviewMode
+}
+
+// BuildCreateCommand builds the command arguments for phpharbor create
+func (m createWizardModel) BuildCreateCommand() []string {
+	args := []string{}
+
+	// Project name (required)
+	if name, ok := m.answers["name"]; ok && name != "" {
+		args = append(args, name)
+	}
+
+	// Project type --type
+	if ptype, ok := m.answers["type"]; ok && ptype != "" {
+		args = append(args, "--type", ptype)
+	}
+
+	// PHP version --php (skip for html or if 'skip')
+	if php, ok := m.answers["php"]; ok && php != "" && strings.ToLower(php) != "skip" {
+		if ptype, ok := m.answers["type"]; !ok || ptype != "html" {
+			args = append(args, "--php", php)
+		}
+	}
+
+	// Node version --node (only for laravel, skip if 'skip')
+	if node, ok := m.answers["node"]; ok && node != "" && strings.ToLower(node) != "skip" {
+		if ptype, ok := m.answers["type"]; ok && ptype == "laravel" {
+			args = append(args, "--node", node)
+		}
+	}
+
+	// Database configuration
+	if db, ok := m.answers["database"]; ok && db != "" {
+		switch strings.ToLower(db) {
+		case "none":
+			args = append(args, "--no-db")
+		case "shared":
+			args = append(args, "--shared-db")
+		case "mysql", "mariadb":
+			// Dedicated database
+			if dbver, ok := m.answers["db_version"]; ok && dbver != "" && strings.ToLower(dbver) != "skip" {
+				if db == "mysql" {
+					args = append(args, "--mysql", dbver)
+				} else if db == "mariadb" {
+					args = append(args, "--mariadb", dbver)
+				}
+			} else {
+				// Default version
+				if db == "mysql" {
+					args = append(args, "--mysql", "8.0")
+				} else {
+					args = append(args, "--mariadb", "11.4")
+				}
+			}
+		}
+	}
+
+	// Redis
+	if redis, ok := m.answers["redis"]; ok && strings.ToLower(redis) == "yes" {
+		args = append(args, "--redis")
+	}
+
+	// SSL
+	if ssl, ok := m.answers["ssl"]; ok && strings.ToLower(ssl) == "yes" {
+		args = append(args, "--ssl")
+	}
+
+	return args
 }

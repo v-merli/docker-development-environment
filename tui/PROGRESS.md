@@ -1,8 +1,8 @@
 # TUI Production - Progress Tracker
 
 **Branch:** `feature/go-tui-production`  
-**Status:** 20+ commits ahead of develop  
-**Last Updated:** 2026-04-03 (Fase 3 completata)
+**Status:** 23+ commits ahead of develop  
+**Last Updated:** 2026-04-03 (Advanced Create Wizard Implemented)
 
 ## ✅ Completato
 
@@ -29,6 +29,29 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 - [x] `service` - Gestione servizi progetto (add/remove/list/templates)
 - [x] `shared` - Gestione servizi condivisi (start/stop/status/logs)
 
+### Fase 4: SSL & System (4/4)
+- [x] `ssl` - SSL certificate management (setup/generate/verify/cleanup)
+- [x] `setup` - System setup wizard (dns/proxy/init/config/ports)
+- [x] `update` - Update management (check/install/changelog)
+- [x] `reset` - Docker environment reset (soft/hard/status)
+
+### Advanced Create Wizard (Enhanced)
+- [x] **Interactive project creation wizard** con 8 step configurabili:
+  1. Project Name (validazione lowercase/numbers/hyphens)
+  2. Project Type (laravel/wordpress/php/html)
+  3. PHP Version (7.3-8.5, skip per html)
+  4. Node.js Version (18/20/21, solo Laravel)
+  5. Database (none/shared/mysql/mariadb con versioni)
+  6. Database Version (skip se shared/none)
+  7. Redis Cache (yes/no)
+  8. SSL Certificate (yes/no)
+- [x] Navigazione avanzata (Tab/Shift+Tab tra step)
+- [x] Review mode (Ctrl+R) per rivedere tutte le risposte
+- [x] Validazione real-time con feedback visivo
+- [x] Mostra opzioni disponibili per ogni campo
+- [x] Conversione automatica risposte → argomenti bash command
+- [x] Esecuzione comando create e output nella TUI
+
 ### Integrazione Bash/TUI
 - [x] No args → TUI mode (`./phpharbor`)
 - [x] With args → CLI mode (`./phpharbor list`)
@@ -44,13 +67,7 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 
 ## 🚧 Prossimi Step
 
-### Fase 4: SSL & System (0/4)
-- [ ] `ssl [project]` - SSL setup
-- [ ] `setup` - Initial setup wizard
-- [ ] `system prune` - Cleanup Docker resources
-- [ ] `update` - Update php-harbor
-
-### Fase 5: Testing & Release (0/5)
+### Fase 5: Testing & Polish (0/5)
 - [ ] Test completo tutti i comandi
 - [ ] Test su diversi terminali
 - [ ] Update README.md
@@ -59,11 +76,12 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 
 ## 📊 Metriche
 
-- **Commits:** 20+ (da develop)
-- **Files changed:** 3 main files (tui.go, main.go, phpharbor)
-- **Lines of Go code:** ~1,800
-- **Binary size:** 4.8 MB
-- **Commands implemented:** 15/19
+- **Commits:** 23+ (da develop)
+- **Files changed:** 4 main files (tui.go, create_wizard.go, wizard_shared.go, main.go)
+- **Lines of Go code:** ~2,050
+- **Binary size:** ~4.8 MB
+- **Commands implemented:** 19/19 ✅ (100% CORE COMMANDS)
+- **Wizard steps:** 8 (advanced create wizard with full validation)
 
 ## 🔧 Setup dall'Altro PC
 
@@ -111,14 +129,49 @@ if m.view == viewInteractiveConfirm {
 }
 ```
 
+### Advanced Create Wizard Architecture
+Il wizard create è stato potenziato con 8 step configurabili:
+
+```go
+// Struttura wizard step
+type wizardStep struct {
+    id          string                 // Identificatore unico
+    title       string                 // Titolo visualizzato
+    description string                 // Descrizione del campo
+    input       textinput.Model        // Input utente
+    options     []string               // Opzioni disponibili
+    validate    func(string) error     // Funzione di validazione
+}
+
+// Build command arguments da risposte wizard
+func (m createWizardModel) BuildCreateCommand() []string {
+    args := []string{}
+    // Logica condizionale basata su risposte:
+    // - Skip Node.js se non Laravel
+    // - Skip PHP version se HTML
+    // - Database version solo se dedicated
+    // - Costruisce --type, --php, --node, --mysql/--mariadb, --redis, --ssl
+    return args
+}
+```
+
+**Features wizard:**
+- Navigazione Tab/Shift+Tab tra step
+- Review mode (Ctrl+R) per rivedere risposte
+- Validazione real-time con feedback visivo ✓/✗
+- Display opzioni disponibili per ogni campo
+- Esecuzione automatica comando create al completamento
+
 ## 🎯 Prossima Sessione
 
-**Fase 3 completata!** ✅
+**Fase 4 completata!** ✅ **TUTTI I COMANDI CORE IMPLEMENTATI!** 🎉
 
-Iniziare con **Fase 4: SSL & System**. Questi comandi sono più complessi:
-- `ssl` richiede interazione con certificati e configurazione nginx
-- `setup` è un wizard interattivo per il setup iniziale
-- `system prune` è più semplice (cleanup Docker)
-- `update` gestisce gli aggiornamenti di php-harbor
+**Fase 5: Testing & Polish** è l'ultima fase prima del merge:
+- Test completo di tutti i comandi in scenari reali
+- Test su diversi terminali (iTerm2, Terminal.app, Alacritty, etc.)
+- Verifica compatibilità cross-platform
+- Update della documentazione (README.md, docs/)
+- Preparazione per il merge in develop
+- Release notes per il changelog
 
-Stima tempo: 45-60 minuti per completare Fase 4.
+Stima tempo: 1-2 ore per testing completo e documentazione.

@@ -133,13 +133,17 @@ var commands = []struct {
 	{"queue", "Manage queue worker"},
 	{"quit", "Exit TUI"},
 	{"remove", "Remove a project"},
+	{"reset", "Reset Docker environment (soft/hard)"},
 	{"restart", "Restart a project"},
 	{"service", "Manage project services (add/remove/list)"},
+	{"setup", "System setup (dns/proxy/init)"},
 	{"shared", "Manage shared services (start/stop/status)"},
 	{"shell", "Open shell in PHP container"},
+	{"ssl", "SSL certificate management"},
 	{"start", "Start a project"},
 	{"stats", "Show system statistics"},
 	{"stop", "Stop a project"},
+	{"update", "Check/install updates"},
 	{"wizard", "Create new project (wizard)"},
 }
 
@@ -247,13 +251,34 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Check completion/cancellation
 				if wm, ok := wizardModel.(createWizardModel); ok {
 					if wm.WasCompleted() {
+						// Build command arguments from wizard answers
+						args := wm.BuildCreateCommand()
+
+						// Execute the create command
 						m.wizardActive = false
-						m.view = viewHome
-						m.message = "✓ Project wizard completed!"
-						m.statusType = statusSuccess
-						m.statusMessage = "Create wizard completed successfully"
 						m.wizard = nil
+						m.commandRunning = true
+						m.currentCommand = fmt.Sprintf("phpharbor create %s", strings.Join(args, " "))
+						m.view = viewCommandOutput
+						m.statusType = statusInfo
+						m.statusMessage = "Creating project..."
 						m.scrollOffset = 0
+
+						// Execute the command
+						output, err := executePHPHarborCommand("create", args...)
+
+						if err != nil {
+							m.commandOutput = fmt.Sprintf("Command output:\n%s\n\nError: %v", output, err)
+							m.statusType = statusDanger
+							m.statusMessage = "Project creation failed"
+						} else {
+							m.commandOutput = output
+							m.statusType = statusSuccess
+							m.statusMessage = "Project created successfully!"
+						}
+
+						m.commandRunning = false
+						m.maxScroll = m.calculateMaxScroll()
 						return m, nil
 					} else if wm.WasCancelled() {
 						m.wizardActive = false
@@ -1335,8 +1360,10 @@ func (m tuiModel) executeCommand(cmd string) (tuiModel, tea.Cmd) {
 		"artisan", "composer", "npm", "queue",
 		// Service management (Phase 3)
 		"service", "shared",
-		// System commands
-		"update", "reset", "setup", "projects",
+		// SSL & System commands (Phase 4)
+		"ssl", "setup", "update", "reset", "stats",
+		// Other
+		"projects", "convert",
 	}
 	for _, cliCmd := range cliCommands {
 		if command == cliCmd {
