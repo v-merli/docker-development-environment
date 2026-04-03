@@ -1,8 +1,8 @@
 # TUI Production - Progress Tracker
 
 **Branch:** `feature/go-tui-production`  
-**Status:** 20 commits ahead of develop  
-**Last Updated:** 2026-04-03
+**Status:** 20+ commits ahead of develop  
+**Last Updated:** 2026-04-03 (Fase 3 completata)
 
 ## ✅ Completato
 
@@ -25,6 +25,10 @@
 
 _⭐ = Comando interattivo con suspend-resume pattern_
 
+### Fase 3: Service Management (2/2)
+- [x] `service` - Gestione servizi progetto (add/remove/list/templates)
+- [x] `shared` - Gestione servizi condivisi (start/stop/status/logs)
+
 ### Integrazione Bash/TUI
 - [x] No args → TUI mode (`./phpharbor`)
 - [x] With args → CLI mode (`./phpharbor list`)
@@ -39,16 +43,6 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 - [x] Modal overlay vertical alignment
 
 ## 🚧 Prossimi Step
-
-### Fase 3: Service Management (0/2)
-- [ ] `service` command wrapper
-  - [ ] `service add <name>` - Aggiungi servizio custom
-  - [ ] `service remove <name>` - Rimuovi servizio
-  - [ ] `service list` - Lista servizi custom
-- [ ] `shared` command wrapper
-  - [ ] `shared start <service>` - Avvia servizio shared
-  - [ ] `shared stop <service>` - Ferma servizio shared
-  - [ ] `shared status` - Status servizi shared
 
 ### Fase 4: SSL & System (0/4)
 - [ ] `ssl [project]` - SSL setup
@@ -65,11 +59,11 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 
 ## 📊 Metriche
 
-- **Commits:** 20 (da develop)
+- **Commits:** 20+ (da develop)
 - **Files changed:** 3 main files (tui.go, main.go, phpharbor)
-- **Lines of Go code:** ~1,750
+- **Lines of Go code:** ~1,800
 - **Binary size:** 4.8 MB
-- **Commands implemented:** 13/19
+- **Commands implemented:** 15/19
 
 ## 🔧 Setup dall'Altro PC
 
@@ -119,6 +113,12 @@ if m.view == viewInteractiveConfirm {
 
 ## 🎯 Prossima Sessione
 
-Iniziare con **Fase 3: Service Management**. I comandi `service` e `shared` hanno sub-comandi quindi richiedono gestione args più complessa rispetto alle fasi precedenti.
+**Fase 3 completata!** ✅
 
-Stima tempo: 30-40 minuti per completare Fase 3.
+Iniziare con **Fase 4: SSL & System**. Questi comandi sono più complessi:
+- `ssl` richiede interazione con certificati e configurazione nginx
+- `setup` è un wizard interattivo per il setup iniziale
+- `system prune` è più semplice (cleanup Docker)
+- `update` gestisce gli aggiornamenti di php-harbor
+
+Stima tempo: 45-60 minuti per completare Fase 4.

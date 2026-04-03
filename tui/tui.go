@@ -134,7 +134,8 @@ var commands = []struct {
 	{"quit", "Exit TUI"},
 	{"remove", "Remove a project"},
 	{"restart", "Restart a project"},
-	{"service", "Configure service (wizard)"},
+	{"service", "Manage project services (add/remove/list)"},
+	{"shared", "Manage shared services (start/stop/status)"},
 	{"shell", "Open shell in PHP container"},
 	{"start", "Start a project"},
 	{"stats", "Show system statistics"},
@@ -1332,6 +1333,8 @@ func (m tuiModel) executeCommand(cmd string) (tuiModel, tea.Cmd) {
 		"list", "start", "stop", "restart", "remove", "logs", "info",
 		// Development tools (Phase 2 - non-interactive)
 		"artisan", "composer", "npm", "queue",
+		// Service management (Phase 3)
+		"service", "shared",
 		// System commands
 		"update", "reset", "setup", "projects",
 	}
@@ -1355,7 +1358,7 @@ func (m tuiModel) executeCommand(cmd string) (tuiModel, tea.Cmd) {
 		m.statusType = statusSuccess
 		m.statusMessage = "PHP versions table displayed"
 		m.scrollOffset = 0
-	case "wizard", "create", "service":
+	case "wizard", "create":
 		// Launch the simple 3-step create wizard
 		wizard := newCreateWizard()
 		wizard.width = m.width
