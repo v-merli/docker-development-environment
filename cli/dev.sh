@@ -96,17 +96,17 @@ cmd_composer() {
     
     cd "$project_path"
     
-    # Check if project uses shared PHP
-    if uses_shared_php "$project_path"; then
-        php_version=$(grep "^PHP_VERSION=" ".env" 2>/dev/null | cut -d'=' -f2)
-        if [ -n "$php_version" ]; then
-            print_info "Using shared PHP $php_version..."
-            docker exec php-$php_version-shared bash -c "cd /var/www/projects/$project/app && composer $*"
-            return
-        fi
+    # Always use app container for consistent UX
+    $DOCKER_COMPOSE exec app composer "$@"
+}
+
+cmd_npm() {
+    if [ -z "$1" ]; then
+        print_error "Specify the project name"
+        echo "Usage: ./phpharbor npm <project> <command>"
+        exit 1
     fi
     
-    # Always use app container for consistent UX
     local project=$1
     shift
     local project_path="$PROJECTS_DIR/$project"
