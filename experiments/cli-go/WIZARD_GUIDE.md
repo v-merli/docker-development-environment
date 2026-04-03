@@ -70,6 +70,17 @@ oppure
 - **Ctrl+R**: Attiva la modalità di revisione per vedere tutte le risposte
 - **Esc**: Annulla e torna al menu principale
 
+#### 📜 Scrolling del Contenuto
+Quando il wizard entra in modalità Review o mostra il riepilogo finale, il contenuto può essere più alto dello spazio disponibile. In questi casi:
+- **Page Up/Page Down**: Scorri su/giù di 10 righe
+- **j/k**: Scorri su/giù di 1 riga (stile Vim)
+- **g/G** o **Home/End**: Vai all'inizio/fine del contenuto
+- **Indicatore visivo**: Mostra "↕ Scroll: X-Y of Z lines" quando lo scrolling è disponibile
+
+Lo scrolling è automaticamente disponibile in:
+- **Modalità Review** (Ctrl+R) - per vedere tutte le risposte
+- **Riepilogo finale** - per vedere configurazione e docker-compose completo
+
 #### 📊 Indicatori di Progresso
 - Barra di progresso visuale che mostra:
   - **✓** Domande completate (verde)
@@ -172,6 +183,12 @@ Per le domande con opzioni predefinite, vengono mostrate:
 💡 **Correggi errori facilmente**: Torna indietro con ↑ invece di ricominciare da capo
 
 💡 **Opzioni predefinite**: Molti campi hanno valori di default ragionevoli
+
+💡 **Scrolling intelligente**: Usa Page Up/Down per navigare contenuti lunghi nella modalità review
+
+💡 **Vim-style navigation**: Se preferisci, usa j/k invece di frecce per lo scrolling
+
+💡 **Scroll veloce**: Usa Home/End (o g/G) per saltare all'inizio/fine del contenuto
 
 ## Integrazione nel Workflow
 

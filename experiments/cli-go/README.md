@@ -76,6 +76,7 @@ The advanced wizard provides a professional UX for configuring custom services:
 - ✏️ **Edit Answers**: Go back to modify previous responses
 - ✅ **Live Validation**: Instant feedback on input validity
 - 📋 **Review Mode**: See all answers before confirming (Ctrl+R)
+- 📜 **Smart Scrolling**: Vertical scrolling for long content (PgUp/PgDn, j/k)
 - 🎨 **Rich UI**: Progress indicators, color coding, clear feedback
 - 🚀 **Zero Context Switch**: Fully integrated in TUI, no separate commands
 

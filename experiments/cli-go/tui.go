@@ -178,12 +178,60 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.height = msg.Height
 			m.wizard.width = msg.Width
 			m.wizard.height = msg.Height
+			m.maxScroll = m.calculateMaxScroll()
+		}
+
+		// Intercept scrolling keys when wizard is in scrollable mode
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			// Allow scrolling with Page Up/Down or j/k when wizard is scrollable
+			if m.wizard.IsScrollable() {
+				switch keyMsg.String() {
+				case "pgup", "K":
+					// Page up (scroll up by 10 lines)
+					m.scrollOffset -= 10
+					if m.scrollOffset < 0 {
+						m.scrollOffset = 0
+					}
+					return m, nil
+				case "pgdown", "J":
+					// Page down (scroll down by 10 lines)
+					m.scrollOffset += 10
+					if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
+						m.scrollOffset = m.maxScroll
+					}
+					return m, nil
+				case "k":
+					// Scroll up one line
+					if m.scrollOffset > 0 {
+						m.scrollOffset--
+					}
+					return m, nil
+				case "j":
+					// Scroll down one line
+					m.scrollOffset++
+					if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
+						m.scrollOffset = m.maxScroll
+					}
+					return m, nil
+				case "home", "g":
+					// Go to top
+					m.scrollOffset = 0
+					return m, nil
+				case "end", "G":
+					// Go to bottom
+					m.scrollOffset = m.maxScroll
+					return m, nil
+				}
+			}
 		}
 
 		// Update wizard
 		wizardModel, wizardCmd := m.wizard.Update(msg)
 		if wm, ok := wizardModel.(advancedWizardModel); ok {
 			m.wizard = &wm
+
+			// Recalculate scroll when wizard state changes
+			m.maxScroll = m.calculateMaxScroll()
 
 			// Check if wizard is completed or cancelled
 			if m.wizard.WasCompleted() {
@@ -193,6 +241,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.statusType = statusSuccess
 				m.statusMessage = "Service wizard completed successfully"
 				m.wizard = nil
+				m.scrollOffset = 0
 				return m, nil
 			} else if m.wizard.WasCancelled() {
 				m.wizardActive = false
@@ -201,6 +250,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.statusType = statusWarning
 				m.statusMessage = "Wizard cancelled, returned to home"
 				m.wizard = nil
+				m.scrollOffset = 0
 				return m, nil
 			}
 		}
@@ -533,8 +583,18 @@ func (m tuiModel) renderContent(height int) string {
 
 			var visibleContent string
 			if startLine < totalLines {
-				visibleLines := lines[startLine:endLine]
-				visibleContent = strings.Join(visibleLines, "\n")
+				visibleContentLines := lines[startLine:endLine]
+				visibleContent = strings.Join(visibleContentLines, "\n")
+			}
+
+			// Add scroll indicator if content is scrollable
+			if totalLines > visibleLines && m.wizard.IsScrollable() {
+				scrollInfo := fmt.Sprintf("\n\n%s Scroll: %d-%d of %d lines (PgUp/PgDn or j/k)",
+					newHintStyle.Render("↕"),
+					startLine+1,
+					endLine,
+					totalLines)
+				visibleContent += scrollInfo
 			}
 
 			// Set height for content

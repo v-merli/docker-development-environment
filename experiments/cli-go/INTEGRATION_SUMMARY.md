@@ -123,8 +123,31 @@ if !m.wizardActive {
 ✅ Command bar disabilitata durante wizard
 ✅ Status bar mostra stato wizard
 ✅ Navigazione tra step funzionante
+✅ **Scrolling verticale** in modalità review e summary
+✅ **Indicatori visivi** di scroll quando necessario
 ✅ Ritorno alla home con ESC
 ✅ Layout consistente con altre viste
+
+## Funzionalità di Scrolling
+
+Il wizard implementa un sistema di scrolling intelligente:
+
+### Quando è Attivo
+Lo scrolling è disponibile quando il wizard è in:
+- **Review Mode** (Ctrl+R) - per vedere tutte le domande e risposte
+- **Final Summary** - per vedere configurazione completa e docker-compose
+
+### Comandi di Scrolling
+- **Page Up/Page Down**: Scorri di 10 righe
+- **j/k**: Scorri di 1 riga (stile Vim)
+- **g/G** o **Home/End**: Vai all'inizio/fine
+- **↕ Indicatore**: Mostra "Scroll: X-Y of Z lines" quando disponibile
+
+### Implementazione Tecnica
+1. Flag `IsScrollable()` nel wizard indica quando lo scrolling è possibile
+2. TUI intercetta i tasti di scrolling solo in modalità scrollable
+3. Le frecce ↑/↓ continuano a funzionare per navigare tra step
+4. Indicatore visivo appare automaticamente quando il contenuto supera lo spazio
 
 ## Come Testare
 
