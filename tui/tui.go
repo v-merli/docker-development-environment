@@ -279,6 +279,21 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.maxScroll = m.calculateMaxScroll()
 		return m, nil
 
+	case interactiveCommandFinishedMsg:
+		// Interactive command (shell/mysql) has finished, TUI resumed
+		if msg.err != nil {
+			m.message = fmt.Sprintf("❌ Command failed: %v", msg.err)
+			m.statusType = statusDanger
+			m.statusMessage = "Interactive command failed"
+		} else {
+			m.message = "✓ Returned from interactive command"
+			m.statusType = statusSuccess
+			m.statusMessage = "Interactive command completed"
+		}
+		m.view = viewHome
+		m.scrollOffset = 0
+		return m, nil
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
@@ -321,12 +336,12 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// Execute command
 			command := strings.TrimSpace(m.input.Value())
-			m = m.executeCommand(command)
+			m, execCmd := m.executeCommand(command)
 			m.input.SetValue("")
 			m.showSuggestions = false
 			m.suggestions = nil
 			m.selectedSuggestionIndex = 0
-			return m, nil
+			return m, execCmd
 
 		case "tab":
 			// Navigate suggestions with Tab
@@ -1136,12 +1151,12 @@ func (m tuiModel) getSuggestions() []string {
 	return matches
 }
 
-func (m tuiModel) executeCommand(cmd string) tuiModel {
+func (m tuiModel) executeCommand(cmd string) (tuiModel, tea.Cmd) {
 	cmd = strings.TrimSpace(cmd)
 
 	// Empty command, do nothing
 	if cmd == "" {
-		return m
+		return m, nil
 	}
 
 	// Check if command starts with "/"
@@ -1149,14 +1164,14 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		m.message = "❌ Commands must start with '/'"
 		m.statusType = statusDanger
 		m.statusMessage = "Invalid command format. Use '/' prefix (e.g., /help, /list)"
-		return m
+		return m, nil
 	}
 
 	// Remove leading "/" and parse command with arguments
 	cmdLine := strings.TrimPrefix(cmd, "/")
 	parts := strings.Fields(cmdLine)
 	if len(parts) == 0 {
-		return m
+		return m, nil
 	}
 
 	command := strings.ToLower(parts[0])
@@ -1173,7 +1188,7 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		command = aliasTarget
 	}
 
-	// Handle interactive commands that need a new terminal tab
+	// Handle interactive commands that need terminal control (suspend TUI)
 	interactiveCommands := []string{"shell", "mysql"}
 	for _, interactiveCmd := range interactiveCommands {
 		if command == interactiveCmd {
@@ -1192,7 +1207,7 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 	}
 	for _, cliCmd := range cliCommands {
 		if command == cliCmd {
-			return m.executePHPHarborCLI(command, args)
+			return m.executePHPHarborCLI(command, args), nil
 		}
 	}
 
@@ -1253,7 +1268,7 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 	// Recalculate maxScroll after view change
 	m.maxScroll = m.calculateMaxScroll()
 
-	return m
+	return m, nil
 }
 
 // executePHPHarborCommand executes a phpharbor CLI command and returns its output
@@ -1306,30 +1321,69 @@ func executePHPHarborCommand(command string, args ...string) (string, error) {
 	return string(output), err
 }
 
-// executeInteractiveCommand handles commands that need a new terminal tab (shell, mysql)
-func (m tuiModel) executeInteractiveCommand(command string, args []string) tuiModel {
-	// Try to open in new terminal tab
-	success, _ := openCommandInNewTab(command, args...)
-
-	if success {
-		// Successfully opened in new tab
-		m.message = fmt.Sprintf("✓ Opened /%s in new terminal tab", command)
-		m.statusType = statusSuccess
-		m.statusMessage = fmt.Sprintf("Command launched in new tab: %s %s", command, strings.Join(args, " "))
-		m.view = viewHome
-		m.scrollOffset = 0
-	} else {
-		// Failed to open - show fallback instructions
-		fallbackMsg := buildFallbackMessage(command, args)
-		m.commandOutput = fallbackMsg
-		m.view = viewCommandOutput
-		m.statusType = statusWarning
-		m.statusMessage = "Could not auto-open terminal - manual action required"
-		m.scrollOffset = 0
-		m.maxScroll = m.calculateMaxScroll()
+// executeInteractiveCommand handles commands that need terminal control (shell, mysql)
+// Uses tea.ExecProcess to suspend TUI, run command, then resume
+func (m tuiModel) executeInteractiveCommand(command string, args []string) (tuiModel, tea.Cmd) {
+	// Build the command to execute
+	bashScriptPath, err := findPHPHarborScriptForExec()
+	if err != nil {
+		m.message = fmt.Sprintf("❌ Error: %v", err)
+		m.statusType = statusDanger
+		m.statusMessage = "Failed to locate phpharbor script"
+		return m, nil
 	}
 
-	return m
+	// Create exec command
+	projectRoot := filepath.Dir(bashScriptPath)
+	cmdArgs := append([]string{bashScriptPath, command}, args...)
+
+	cmd := exec.Command("bash", cmdArgs...)
+	cmd.Dir = projectRoot
+
+	// Return tea.ExecProcess which will:
+	// 1. Suspend TUI (clear screen)
+	// 2. Execute command with full terminal control
+	// 3. Resume TUI when command exits
+	return m, tea.ExecProcess(cmd, func(err error) tea.Msg {
+		if err != nil {
+			return interactiveCommandFinishedMsg{err: err}
+		}
+		return interactiveCommandFinishedMsg{err: nil}
+	})
+}
+
+// interactiveCommandFinishedMsg is sent when interactive command completes
+type interactiveCommandFinishedMsg struct {
+	err error
+}
+
+// findPHPHarborScriptForExec finds the bash script (same logic as executeBashScript)
+func findPHPHarborScriptForExec() (string, error) {
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("failed to get executable path: %w", err)
+	}
+	execPath, err = filepath.EvalSymlinks(execPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve symlinks: %w", err)
+	}
+	baseDir := filepath.Dir(execPath)
+
+	// Search up the directory tree
+	searchDir := filepath.Dir(baseDir)
+	for i := 0; i < 5; i++ {
+		candidatePath := filepath.Join(searchDir, "phpharbor")
+		if stat, err := os.Stat(candidatePath); err == nil {
+			absCandidate, _ := filepath.Abs(candidatePath)
+			absExec, _ := filepath.Abs(execPath)
+			if absCandidate != absExec && stat.Mode()&0111 != 0 {
+				return candidatePath, nil
+			}
+		}
+		searchDir = filepath.Dir(searchDir)
+	}
+
+	return "", fmt.Errorf("phpharbor bash script not found")
 }
 
 // executePHPHarborCLI wraps PHPHarbor CLI command execution for TUI
