@@ -598,7 +598,35 @@ func (m tuiModel) renderContent(height int) string {
 
 			// Set height and width for content (full-width minus borders)
 			style := newContentStyle.Copy().Height(height).Width(m.width - 2)
-			return style.Render(visibleContent)
+			renderedContent := style.Render(visibleContent)
+
+			// Add scrollbar overlay if content is scrollable
+			if totalLines > visibleLines {
+				// Generate scrollbar
+				scrollbarHeight := height - 4
+				scrollbar := m.renderScrollbar(scrollbarHeight, totalLines, startLine)
+
+				// Split rendered content into lines
+				contentLines := strings.Split(renderedContent, "\n")
+				scrollbarLines := strings.Split(scrollbar, "\n")
+
+				// Insert scrollbar into content at the right position
+				scrollbarIdx := 0
+				for i := 2; i < len(contentLines) && scrollbarIdx < len(scrollbarLines); i++ {
+					if i >= len(contentLines)-2 {
+						break
+					}
+					line := contentLines[i]
+					if len(line) > 0 {
+						contentLines[i] = line[:len(line)-1] + scrollbarLines[scrollbarIdx] + line[len(line)-1:]
+						scrollbarIdx++
+					}
+				}
+
+				renderedContent = strings.Join(contentLines, "\n")
+			}
+
+			return renderedContent
 		}
 		content = "Service wizard not initialized"
 	default:
@@ -640,17 +668,85 @@ func (m tuiModel) renderContent(height int) string {
 
 	visibleContent := strings.Join(lines[m.scrollOffset:endLine], "\n")
 
-	// Add scroll indicators
-	var scrollInfo string
+	// Add scroll info
 	if totalLines > visibleLines {
-		scrollInfo = fmt.Sprintf("\n\n  [%d-%d of %d lines | ↑/↓ arrows | PgUp/PgDn | Home/End]",
-			m.scrollOffset+1, endLine, totalLines)
+		// Calculate scrollbar position for mini indicator
+		scrollPercentage := float64(m.scrollOffset) / float64(maxScroll)
+		if maxScroll == 0 {
+			scrollPercentage = 0
+		}
+
+		// Create simple scroll indicator with bar
+		scrollbarIndicator := m.renderMiniScrollbar(scrollPercentage)
+
+		scrollInfo := fmt.Sprintf("\n\n  [%d-%d of %d] %s",
+			m.scrollOffset+1, endLine, totalLines, scrollbarIndicator)
 		visibleContent += scrollInfo
 	}
 
 	// Set height and width for content (full-width minus borders)
 	style := newContentStyle.Copy().Height(height).Width(m.width - 2)
 	return style.Render(visibleContent)
+}
+
+// renderMiniScrollbar creates a compact horizontal scrollbar indicator
+func (m tuiModel) renderMiniScrollbar(percentage float64) string {
+	barWidth := 20
+	filled := int(float64(barWidth) * percentage)
+
+	bar := "["
+	for i := 0; i < barWidth; i++ {
+		if i <= filled {
+			bar += lipgloss.NewStyle().Foreground(lipgloss.Color("#00d4ff")).Render("█")
+		} else {
+			bar += lipgloss.NewStyle().Foreground(lipgloss.Color("#444444")).Render("░")
+		}
+	}
+	bar += "]"
+
+	return bar
+}
+
+// renderScrollbar creates a visual scrollbar indicator
+func (m tuiModel) renderScrollbar(barHeight, totalLines, scrollOffset int) string {
+	if barHeight < 3 {
+		barHeight = 3 // Minimum height
+	}
+
+	var bar strings.Builder
+
+	// Calculate thumb (indicator) position and size
+	ratio := float64(barHeight) / float64(totalLines)
+	thumbSize := int(float64(barHeight) * ratio)
+	if thumbSize < 1 {
+		thumbSize = 1
+	}
+
+	// Calculate thumb position based on scroll offset
+	scrollRatio := float64(scrollOffset) / float64(totalLines-barHeight)
+	if scrollRatio < 0 {
+		scrollRatio = 0
+	}
+	if scrollRatio > 1 {
+		scrollRatio = 1
+	}
+	thumbPos := int(float64(barHeight-thumbSize) * scrollRatio)
+
+	// Build scrollbar with colors
+	for i := 0; i < barHeight; i++ {
+		if i >= thumbPos && i < thumbPos+thumbSize {
+			// Thumb (indicator) - cyan/blue
+			bar.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#00d4ff")).Bold(true).Render("█"))
+		} else {
+			// Track - purple
+			bar.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#874BFD")).Render("│"))
+		}
+		if i < barHeight-1 {
+			bar.WriteString("\n")
+		}
+	}
+
+	return bar.String()
 }
 
 func (m tuiModel) renderHomeView() string {
