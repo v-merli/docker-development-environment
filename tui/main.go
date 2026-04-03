@@ -48,20 +48,27 @@ func executeBashScript(command string, args ...string) error {
 	}
 	baseDir := filepath.Dir(execPath)
 
-	// Find phpharbor script by searching up the directory tree
+	// Find phpharbor bash script by searching up the directory tree
+	// IMPORTANT: Skip the current directory to avoid finding the Go binary itself
 	bashScriptPath := ""
-	searchDir := baseDir
-	for i := 0; i < 5; i++ { // Search up to 5 levels
+	searchDir := filepath.Dir(baseDir) // Start from parent directory
+	for i := 0; i < 5; i++ {           // Search up to 5 levels
 		candidatePath := filepath.Join(searchDir, "phpharbor")
-		if _, err := os.Stat(candidatePath); err == nil {
-			bashScriptPath = candidatePath
-			break
+		// Check if exists and is NOT the same as our binary
+		if stat, err := os.Stat(candidatePath); err == nil {
+			absCandidate, _ := filepath.Abs(candidatePath)
+			absExec, _ := filepath.Abs(execPath)
+			// Make sure it's not our binary and it's executable
+			if absCandidate != absExec && stat.Mode()&0111 != 0 {
+				bashScriptPath = candidatePath
+				break
+			}
 		}
 		searchDir = filepath.Dir(searchDir)
 	}
 
 	if bashScriptPath == "" {
-		return fmt.Errorf("phpharbor script not found (searched from %s)", baseDir)
+		return fmt.Errorf("phpharbor bash script not found (searched from %s)", baseDir)
 	}
 
 	// Execute the main phpharbor script with command and args
