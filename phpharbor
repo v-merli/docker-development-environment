@@ -168,9 +168,14 @@ show_help() {
     cat << EOF
 $(show_version)
 
-Usage: ./phpharbor <command> [options]
+Usage: ./phpharbor [command] [options]
+
+Note: Running './phpharbor' without arguments launches the interactive TUI.
 
 COMMANDS:
+
+  User Interface:
+    tui                   Launch interactive TUI (default when no args)
 
   Project Management:
     create <name>         Create a new project
@@ -240,6 +245,10 @@ COMMANDS:
     help                  Show this message
 
 EXAMPLES:
+
+  # Interactive TUI
+  ./phpharbor              # Launch TUI (no arguments)
+  ./phpharbor tui          # Explicitly launch TUI
 
   # Initial setup
   ./phpharbor setup init
