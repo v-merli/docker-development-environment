@@ -51,12 +51,41 @@ GOOS=windows GOARCH=amd64 go build -o phpharbor-windows-amd64.exe
 - ✅ Commands: `create`, `list`, `start`, `version`
 - ✅ Colored output
 - ✅ Go modules setup
+- ✅ **Full-featured TUI** with Bubble Tea framework
+- ✅ **Advanced Interactive Wizard** integrated in TUI
+  - Multi-step form with navigation (↑/↓ to move between questions)
+  - Edit previous answers by going back
+  - Real-time validation with visual feedback
+  - Review mode (Ctrl+R) to see all answers
+  - Generates docker-compose.yml snippets
+- ✅ Stats tables and overview views
+- ✅ Projects table with interactive display
+- ✅ Auto-complete suggestions in TUI
+
+### Featured: Service Configuration Wizard
+
+The advanced wizard provides a professional UX for configuring custom services:
+
+```bash
+./phpharbor tui
+# Then type: /service
+```
+
+**Key Features:**
+- 🔄 **Bidirectional Navigation**: Move forward/backward between questions
+- ✏️ **Edit Answers**: Go back to modify previous responses
+- ✅ **Live Validation**: Instant feedback on input validity
+- 📋 **Review Mode**: See all answers before confirming (Ctrl+R)
+- 🎨 **Rich UI**: Progress indicators, color coding, clear feedback
+- 🚀 **Zero Context Switch**: Fully integrated in TUI, no separate commands
+
+See [WIZARD_GUIDE.md](WIZARD_GUIDE.md) for complete documentation.
 
 ### TODO  
 - [ ] Docker API integration (use `github.com/docker/docker/client`)
 - [ ] Project creation logic
 - [ ] Configuration file parsing
-- [ ] Interactive prompts (use `github.com/AlecAivazis/survey/v2`)
+- [x] Interactive prompts (using `github.com/AlecAivazis/survey/v2` and Bubble Tea)
 - [ ] Full parity with bash CLI
 
 ## Benchmarks

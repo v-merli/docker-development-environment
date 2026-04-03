@@ -95,10 +95,11 @@ var (
 type viewType string
 
 const (
-	viewHome       viewType = "home"
-	viewProjects   viewType = "projects"
-	viewStats      viewType = "stats"
-	viewLongOutput viewType = "longoutput"
+	viewHome          viewType = "home"
+	viewProjects      viewType = "projects"
+	viewStats         viewType = "stats"
+	viewLongOutput    viewType = "longoutput"
+	viewServiceWizard viewType = "servicewizard"
 )
 
 // Status types
@@ -118,6 +119,7 @@ var commands = []struct {
 }{
 	{"list", "List all projects"},
 	{"stats", "Show system statistics"},
+	{"service", "Configure a custom service (wizard)"},
 	{"test", "Test long output (simulates ls)"},
 	{"create", "Create a new project"},
 	{"start", "Start a project"},
@@ -142,6 +144,8 @@ type tuiModel struct {
 	showSuggestions         bool
 	selectedSuggestionIndex int
 	suggestions             []string
+	wizard                  *advancedWizardModel // Embedded wizard
+	wizardActive            bool
 }
 
 func newTUIModel() tuiModel {
@@ -165,6 +169,43 @@ func (m tuiModel) Init() tea.Cmd {
 
 func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+
+	// If wizard is active, delegate to wizard Update
+	if m.wizardActive && m.wizard != nil {
+		// Handle window size for wizard
+		if msg, ok := msg.(tea.WindowSizeMsg); ok {
+			m.width = msg.Width
+			m.height = msg.Height
+			m.wizard.width = msg.Width
+			m.wizard.height = msg.Height
+		}
+
+		// Update wizard
+		wizardModel, wizardCmd := m.wizard.Update(msg)
+		if wm, ok := wizardModel.(advancedWizardModel); ok {
+			m.wizard = &wm
+
+			// Check if wizard is completed or cancelled
+			if m.wizard.WasCompleted() {
+				m.wizardActive = false
+				m.view = viewHome
+				m.message = "✓ Service configuration completed!"
+				m.statusType = statusSuccess
+				m.statusMessage = "Service wizard completed successfully"
+				m.wizard = nil
+				return m, nil
+			} else if m.wizard.WasCancelled() {
+				m.wizardActive = false
+				m.view = viewHome
+				m.message = "⚠ Service wizard cancelled"
+				m.statusType = statusWarning
+				m.statusMessage = "Wizard cancelled, returned to home"
+				m.wizard = nil
+				return m, nil
+			}
+		}
+		return m, wizardCmd
+	}
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -331,6 +372,11 @@ func (m tuiModel) View() string {
 		return "Loading..."
 	}
 
+	// If wizard is active, show only the wizard
+	if m.wizardActive && m.wizard != nil {
+		return m.wizard.View()
+	}
+
 	// Calculate heights
 	headerHeight := 12
 	commandBarHeight := 1
@@ -405,6 +451,9 @@ func (m tuiModel) calculateMaxScroll() int {
 		content = m.renderStatsView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
+	case viewServiceWizard:
+		// Wizard doesn't use scrolling in TUI mode
+		return 0
 	default:
 		content = "Unknown view"
 	}
@@ -453,6 +502,13 @@ func (m tuiModel) renderContent(height int) string {
 		content = m.renderStatsView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
+	case viewServiceWizard:
+		// This case should not be reached if wizardActive is true
+		// but handle it just in case
+		if m.wizard != nil {
+			return m.wizard.View()
+		}
+		content = "Service wizard not initialized"
 	default:
 		content = "Unknown view"
 	}
@@ -796,6 +852,18 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		m.message = "✓ Showing statistics"
 		m.statusType = statusInfo
 		m.statusMessage = "System statistics displayed"
+		m.scrollOffset = 0
+	case "service", "wizard":
+		// Launch the service configuration wizard
+		wizard := newAdvancedServiceWizard()
+		wizard.width = m.width
+		wizard.height = m.height
+		m.wizard = &wizard
+		m.wizardActive = true
+		m.view = viewServiceWizard
+		m.message = ""
+		m.statusType = statusInfo
+		m.statusMessage = "Service wizard launched"
 		m.scrollOffset = 0
 	case "test", "longoutput":
 		m.view = viewLongOutput
