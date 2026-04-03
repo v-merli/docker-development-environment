@@ -144,28 +144,28 @@ var commands = []struct {
 
 // Main TUI model
 type tuiModel struct {
-	width                       int
-	height                      int
-	input                       textinput.Model
-	view                        viewType
-	message                     string
-	err                         error
-	statusType                  statusType
-	statusMessage               string
-	exitConfirm                 bool
-	scrollOffset                int
-	maxScroll                   int // Maximum scroll offset for current content
-	showSuggestions             bool
-	selectedSuggestionIndex     int
-	suggestions                 []string
-	wizard                      tea.Model // Embedded wizard (createWizardModel)
-	wizardActive                bool
-	commandOutput               string // Output from executed bash commands
-	commandRunning              bool   // True if a command is currently running
-	currentCommand              string // The command being executed
-	waitingForInteractiveConfirm bool   // True when waiting for user to confirm interactive command
-	pendingInteractiveCommand   string // Command to execute after confirmation
-	pendingInteractiveArgs      []string // Args for pending interactive command
+	width                        int
+	height                       int
+	input                        textinput.Model
+	view                         viewType
+	message                      string
+	err                          error
+	statusType                   statusType
+	statusMessage                string
+	exitConfirm                  bool
+	scrollOffset                 int
+	maxScroll                    int // Maximum scroll offset for current content
+	showSuggestions              bool
+	selectedSuggestionIndex      int
+	suggestions                  []string
+	wizard                       tea.Model // Embedded wizard (createWizardModel)
+	wizardActive                 bool
+	commandOutput                string   // Output from executed bash commands
+	commandRunning               bool     // True if a command is currently running
+	currentCommand               string   // The command being executed
+	waitingForInteractiveConfirm bool     // True when waiting for user to confirm interactive command
+	pendingInteractiveCommand    string   // Command to execute after confirmation
+	pendingInteractiveArgs       []string // Args for pending interactive command
 }
 
 func newTUIModel() tuiModel {
@@ -316,7 +316,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.scrollOffset = 0
 				return m, nil
 			}
-			
+
 			// If already in home view, require double ESC to quit
 			if m.view == viewHome {
 				if m.exitConfirm {
@@ -343,7 +343,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.waitingForInteractiveConfirm {
 				return m.launchInteractiveCommand()
 			}
-			
+
 			// Cancel exit confirmation on any input
 			m.exitConfirm = false
 
@@ -557,7 +557,7 @@ func (m tuiModel) calculateMaxScroll() int {
 	case viewLongOutput:
 		content = m.renderLongOutputView()
 	case viewInteractiveConfirm:
-		content = m.renderInteractiveConfirmView()
+		content = m.renderInteractiveConfirmModal()
 	case viewWizard:
 		if m.wizard != nil {
 			content = m.wizard.View()
@@ -617,7 +617,11 @@ func (m tuiModel) renderContent(height int) string {
 	case viewLongOutput:
 		content = m.renderLongOutputView()
 	case viewInteractiveConfirm:
-		content = m.renderInteractiveConfirmView()
+		// Render modal centered on screen with dark background
+		modal := m.renderInteractiveConfirmModal()
+		
+		// Place modal centered with dark background
+		content = lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, modal, lipgloss.WithWhitespaceChars(" "), lipgloss.WithWhitespaceForeground(lipgloss.Color("#1a1a1a")))
 	case viewWizard:
 		if m.wizard != nil {
 			content = m.wizard.View()
@@ -1021,9 +1025,7 @@ func (m tuiModel) renderCommandOutputView() string {
 	return b.String()
 }
 
-func (m tuiModel) renderInteractiveConfirmView() string {
-	var b strings.Builder
-
+func (m tuiModel) renderInteractiveConfirmModal() string {
 	// Get command details for display
 	commandName := map[string]string{
 		"shell": "Shell",
@@ -1038,59 +1040,78 @@ func (m tuiModel) renderInteractiveConfirmView() string {
 		projectName = m.pendingInteractiveArgs[0]
 	}
 
-	// Build the modal content
-	b.WriteString("\n\n\n") // Top padding
-
+	// Modal box style with shadow effect
 	boxStyle := lipgloss.NewStyle().
-		Border(lipgloss.DoubleBorder()).
+		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("#FFD700")).
-		Padding(2, 4).
-		Width(60).
+		Background(lipgloss.Color("#1a1a1a")).
+		Padding(1, 3).
+		Width(56)
+
+	// Title style
+	titleStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFD700")).
+		Bold(true).
 		Align(lipgloss.Center)
 
-	iconStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFD700")).
-		Bold(true)
-
+	// Command style
 	commandStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#00d4ff")).
 		Bold(true)
 
+	// Instruction style
 	instructionStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#AAAAAA"))
+		Foreground(lipgloss.Color("#CCCCCC"))
 
-	keyHintStyle := lipgloss.NewStyle().
+	// Key hint styles
+	enterKeyStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#00FF00")).
 		Bold(true)
 
+	escKeyStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FF4444")).
+		Bold(true)
+
+	dimStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#888888"))
+
+	// Build modal content
 	var content strings.Builder
-	content.WriteString(iconStyle.Render("🚀  INTERACTIVE COMMAND"))
+	
+	// Title
+	content.WriteString(titleStyle.Render("🚀  INTERACTIVE COMMAND"))
 	content.WriteString("\n\n")
-	content.WriteString("You are about to launch:\n\n")
-	content.WriteString(commandStyle.Render(fmt.Sprintf("  %s for %s", commandName, projectName)))
+	
+	// Command info
+	content.WriteString(dimStyle.Render("Launching: "))
+	content.WriteString(commandStyle.Render(fmt.Sprintf("%s", commandName)))
+	content.WriteString("\n")
+	content.WriteString(dimStyle.Render("Project:   "))
+	content.WriteString(commandStyle.Render(fmt.Sprintf("%s", projectName)))
 	content.WriteString("\n\n")
-	content.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
-	content.WriteString(instructionStyle.Render("The TUI will suspend and you will see\n"))
-	content.WriteString(instructionStyle.Render(fmt.Sprintf("the %s interface.\n\n", commandName)))
-	content.WriteString(instructionStyle.Render("Type "))
-	content.WriteString(keyHintStyle.Render("exit"))
-	content.WriteString(instructionStyle.Render(" or press "))
-	content.WriteString(keyHintStyle.Render("Ctrl+D"))
-	content.WriteString(instructionStyle.Render(" to return."))
+	
+	// Separator
+	content.WriteString(dimStyle.Render("────────────────────────────────────────────────"))
 	content.WriteString("\n\n")
-	content.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
-	content.WriteString(keyHintStyle.Render("  ⏎  ENTER"))
-	content.WriteString("  to continue  |  ")
-	content.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).Bold(true).Render("ESC"))
-	content.WriteString("  to cancel")
+	
+	// Instructions
+	content.WriteString(instructionStyle.Render("The TUI will suspend. To return, type "))
+	content.WriteString(enterKeyStyle.Render("exit"))
+	content.WriteString(instructionStyle.Render("\nor press "))
+	content.WriteString(enterKeyStyle.Render("Ctrl+D"))
+	content.WriteString(instructionStyle.Render("."))
+	content.WriteString("\n\n")
+	
+	// Separator
+	content.WriteString(dimStyle.Render("────────────────────────────────────────────────"))
+	content.WriteString("\n\n")
+	
+	// Action keys
+	content.WriteString(lipgloss.NewStyle().Align(lipgloss.Center).Render(
+		enterKeyStyle.Render(" ⏎  ENTER ") + dimStyle.Render(" to launch  │  ") + escKeyStyle.Render(" ESC ") + dimStyle.Render(" to cancel"),
+	))
 
-	modalBox := boxStyle.Render(content.String())
-
-	// Center the box
-	b.WriteString(lipgloss.PlaceHorizontal(m.width, lipgloss.Center, modalBox))
-	b.WriteString("\n\n\n") // Bottom padding
-
-	return b.String()
+	return boxStyle.Render(content.String())
 }
 
 func (m tuiModel) renderCommandBar() string {
@@ -1452,7 +1473,7 @@ func (m tuiModel) launchInteractiveCommand() (tuiModel, tea.Cmd) {
 
 	cmd := exec.Command("bash", cmdArgs...)
 	cmd.Dir = projectRoot
-	
+
 	// Clear waiting state
 	m.waitingForInteractiveConfirm = false
 	m.pendingInteractiveCommand = ""
