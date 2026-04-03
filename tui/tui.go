@@ -96,13 +96,14 @@ var (
 type viewType string
 
 const (
-	viewHome          viewType = "home"
-	viewProjects      viewType = "projects"
-	viewStats         viewType = "stats"
-	viewLongOutput    viewType = "longoutput"
-	viewWizard        viewType = "wizard"
-	viewTable         viewType = "table"
-	viewCommandOutput viewType = "commandoutput"
+	viewHome               viewType = "home"
+	viewProjects           viewType = "projects"
+	viewStats              viewType = "stats"
+	viewLongOutput         viewType = "longoutput"
+	viewWizard             viewType = "wizard"
+	viewTable              viewType = "table"
+	viewCommandOutput      viewType = "commandoutput"
+	viewInteractiveConfirm viewType = "interactiveconfirm"
 )
 
 // Status types
@@ -308,9 +309,11 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.waitingForInteractiveConfirm = false
 				m.pendingInteractiveCommand = ""
 				m.pendingInteractiveArgs = nil
+				m.view = viewHome
 				m.message = "❌ Interactive command cancelled"
 				m.statusType = statusWarning
 				m.statusMessage = "Command cancelled by user"
+				m.scrollOffset = 0
 				return m, nil
 			}
 			
@@ -553,6 +556,8 @@ func (m tuiModel) calculateMaxScroll() int {
 		content = m.renderCommandOutputView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
+	case viewInteractiveConfirm:
+		content = m.renderInteractiveConfirmView()
 	case viewWizard:
 		if m.wizard != nil {
 			content = m.wizard.View()
@@ -611,6 +616,8 @@ func (m tuiModel) renderContent(height int) string {
 		content = m.renderCommandOutputView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
+	case viewInteractiveConfirm:
+		content = m.renderInteractiveConfirmView()
 	case viewWizard:
 		if m.wizard != nil {
 			content = m.wizard.View()
@@ -1014,6 +1021,78 @@ func (m tuiModel) renderCommandOutputView() string {
 	return b.String()
 }
 
+func (m tuiModel) renderInteractiveConfirmView() string {
+	var b strings.Builder
+
+	// Get command details for display
+	commandName := map[string]string{
+		"shell": "Shell",
+		"mysql": "MySQL CLI",
+	}[m.pendingInteractiveCommand]
+	if commandName == "" {
+		commandName = m.pendingInteractiveCommand
+	}
+
+	projectName := "project"
+	if len(m.pendingInteractiveArgs) > 0 {
+		projectName = m.pendingInteractiveArgs[0]
+	}
+
+	// Build the modal content
+	b.WriteString("\n\n\n") // Top padding
+
+	boxStyle := lipgloss.NewStyle().
+		Border(lipgloss.DoubleBorder()).
+		BorderForeground(lipgloss.Color("#FFD700")).
+		Padding(2, 4).
+		Width(60).
+		Align(lipgloss.Center)
+
+	iconStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFD700")).
+		Bold(true)
+
+	commandStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#00d4ff")).
+		Bold(true)
+
+	instructionStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#AAAAAA"))
+
+	keyHintStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#00FF00")).
+		Bold(true)
+
+	var content strings.Builder
+	content.WriteString(iconStyle.Render("🚀  INTERACTIVE COMMAND"))
+	content.WriteString("\n\n")
+	content.WriteString("You are about to launch:\n\n")
+	content.WriteString(commandStyle.Render(fmt.Sprintf("  %s for %s", commandName, projectName)))
+	content.WriteString("\n\n")
+	content.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+	content.WriteString(instructionStyle.Render("The TUI will suspend and you will see\n"))
+	content.WriteString(instructionStyle.Render(fmt.Sprintf("the %s interface.\n\n", commandName)))
+	content.WriteString(instructionStyle.Render("Type "))
+	content.WriteString(keyHintStyle.Render("exit"))
+	content.WriteString(instructionStyle.Render(" or press "))
+	content.WriteString(keyHintStyle.Render("Ctrl+D"))
+	content.WriteString(instructionStyle.Render(" to return."))
+	content.WriteString("\n\n")
+	content.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+	content.WriteString(keyHintStyle.Render("  ⏎  ENTER"))
+	content.WriteString("  to continue  |  ")
+	content.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).Bold(true).Render("ESC"))
+	content.WriteString("  to cancel")
+
+	modalBox := boxStyle.Render(content.String())
+
+	// Center the box
+	b.WriteString(lipgloss.PlaceHorizontal(m.width, lipgloss.Center, modalBox))
+	b.WriteString("\n\n\n") // Bottom padding
+
+	return b.String()
+}
+
 func (m tuiModel) renderCommandBar() string {
 	// When wizard is active, show a disabled command bar
 	if m.wizardActive {
@@ -1343,34 +1422,14 @@ func executePHPHarborCommand(command string, args ...string) (string, error) {
 // executeInteractiveCommand handles commands that need terminal control (shell, mysql)
 // Shows a confirmation message and waits for Enter before suspending TUI
 func (m tuiModel) executeInteractiveCommand(command string, args []string) (tuiModel, tea.Cmd) {
-	// Show informative message before suspending
-	commandName := map[string]string{
-		"shell": "shell",
-		"mysql": "MySQL CLI",
-	}[command]
-	if commandName == "" {
-		commandName = command
-	}
-	
-	projectName := "project"
-	if len(args) > 0 {
-		projectName = args[0]
-	}
-	
-	m.message = fmt.Sprintf("🚀 Ready to launch %s for %s\n\n"+
-		"The TUI will suspend and you'll see the %s.\n"+
-		"Type 'exit' or press Ctrl+D to return to TUI.\n\n"+
-		"Press Enter to continue or ESC to cancel...", 
-		commandName, projectName, commandName)
-	m.statusType = statusInfo
-	m.statusMessage = fmt.Sprintf("Ready to launch %s - press Enter", commandName)
-	m.view = viewHome
-	m.scrollOffset = 0
-	
-	// Set waiting state
+	// Set pending command and show confirmation view
 	m.waitingForInteractiveConfirm = true
 	m.pendingInteractiveCommand = command
 	m.pendingInteractiveArgs = args
+	m.view = viewInteractiveConfirm
+	m.statusType = statusWarning
+	m.statusMessage = "Press Enter to launch or ESC to cancel"
+	m.scrollOffset = 0
 
 	return m, nil
 }
