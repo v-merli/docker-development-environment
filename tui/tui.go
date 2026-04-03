@@ -1333,6 +1333,29 @@ func (m tuiModel) executeInteractiveCommand(command string, args []string) (tuiM
 		return m, nil
 	}
 
+	// Show informative message before suspending
+	commandName := map[string]string{
+		"shell": "shell",
+		"mysql": "MySQL CLI",
+	}[command]
+	if commandName == "" {
+		commandName = command
+	}
+	
+	projectName := "project"
+	if len(args) > 0 {
+		projectName = args[0]
+	}
+	
+	m.message = fmt.Sprintf("🚀 Launching %s for %s...\n\n"+
+		"The TUI will suspend and you'll see the %s.\n"+
+		"Type 'exit' or press Ctrl+D to return to TUI.", 
+		commandName, projectName, commandName)
+	m.statusType = statusInfo
+	m.statusMessage = fmt.Sprintf("Launching interactive %s", commandName)
+	m.view = viewHome
+	m.scrollOffset = 0
+
 	// Create exec command
 	projectRoot := filepath.Dir(bashScriptPath)
 	cmdArgs := append([]string{bashScriptPath, command}, args...)
