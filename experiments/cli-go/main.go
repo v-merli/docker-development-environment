@@ -264,6 +264,33 @@ var statsOverviewCmd = &cobra.Command{
 	},
 }
 
+var advancedWizardCmd = &cobra.Command{
+	Use:   "service-wizard",
+	Short: "Interactive service configuration wizard",
+	Long:  `Launch an advanced interactive wizard to configure a custom service with full navigation and review capabilities`,
+	Run: func(cmd *cobra.Command, args []string) {
+		wizard := newAdvancedServiceWizard()
+		p := tea.NewProgram(wizard)
+		finalModel, err := p.Run()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, red("Error running service wizard: "+err.Error()))
+			os.Exit(1)
+		}
+
+		// Check if completed
+		if w, ok := finalModel.(advancedWizardModel); ok {
+			if w.WasCompleted() {
+				fmt.Println()
+				fmt.Println(green("✅ Service configuration saved!"))
+				fmt.Println()
+				fmt.Println(cyan("💡 You can now integrate this configuration into your PHPHarbor setup"))
+			} else if w.WasCancelled() {
+				fmt.Println(yellow("⚠️  Service wizard cancelled"))
+			}
+		}
+	},
+}
+
 // Interactive project creation
 func createInteractive(name *string, projectType *string, phpVersion *string) {
 	fmt.Println(cyan("🎨 Interactive Project Creation"))
@@ -406,6 +433,7 @@ func init() {
 	rootCmd.AddCommand(statsTableCmd)
 	rootCmd.AddCommand(projectsTableCmd)
 	rootCmd.AddCommand(statsOverviewCmd)
+	rootCmd.AddCommand(advancedWizardCmd)
 }
 
 func main() {
