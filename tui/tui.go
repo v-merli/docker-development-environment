@@ -1309,7 +1309,7 @@ func executePHPHarborCommand(command string, args ...string) (string, error) {
 // executeInteractiveCommand handles commands that need a new terminal tab (shell, mysql)
 func (m tuiModel) executeInteractiveCommand(command string, args []string) tuiModel {
 	// Try to open in new terminal tab
-	success, err := openCommandInNewTab(command, args...)
+	success, _ := openCommandInNewTab(command, args...)
 
 	if success {
 		// Successfully opened in new tab
@@ -1327,11 +1327,6 @@ func (m tuiModel) executeInteractiveCommand(command string, args []string) tuiMo
 		m.statusMessage = "Could not auto-open terminal - manual action required"
 		m.scrollOffset = 0
 		m.maxScroll = m.calculateMaxScroll()
-		
-		// Log the error for debugging
-		if err != nil {
-			m.commandOutput += fmt.Sprintf("\n\nDebug info: %v", err)
-		}
 	}
 
 	return m

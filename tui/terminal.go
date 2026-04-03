@@ -124,15 +124,12 @@ func findPHPHarborScript() (string, error) {
 	return "", fmt.Errorf("phpharbor bash script not found")
 }
 
-// openInVSCode opens command in VS Code integrated terminal (cross-platform)
+// openInVSCode opens command in VS Code integrated terminal
 func openInVSCode(command string) (bool, error) {
-	// VS Code doesn't have a direct way to open new terminal with command
-	// We use 'open' command with vscode:// URL scheme (macOS/Linux)
-	// For Windows, we'd use different approach
-	
-	// For now, return false to show fallback
-	// TODO: Implement VS Code terminal opening if possible
-	return false, fmt.Errorf("VS Code terminal: use fallback")
+	// VS Code doesn't provide a simple way to open new terminal with command from CLI
+	// User can easily open new terminal with Cmd+Shift+` (macOS) or Ctrl+Shift+` (Windows/Linux)
+	// Return false to show user-friendly fallback with VS Code-specific instructions
+	return false, fmt.Errorf("VS Code: please open new terminal manually with Cmd+Shift+` (macOS) or Ctrl+Shift+` (Windows/Linux)")
 }
 
 // openInITerm2 opens command in iTerm2 new tab (macOS)
@@ -218,12 +215,45 @@ func buildFallbackMessage(command string, args []string) string {
 		command,
 		strings.Join(args, " "))
 
+	// Detect terminal for specific instructions
+	terminal := detectTerminal()
+	var instructions string
+	
+	switch terminal {
+	case terminalVSCode:
+		instructions = `
+💡 VS Code Instructions:
+   1. Press Cmd+Shift+` + "`" + ` (macOS) or Ctrl+Shift+` + "`" + ` (Windows/Linux) to open new terminal
+   2. Paste the command above
+   3. Press Enter
+`
+	case terminalITerm2, terminalApple:
+		instructions = `
+💡 macOS Instructions:
+   1. Press Cmd+T to open new terminal tab
+   2. Paste the command above
+   3. Press Enter
+`
+	case terminalGnome, terminalKonsole:
+		instructions = `
+💡 Linux Instructions:
+   1. Press Ctrl+Shift+T to open new terminal tab
+   2. Paste the command above
+   3. Press Enter
+`
+	default:
+		instructions = `
+💡 Instructions:
+   1. Open a new terminal tab
+   2. Paste the command above
+   3. Press Enter
+`
+	}
+
 	return fmt.Sprintf(`⚠️  Could not auto-open new terminal tab
 
-Please open a new terminal tab manually and run:
+Command to run:
 
   %s
-
-Or copy the command above and paste it in a new terminal.
-`, fullCmd)
+%s`, fullCmd, instructions)
 }
