@@ -128,6 +128,13 @@ var commands = []struct {
 	{"remove", "Remove a project"},
 	{"logs", "Show project logs"},
 	{"info", "Project information"},
+	// Development tools
+	{"shell", "Open shell in PHP container"},
+	{"artisan", "Run Laravel Artisan command"},
+	{"composer", "Run Composer command"},
+	{"npm", "Run npm command"},
+	{"mysql", "Open MySQL CLI"},
+	{"queue", "Manage queue worker"},
 	// Wizards
 	{"create", "Create new project (wizard)"},
 	{"wizard", "Create new project (wizard)"},
@@ -1176,6 +1183,8 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 	cliCommands := []string{
 		// Project management (Phase 1)
 		"list", "start", "stop", "restart", "remove", "logs", "info",
+		// Development tools (Phase 2)
+		"shell", "artisan", "composer", "npm", "mysql", "queue",
 		// System commands
 		"update", "reset", "setup", "projects",
 	}

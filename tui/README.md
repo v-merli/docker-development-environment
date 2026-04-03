@@ -47,6 +47,14 @@ Inside the TUI, use these commands (prefix with `/`):
 - `/info <name>` - Project information
 - `/remove <name>` (or `/rm`) - Remove a project
 
+**Development Tools:**
+- `/shell <name>` (or `/bash`) - Open shell in PHP container
+- `/artisan <name> <cmd>` - Run Laravel Artisan command
+- `/composer <name> <cmd>` - Run Composer command
+- `/npm <name> <cmd>` - Run npm command
+- `/mysql <name>` - Open MySQL CLI for project
+- `/queue <name> <action>` - Manage queue worker (restart|logs|status)
+
 **Wizards:**
 - `/wizard` or `/create` - Launch project creation wizard
 - `/service` - Configure services (alias for /create)
