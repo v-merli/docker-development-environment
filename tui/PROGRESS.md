@@ -1,8 +1,8 @@
 # TUI Production - Progress Tracker
 
 **Branch:** `feature/go-tui-production`  
-**Status:** 24+ commits ahead of develop  
-**Last Updated:** 2026-04-03 (Setup Wizard + Advanced Create Wizard)
+**Status:** 25+ commits ahead of develop  
+**Last Updated:** 2026-04-03 (Setup Wizard Suspend-Resume Fix)
 
 ## ✅ Completato
 
@@ -55,9 +55,18 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 - [x] **Pre-flight Checks** prima di modifiche:
   - Docker running check
   - Docker Compose check
-  - Sudo authentication (only if DNS enabled)
+  - Eseguiti NEL TUI prima di suspend
+- [x] **Suspend-Resume Pattern** ⭐ - TUI si sospende per esecuzione bash:
+  - Wizard raccoglie configurazione (4 step)
+  - Review → conferma utente
+  - Pre-flight checks IN TUI
+  - **TUI SUSPENDS** → terminale pulito
+  - Bash script esegue con pieno controllo terminale
+  - **Sudo prompt VISIBILE e chiaro**
+  - TUI riprende al completamento
 - [x] **Just-in-Time Sudo** - password requested solo dopo review
 - [x] **Secure sudo handling** - no password in memory, system prompt
+- [x] **Clean UX** - no bash output corrupting TUI, no invisible prompts
 - [x] Step condizionali (MailPit skip se proxy=no)
 - [x] Review mode con warning pre-flight
 - [x] Clear error messages e abort su qualsiasi fallimento
@@ -75,6 +84,45 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 - [x] Modal scroll causing logo cutoff
 - [x] Terminal detection issues (risolto con suspend-resume)
 - [x] Modal overlay vertical alignment
+- [x] Setup wizard sudo prompt invisibility (fix con suspend-resume pattern)
+
+## ⚠️ Known Issues / TODO
+
+### Setup Init Script Enhancement
+**Status:** Posticipato  
+**Issue:** Lo script bash `cli/setup.sh` (funzione `setup_init()`) attualmente ripropone le domande anche se il wizard Go ha già raccolto la configurazione tramite variabili d'ambiente.
+
+**Variabili d'ambiente passate dal wizard:**
+```bash
+PHPHARBOR_PROJECTS_DIR=<path>     # Directory progetti
+PHPHARBOR_SETUP_DNS=1             # Se abilitare DNS (assente = no)
+PHPHARBOR_SETUP_PROXY=1           # Se abilitare proxy (assente = no)
+PHPHARBOR_SETUP_MAILPIT=1         # Se abilitare MailPit (assente = no)
+```
+
+**Soluzione richiesta:**
+Modificare `cli/setup.sh` → `setup_init()` per:
+1. Controllare se le variabili d'ambiente sono settate
+2. Se presenti → usare quelle (modalità non-interattiva)
+3. Se assenti → fare domande interattive (backward compatibility)
+
+**Esempio logica:**
+```bash
+# Invece di ask sempre:
+read -p "Configure dnsmasq for *.test? [y/N]" -n 1 -r
+
+# Fare:
+if [ -n "$PHPHARBOR_SETUP_DNS" ]; then
+    # Usa valore da wizard
+    setup_dns
+else
+    # Chiedi all'utente
+    read -p "Configure dnsmasq for *.test? [y/N]" -n 1 -r
+    [[ $REPLY =~ ^[Yy]$ ]] && setup_dns
+fi
+```
+
+**Priorità:** Media (wizard funziona già, ma ripete domande)
 
 ## 🚧 Prossimi Step
 
@@ -87,12 +135,13 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 
 ## 📊 Metriche
 
-- **Commits:** 24+ (da develop)
+- **Commits:** 25+ (da develop)
 - **Files changed:** 5 main files (tui.go, create_wizard.go, setup_wizard.go, wizard_shared.go, main.go)
-- **Lines of Go code:** ~2,500
+- **Lines of Go code:** ~2,650
 - **Binary size:** ~5.0 MB
 - **Commands implemented:** 19/19 ✅ (100% CORE COMMANDS)
 - **Wizards:** 2 (create + setup init, 12 total steps)
+- **Interactive commands with suspend-resume:** 8 (shell, mysql, artisan, composer, npm, queue, create wizard, setup wizard)
 
 ## 🔧 Setup dall'Altro PC
 
@@ -139,6 +188,70 @@ if m.view == viewInteractiveConfirm {
     return 0
 }
 ```
+
+### Setup Wizard Suspend-Resume Pattern
+Il setup wizard usa il pattern suspend-resume per esecuzione bash pulita:
+
+```go
+// In tui.go - Wizard completion handler
+if wm.WasCompleted() {
+    // 1. Pre-flight checks IN TUI (Docker, Docker Compose)
+    preflightOutput, err := wm.ExecuteSetup()
+    if err != nil {
+        // Abort on failure, show error, return to home
+        return m, nil
+    }
+    
+    // 2. Build command with env vars from wizard answers
+    cmd := wm.BuildSetupCommand()
+    
+    // 3. Suspend TUI and execute bash with full terminal control
+    return m, tea.ExecProcess(cmd, func(err error) tea.Msg {
+        return setupWizardFinishedMsg{err: err}
+    })
+}
+
+// In setup_wizard.go - Build command
+func (m setupWizardModel) BuildSetupCommand() *exec.Cmd {
+    cmd := exec.Command("bash", bashScriptPath, "setup", "init")
+    
+    // CRITICAL: Direct terminal I/O for sudo prompts
+    cmd.Stdin = os.Stdin
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    
+    // Pass wizard answers via environment variables
+    env := os.Environ()
+    if dir, ok := m.answers["projects_dir"]; ok {
+        env = append(env, fmt.Sprintf("PHPHARBOR_PROJECTS_DIR=%s", dir))
+    }
+    if dns, ok := m.answers["dns_enable"]; ok && dns == "yes" {
+        env = append(env, "PHPHARBOR_SETUP_DNS=1")
+    }
+    // ... other env vars
+    cmd.Env = env
+    
+    return cmd
+}
+```
+
+**Flusso completo:**
+1. Wizard raccoglie configurazione (4 step)
+2. Review → utente conferma
+3. Pre-flight checks eseguiti NEL TUI (Docker, Docker Compose)
+4. Se checks falliscono → ABORT, mostra errore, torna a home
+5. **TUI SI SOSPENDE** (schermo pulito, terminale libero)
+6. Bash script esegue con pieno controllo del terminale
+7. Sudo prompt è **VISIBILE e CHIARO** (no TUI in background)
+8. Output bash è **LEGGIBILE** (no corruzione visuale)
+9. **TUI RIPRENDE** al completamento, mostra risultato
+
+**Vantaggi:**
+- ✅ Sudo prompt perfettamente visibile
+- ✅ Nessuna corruzione del TUI da output bash
+- ✅ Errori mostrati chiaramente nel terminale
+- ✅ UX pulita e professionale
+- ✅ Stesso pattern di shell/mysql/altri comandi interattivi
 
 ### Advanced Create Wizard Architecture
 Il wizard create è stato potenziato con 8 step configurabili:
