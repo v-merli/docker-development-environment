@@ -617,11 +617,15 @@ func (m tuiModel) renderContent(height int) string {
 	case viewLongOutput:
 		content = m.renderLongOutputView()
 	case viewInteractiveConfirm:
-		// Render modal centered on screen with dark background
+		// Render modal centered in content area with dark background
 		modal := m.renderInteractiveConfirmModal()
 		
-		// Place modal centered with dark background
-		content = lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, modal, lipgloss.WithWhitespaceChars(" "), lipgloss.WithWhitespaceForeground(lipgloss.Color("#1a1a1a")))
+		// Place modal centered in available content area (no scrolling needed)
+		centeredModal := lipgloss.Place(m.width-2, height, lipgloss.Center, lipgloss.Center, modal, lipgloss.WithWhitespaceChars(" "), lipgloss.WithWhitespaceForeground(lipgloss.Color("#1a1a1a")))
+		
+		// Return immediately without scrolling logic
+		style := newContentStyle.Copy().Height(height).Width(m.width - 2)
+		return style.Render(centeredModal)
 	case viewWizard:
 		if m.wizard != nil {
 			content = m.wizard.View()
@@ -1077,11 +1081,11 @@ func (m tuiModel) renderInteractiveConfirmModal() string {
 
 	// Build modal content
 	var content strings.Builder
-	
+
 	// Title
 	content.WriteString(titleStyle.Render("🚀  INTERACTIVE COMMAND"))
 	content.WriteString("\n\n")
-	
+
 	// Command info
 	content.WriteString(dimStyle.Render("Launching: "))
 	content.WriteString(commandStyle.Render(fmt.Sprintf("%s", commandName)))
@@ -1089,11 +1093,11 @@ func (m tuiModel) renderInteractiveConfirmModal() string {
 	content.WriteString(dimStyle.Render("Project:   "))
 	content.WriteString(commandStyle.Render(fmt.Sprintf("%s", projectName)))
 	content.WriteString("\n\n")
-	
+
 	// Separator
 	content.WriteString(dimStyle.Render("────────────────────────────────────────────────"))
 	content.WriteString("\n\n")
-	
+
 	// Instructions
 	content.WriteString(instructionStyle.Render("The TUI will suspend. To return, type "))
 	content.WriteString(enterKeyStyle.Render("exit"))
@@ -1101,11 +1105,11 @@ func (m tuiModel) renderInteractiveConfirmModal() string {
 	content.WriteString(enterKeyStyle.Render("Ctrl+D"))
 	content.WriteString(instructionStyle.Render("."))
 	content.WriteString("\n\n")
-	
+
 	// Separator
 	content.WriteString(dimStyle.Render("────────────────────────────────────────────────"))
 	content.WriteString("\n\n")
-	
+
 	// Action keys
 	content.WriteString(lipgloss.NewStyle().Align(lipgloss.Center).Render(
 		enterKeyStyle.Render(" ⏎  ENTER ") + dimStyle.Render(" to launch  │  ") + escKeyStyle.Render(" ESC ") + dimStyle.Render(" to cancel"),
