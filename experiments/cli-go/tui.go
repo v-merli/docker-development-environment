@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -99,6 +102,7 @@ const (
 	viewLongOutput    viewType = "longoutput"
 	viewServiceWizard viewType = "servicewizard"
 	viewTable         viewType = "table"
+	viewCommandOutput viewType = "commandoutput"
 )
 
 // Status types
@@ -146,6 +150,9 @@ type tuiModel struct {
 	suggestions             []string
 	wizard                  *advancedWizardModel // Embedded wizard
 	wizardActive            bool
+	commandOutput           string // Output from executed bash commands
+	commandRunning          bool   // True if a command is currently running
+	currentCommand          string // The command being executed
 }
 
 func newTUIModel() tuiModel {
@@ -493,6 +500,8 @@ func (m tuiModel) calculateMaxScroll() int {
 		content = m.renderStatsView()
 	case viewTable:
 		content = m.renderTableView()
+	case viewCommandOutput:
+		content = m.renderCommandOutputView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
 	case viewServiceWizard:
@@ -550,6 +559,8 @@ func (m tuiModel) renderContent(height int) string {
 		content = m.renderStatsView()
 	case viewTable:
 		content = m.renderTableView()
+	case viewCommandOutput:
+		content = m.renderCommandOutputView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
 	case viewServiceWizard:
@@ -980,6 +991,38 @@ func (m tuiModel) renderTableView() string {
 	return b.String()
 }
 
+func (m tuiModel) renderCommandOutputView() string {
+	var b strings.Builder
+
+	b.WriteString("📟 Command Output\n")
+	b.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+
+	if m.commandRunning {
+		b.WriteString("⏳ Executing: ")
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#00d4ff")).Bold(true).Render(m.currentCommand))
+		b.WriteString("\n\nPlease wait...")
+	} else if m.commandOutput != "" {
+		// Show command that was executed
+		b.WriteString("$ ")
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#888888")).Render(m.currentCommand))
+		b.WriteString("\n\n")
+
+		// Show output
+		b.WriteString(m.commandOutput)
+
+		b.WriteString("\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#00d4ff")).Render("Press ESC or type /home to return"))
+	} else {
+		b.WriteString("No command output available.\n")
+		b.WriteString("\nType a command like:\n")
+		b.WriteString("  /list - List projects\n")
+		b.WriteString("  /create myproject - Create new project\n")
+		b.WriteString("  /start myproject - Start a project\n")
+	}
+
+	return b.String()
+}
+
 func (m tuiModel) renderCommandBar() string {
 	// When wizard is active, show a disabled command bar
 	if m.wizardActive {
@@ -1154,16 +1197,26 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		return m
 	}
 
-	// Remove leading "/" and convert to lowercase
-	cmd = strings.ToLower(strings.TrimPrefix(cmd, "/"))
+	// Remove leading "/" and parse command with arguments
+	cmdLine := strings.TrimPrefix(cmd, "/")
+	parts := strings.Fields(cmdLine)
+	if len(parts) == 0 {
+		return m
+	}
 
-	switch cmd {
-	case "list", "projects":
-		m.view = viewProjects
-		m.message = "✓ Showing projects"
-		m.statusType = statusSuccess
-		m.statusMessage = "Projects view loaded successfully"
-		m.scrollOffset = 0
+	command := strings.ToLower(parts[0])
+	args := parts[1:]
+
+	// Check if it's a PHPHarbor CLI command (delegate to binary)
+	cliCommands := []string{"list", "create", "start", "stop", "update", "reset", "setup", "projects"}
+	for _, cliCmd := range cliCommands {
+		if command == cliCmd {
+			return m.executePHPHarborCLI(command, args)
+		}
+	}
+
+	// Handle TUI-internal commands
+	switch command {
 	case "stats", "statistics":
 		m.view = viewStats
 		m.message = "✓ Showing statistics"
@@ -1211,12 +1264,63 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		m.statusType = statusWarning
 		m.statusMessage = "Use ESC or Ctrl+C to exit"
 	default:
-		m.message = fmt.Sprintf("❌ Unknown command: '/%s'. Type '/help' for available commands.", cmd)
+		m.message = fmt.Sprintf("❌ Unknown command: '/%s'. Type '/help' for available commands.", command)
 		m.statusType = statusDanger
-		m.statusMessage = fmt.Sprintf("Command not found: '/%s'", cmd)
+		m.statusMessage = fmt.Sprintf("Command not found: '/%s'", command)
 	}
 
 	// Recalculate maxScroll after view change
+	m.maxScroll = m.calculateMaxScroll()
+
+	return m
+}
+
+// executePHPHarborCommand executes a phpharbor CLI command and returns its output
+func executePHPHarborCommand(command string, args ...string) (string, error) {
+	// Get the path to the current executable
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	// Execute the phpharbor command (e.g., "./phpharbor list")
+	cmdArgs := append([]string{command}, args...)
+	cmd := exec.Command(execPath, cmdArgs...)
+
+	// Set working directory to project root
+	baseDir := filepath.Dir(execPath)
+	cmd.Dir = filepath.Join(baseDir, "..", "..")
+
+	// Disable banner when called from TUI
+	cmd.Env = append(os.Environ(), "PHPHARBOR_NO_BANNER=1")
+
+	output, err := cmd.CombinedOutput()
+	return string(output), err
+}
+
+// executePHPHarborCLI wraps PHPHarbor CLI command execution for TUI
+func (m tuiModel) executePHPHarborCLI(command string, args []string) tuiModel {
+	m.commandRunning = true
+	m.currentCommand = fmt.Sprintf("phpharbor %s %s", command, strings.Join(args, " "))
+	m.view = viewCommandOutput
+	m.statusType = statusInfo
+	m.statusMessage = fmt.Sprintf("Executing: %s", m.currentCommand)
+	m.scrollOffset = 0
+
+	// Execute the phpharbor CLI command
+	output, err := executePHPHarborCommand(command, args...)
+
+	if err != nil {
+		m.commandOutput = fmt.Sprintf("Command output:\n%s\n\nError: %v", output, err)
+		m.statusType = statusDanger
+		m.statusMessage = "Command failed"
+	} else {
+		m.commandOutput = output
+		m.statusType = statusSuccess
+		m.statusMessage = "Command completed successfully"
+	}
+
+	m.commandRunning = false
 	m.maxScroll = m.calculateMaxScroll()
 
 	return m

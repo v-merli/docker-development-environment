@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -38,13 +40,36 @@ func printBanner() {
 	fmt.Println()
 }
 
+// executeBashScript executes the main phpharbor bash script
+func executeBashScript(command string, args ...string) error {
+	// Get executable directory
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+	baseDir := filepath.Dir(execPath)
+
+	// Path to main phpharbor bash script at project root
+	bashScriptPath := filepath.Join(baseDir, "..", "..", "phpharbor")
+
+	// Execute the main phpharbor script with command and args
+	scriptArgs := append([]string{command}, args...)
+	cmd := exec.Command("bash", append([]string{bashScriptPath}, scriptArgs...)...)
+	cmd.Dir = filepath.Join(baseDir, "..", "..") // Run from project root
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	return cmd.Run()
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "phpharbor",
 	Short: "PHPHarbor - Docker development environment",
 	Long:  `PHPHarbor is a Docker-based local development environment for PHP projects.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		// Skip banner for completion command
-		if cmd.Name() != "completion" && cmd.Name() != "help" {
+		// Skip banner for completion command, help, or when called from TUI
+		if cmd.Name() != "completion" && cmd.Name() != "help" && os.Getenv("PHPHARBOR_NO_BANNER") != "1" {
 			printBanner()
 		}
 	},
@@ -55,27 +80,11 @@ var createCmd = &cobra.Command{
 	Short: "Create a new project",
 	Long:  `Create a new PHP project with interactive configuration`,
 	Run: func(cmd *cobra.Command, args []string) {
-		interactive, _ := cmd.Flags().GetBool("interactive")
-
-		var name string
-		var projectType string
-		var phpVersion string
-
-		// If name provided via args, use it
-		if len(args) > 0 {
-			name = args[0]
+		// Delegate to bash script - it handles interactivity
+		if err := executeBashScript("create", args...); err != nil {
+			fmt.Fprintln(os.Stderr, red("Error: "+err.Error()))
+			os.Exit(1)
 		}
-
-		// Interactive mode or missing required flags
-		if interactive || name == "" {
-			createInteractive(&name, &projectType, &phpVersion)
-		} else {
-			projectType, _ = cmd.Flags().GetString("type")
-			phpVersion, _ = cmd.Flags().GetString("php")
-		}
-
-		// Create project (simulated)
-		createProject(name, projectType, phpVersion)
 	},
 }
 
@@ -83,48 +92,11 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all projects",
 	Run: func(cmd *cobra.Command, args []string) {
-		// Mock data - in real implementation would read from projects directory
-		projects := []struct {
-			name  string
-			ptype string
-			php   string
-			state string
-			icon  string
-		}{
-			{"laravel-1", "Laravel", "8.3", "running", "🟢"},
-			{"laravel-2", "Laravel", "8.5", "stopped", "🔴"},
-			{"wordpress-site", "WordPress", "8.2", "running", "🟢"},
+		// Delegate to bash script
+		if err := executeBashScript("list"); err != nil {
+			fmt.Fprintln(os.Stderr, red("Error: "+err.Error()))
+			os.Exit(1)
 		}
-
-		fmt.Println(cyan("📦 Available Projects"))
-		fmt.Println()
-
-		// Table header
-		fmt.Printf("  %s  %-20s %-12s %-6s %s\n",
-			cyan("●"),
-			cyan("NAME"),
-			cyan("TYPE"),
-			cyan("PHP"),
-			cyan("STATUS"))
-		fmt.Println("  " + cyan("─────────────────────────────────────────────────"))
-
-		// Table rows
-		for _, p := range projects {
-			statusColor := red
-			if p.state == "running" {
-				statusColor = green
-			}
-
-			fmt.Printf("  %s  %-20s %-12s %-6s %s\n",
-				p.icon,
-				p.name,
-				magenta(p.ptype),
-				yellow(p.php),
-				statusColor(p.state))
-		}
-
-		fmt.Println()
-		fmt.Println(yellow("💡 Tip: Use 'phpharbor start <name>' to start a project"))
 	},
 }
 
@@ -133,36 +105,11 @@ var startCmd = &cobra.Command{
 	Short: "Start a project",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		name := args[0]
-
-		fmt.Println(blue(fmt.Sprintf("🚀 Starting project: %s", name)))
-		fmt.Println()
-
-		// Simulated operations with spinner
-		operations := []string{
-			"Building Docker images",
-			"Starting containers",
-			"Configuring network",
-			"Generating SSL certificates",
+		// Delegate to bash script
+		if err := executeBashScript("start", args...); err != nil {
+			fmt.Fprintln(os.Stderr, red("Error: "+err.Error()))
+			os.Exit(1)
 		}
-
-		for _, op := range operations {
-			s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-			s.Suffix = fmt.Sprintf("  %s...", op)
-			s.Color("cyan")
-			s.Start()
-
-			// Simulate work
-			time.Sleep(800 * time.Millisecond)
-
-			s.Stop()
-			fmt.Printf("  %s %s\n", green("✓"), op)
-		}
-
-		fmt.Println()
-		fmt.Println(green("✅ Project started successfully!"))
-		fmt.Println()
-		fmt.Printf("  🌐 URL: %s\n", cyan(fmt.Sprintf("https://%s.test:8443", name)))
 	},
 }
 
@@ -409,6 +356,16 @@ func init() {
 }
 
 func main() {
+	// If no arguments provided, launch TUI by default
+	if len(os.Args) == 1 {
+		if err := RunTUI(); err != nil {
+			fmt.Fprintln(os.Stderr, "Error running TUI:", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// If arguments provided, use Cobra CLI (for now, could delegate to bash later)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
