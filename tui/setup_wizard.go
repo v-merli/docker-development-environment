@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -370,6 +371,7 @@ func (m setupWizardModel) GetAnswers() map[string]string {
 }
 
 // ExecuteSetup performs the actual setup with all-or-nothing semantics
+// It suspends the TUI to run the bash setup with full terminal control
 func (m setupWizardModel) ExecuteSetup() (string, error) {
 	var output strings.Builder
 
@@ -400,55 +402,67 @@ func (m setupWizardModel) ExecuteSetup() (string, error) {
 		output.WriteString("⚠️  Setup ABORTED - Docker Compose not available\n")
 		return output.String(), fmt.Errorf("Docker Compose not available")
 	}
-	output.WriteString("✓\n")
+	output.WriteString("✓\n\n")
 
-	// Check 3: Sudo (only if DNS enabled)
-	if m.answers["dns_enable"] == "yes" {
-		output.WriteString("Checking sudo privileges (DNS setup requires it)...\n")
-		output.WriteString("Please authenticate:\n\n")
+	output.WriteString("✅ All pre-flight checks passed!\n\n")
 
-		// Call sudo -v to refresh credentials
-		sudoCmd := exec.Command("sudo", "-v")
-		sudoCmd.Stdout = os.Stdout
-		sudoCmd.Stderr = os.Stderr
-		sudoCmd.Stdin = os.Stdin
-
-		if err := sudoCmd.Run(); err != nil {
-			output.WriteString("\n❌ FAILED: Sudo authentication failed\n\n")
-			output.WriteString("⚠️  Setup ABORTED - no changes were made\n")
-			output.WriteString("Please check your password and try again.\n")
-			return output.String(), fmt.Errorf("sudo authentication failed")
-		}
-		output.WriteString("✓ Sudo authenticated\n")
-	}
-
-	output.WriteString("\n✅ All pre-flight checks passed!\n\n")
-
-	// Execute setup by delegating to bash script
-	output.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-	output.WriteString("🚀 EXECUTING SETUP\n")
-	output.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
-
-	// Build arguments for setup init
-	args := []string{"init"}
-
-	// Call phpharbor setup init (non-interactive since we've done preflight)
-	setupOutput, err := executePHPHarborCommand("setup", args...)
-	if err != nil {
-		output.WriteString(setupOutput)
-		output.WriteString("\n\n❌ Setup failed: " + err.Error() + "\n")
-		return output.String(), err
-	}
-
-	output.WriteString(setupOutput)
-	output.WriteString("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-	output.WriteString("✅ SETUP COMPLETED SUCCESSFULLY!\n")
-	output.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
-
-	output.WriteString("Next steps:\n")
-	output.WriteString("  1. Create a project: /create\n")
-	output.WriteString("  2. List projects: /list\n")
-	output.WriteString("  3. Start project: /start <name>\n")
-
+	// Return output - actual setup will be executed by TUI using tea.ExecProcess
+	// This allows proper terminal control for sudo prompts
 	return output.String(), nil
+}
+
+// BuildSetupCommand builds the command to execute for setup
+// This will be called by the TUI with tea.ExecProcess for proper terminal control
+func (m setupWizardModel) BuildSetupCommand() *exec.Cmd {
+	// Find the phpharbor bash script
+	bashScriptPath, err := findPHPHarborScriptForExec()
+	if err != nil {
+		return nil
+	}
+
+	projectRoot := filepath.Dir(bashScriptPath)
+	
+	// Build command with configuration from wizard
+	// We'll call setup init with appropriate flags
+	args := []string{bashScriptPath, "setup", "init"}
+	
+	// Add non-interactive flag if we want to skip prompts
+	// (since wizard already collected the config)
+	// args = append(args, "--non-interactive")
+	
+	cmd := exec.Command("bash", args...)
+	cmd.Dir = projectRoot
+	
+	// IMPORTANT: Set stdin/stdout/stderr to use the terminal directly
+	// This allows sudo prompts and progress to be visible
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	
+	// Set environment variables based on wizard answers
+	env := os.Environ()
+	
+	// Projects directory
+	if dir, ok := m.answers["projects_dir"]; ok {
+		env = append(env, fmt.Sprintf("PHPHARBOR_PROJECTS_DIR=%s", dir))
+	}
+	
+	// DNS enable/disable flag
+	if dns, ok := m.answers["dns_enable"]; ok && dns == "yes" {
+		env = append(env, "PHPHARBOR_SETUP_DNS=1")
+	}
+	
+	// Proxy enable/disable
+	if proxy, ok := m.answers["proxy_enable"]; ok && proxy == "yes" {
+		env = append(env, "PHPHARBOR_SETUP_PROXY=1")
+	}
+	
+	// MailPit enable/disable
+	if mailpit, ok := m.answers["mailpit_enable"]; ok && mailpit == "yes" {
+		env = append(env, "PHPHARBOR_SETUP_MAILPIT=1")
+	}
+	
+	cmd.Env = env
+	
+	return cmd
 }

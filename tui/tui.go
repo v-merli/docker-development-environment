@@ -293,32 +293,41 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else if wm, ok := wizardModel.(setupWizardModel); ok {
 					// Handle setup wizard completion
 					if wm.WasCompleted() {
-						// Execute setup with pre-flight checks
+						// Run pre-flight checks first
 						m.wizardActive = false
 						m.wizard = nil
-						m.commandRunning = true
-						m.currentCommand = "phpharbor setup init"
-						m.view = viewCommandOutput
-						m.statusType = statusInfo
-						m.statusMessage = "Running setup..."
-						m.scrollOffset = 0
-
-						// Execute setup (includes pre-flight checks and atomic execution)
-						output, err := wm.ExecuteSetup()
-
+						
+						// Execute pre-flight checks
+						preflightOutput, err := wm.ExecuteSetup()
+						
 						if err != nil {
-							m.commandOutput = output + "\n\n❌ Setup failed: " + err.Error()
+							// Pre-flight checks failed, show error and return to home
+							m.view = viewHome
+							m.message = fmt.Sprintf("❌ Pre-flight check failed\n\n%s", preflightOutput)
 							m.statusType = statusDanger
-							m.statusMessage = "Setup failed"
-						} else {
-							m.commandOutput = output
-							m.statusType = statusSuccess
-							m.statusMessage = "Setup completed successfully!"
+							m.statusMessage = "Setup aborted: " + err.Error()
+							m.scrollOffset = 0
+							return m, nil
 						}
-
-						m.commandRunning = false
-						m.maxScroll = m.calculateMaxScroll()
-						return m, nil
+						
+						// Pre-flight checks passed, now launch setup with full terminal control
+						cmd := wm.BuildSetupCommand()
+						if cmd == nil {
+							m.view = viewHome
+							m.message = "❌ Failed to build setup command"
+							m.statusType = statusDanger
+							m.statusMessage = "Setup command build failed"
+							m.scrollOffset = 0
+							return m, nil
+						}
+						
+						// Suspend TUI and execute setup with tea.ExecProcess
+						return m, tea.ExecProcess(cmd, func(err error) tea.Msg {
+							if err != nil {
+								return setupWizardFinishedMsg{err: err}
+							}
+							return setupWizardFinishedMsg{err: nil}
+						})
 					} else if wm.WasCancelled() {
 						m.wizardActive = false
 						m.view = viewHome
@@ -358,6 +367,21 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.message = "✓ Returned from interactive command"
 			m.statusType = statusSuccess
 			m.statusMessage = "Interactive command completed"
+		}
+		m.view = viewHome
+		m.scrollOffset = 0
+		return m, nil
+
+	case setupWizardFinishedMsg:
+		// Setup wizard has finished, TUI resumed
+		if msg.err != nil {
+			m.message = fmt.Sprintf("❌ Setup failed: %v", msg.err)
+			m.statusType = statusDanger
+			m.statusMessage = "Setup failed"
+		} else {
+			m.message = "✅ Setup completed successfully!"
+			m.statusType = statusSuccess
+			m.statusMessage = "Setup completed - environment ready"
 		}
 		m.view = viewHome
 		m.scrollOffset = 0
@@ -1585,6 +1609,11 @@ func (m tuiModel) launchInteractiveCommand() (tuiModel, tea.Cmd) {
 
 // interactiveCommandFinishedMsg is sent when interactive command completes
 type interactiveCommandFinishedMsg struct {
+	err error
+}
+
+// setupWizardFinishedMsg is sent when setup wizard completes
+type setupWizardFinishedMsg struct {
 	err error
 }
 
