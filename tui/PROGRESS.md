@@ -45,12 +45,15 @@ _⭐ = Comando interattivo con suspend-resume pattern_
   6. Database Version (skip se shared/none)
   7. Redis Cache (yes/no)
   8. SSL Certificate (yes/no)
-- [x] Navigazione avanzata (Tab/Shift+Tab tra step)
-- [x] Review mode (Ctrl+R) per rivedere tutte le risposte
-- [x] Validazione real-time con feedback visivo
+- [x] **Visual progress bar** con indicatori per step (✓ completato, ▶ corrente, ○ futuro)
+- [x] **Previous answers display** - mostra ultime 2 risposte durante la navigazione
+- [x] **Automatic review mode** - entra in review dopo l'ultimo step
+- [x] Navigazione avanzata (Tab/Shift+Tab tra step, Ctrl+R per review)
+- [x] Validazione real-time con feedback visivo ✓/✗
 - [x] Mostra opzioni disponibili per ogni campo
 - [x] Conversione automatica risposte → argomenti bash command
 - [x] Esecuzione comando create e output nella TUI
+- [x] Enhanced styling con header, colori coerenti, layout migliorato
 
 ### Integrazione Bash/TUI
 - [x] No args → TUI mode (`./phpharbor`)
