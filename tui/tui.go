@@ -120,15 +120,23 @@ var commands = []struct {
 	name string
 	desc string
 }{
+	// Project management
 	{"list", "List all projects"},
-	{"stats", "Show system statistics"},
-	{"table", "Show data in tabular format (mock)"},
-	{"service", "Configure a custom service (wizard)"},
-	{"test", "Test long output (simulates ls)"},
-	{"create", "Create a new project"},
 	{"start", "Start a project"},
 	{"stop", "Stop a project"},
-	{"help", "Show help"},
+	{"restart", "Restart a project"},
+	{"remove", "Remove a project"},
+	{"logs", "Show project logs"},
+	{"info", "Project information"},
+	// Wizards
+	{"create", "Create new project (wizard)"},
+	{"wizard", "Create new project (wizard)"},
+	{"service", "Configure service (wizard)"},
+	// System
+	{"stats", "Show system statistics"},
+	{"table", "Show data in tabular format"},
+	{"test", "Test long output scrolling"},
+	{"help", "Show this help"},
 	{"quit", "Exit TUI"},
 }
 
@@ -954,10 +962,18 @@ func (m tuiModel) renderCommandOutputView() string {
 		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#00d4ff")).Render("Press ESC or type /home to return"))
 	} else {
 		b.WriteString("No command output available.\n")
-		b.WriteString("\nType a command like:\n")
-		b.WriteString("  /list - List projects\n")
-		b.WriteString("  /create myproject - Create new project\n")
-		b.WriteString("  /start myproject - Start a project\n")
+		b.WriteString("\n📋 Quick Commands:\n")
+		b.WriteString("  /list        - List all projects\n")
+		b.WriteString("  /start <name> - Start a project\n")
+		b.WriteString("  /stop <name>  - Stop a project\n")
+		b.WriteString("  /restart <name> - Restart a project\n")
+		b.WriteString("  /logs <name>  - Show project logs\n")
+		b.WriteString("  /info <name>  - Project information\n")
+		b.WriteString("  /remove <name> - Remove a project\n")
+		b.WriteString("\n✨ Wizards:\n")
+		b.WriteString("  /wizard or /create - Create new project wizard\n")
+		b.WriteString("\n💡 Help:\n")
+		b.WriteString("  /help        - Show all available commands\n")
 	}
 
 	return b.String()
@@ -1145,8 +1161,24 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 	command := strings.ToLower(parts[0])
 	args := parts[1:]
 
+	// Handle command aliases
+	aliases := map[string]string{
+		"ls":   "list",
+		"rm":   "remove",
+		"del":  "remove",
+		"bash": "shell",
+	}
+	if aliasTarget, ok := aliases[command]; ok {
+		command = aliasTarget
+	}
+
 	// Check if it's a PHPHarbor CLI command (delegate to binary)
-	cliCommands := []string{"list", "start", "stop", "update", "reset", "setup", "projects"}
+	cliCommands := []string{
+		// Project management (Phase 1)
+		"list", "start", "stop", "restart", "remove", "logs", "info",
+		// System commands
+		"update", "reset", "setup", "projects",
+	}
 	for _, cliCmd := range cliCommands {
 		if command == cliCmd {
 			return m.executePHPHarborCLI(command, args)

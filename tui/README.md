@@ -38,13 +38,24 @@ phpharbor-tui
 
 Inside the TUI, use these commands (prefix with `/`):
 
-- `/list` - List all projects
+**Project Management:**
+- `/list` (or `/ls`) - List all projects
+- `/start <name>` - Start a project
+- `/stop <name>` - Stop a project
+- `/restart <name>` - Restart a project
+- `/logs <name>` - Show project logs
+- `/info <name>` - Project information
+- `/remove <name>` (or `/rm`) - Remove a project
+
+**Wizards:**
 - `/wizard` or `/create` - Launch project creation wizard
 - `/service` - Configure services (alias for /create)
+
+**System:**
 - `/stats` - Show system statistics
 - `/table` - Show PHP versions table
-- `/help` - Show help
 - `/test` - Test long output scrolling
+- `/help` - Show all commands
 
 **Navigation:**
 - **↑/↓** - Scroll content
