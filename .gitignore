@@ -122,3 +122,6 @@ proxy/.env
 
 # Ma NON ignorare i .env nei template
 !shared/templates/**/.env.example
+
+# Experimental code (keep in experiment/* branches only)
+experiments/
