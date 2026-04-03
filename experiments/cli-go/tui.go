@@ -586,47 +586,41 @@ func (m tuiModel) renderContent(height int) string {
 				visibleContent = strings.Join(visibleContentLines, "\n")
 			}
 
-			// Add scroll indicator if content is scrollable
+			// Prepare final content with optional vertical scrollbar
+			var finalContent string
+
 			if totalLines > visibleLines {
-				scrollInfo := fmt.Sprintf("\n\n%s Scroll: %d-%d of %d lines (↑/↓ or PgUp/PgDn)",
+				// Create vertical scrollbar
+				scrollbar := m.renderVerticalScrollbar(visibleLines, totalLines, startLine)
+
+				// Add scroll info at bottom
+				scrollInfo := fmt.Sprintf("\n\n%s Scroll: %d-%d of %d lines (↑/↓)",
 					newHintStyle.Render("↕"),
 					startLine+1,
 					endLine,
 					totalLines)
-				visibleContent += scrollInfo
+				contentWithInfo := visibleContent + scrollInfo
+
+				// Calculate widths
+				scrollbarWidth := 2
+				contentWidth := m.width - 2 - scrollbarWidth - 2
+
+				// Style content and scrollbar as separate columns
+				contentStyle := lipgloss.NewStyle().Width(contentWidth)
+				scrollbarStyle := lipgloss.NewStyle().Width(scrollbarWidth).Align(lipgloss.Right)
+
+				styledContent := contentStyle.Render(contentWithInfo)
+				styledScrollbar := scrollbarStyle.Render(scrollbar)
+
+				// Join horizontally
+				finalContent = lipgloss.JoinHorizontal(lipgloss.Top, styledContent, styledScrollbar)
+			} else {
+				finalContent = visibleContent
 			}
 
-			// Set height and width for content (full-width minus borders)
+			// Apply border and final styling
 			style := newContentStyle.Copy().Height(height).Width(m.width - 2)
-			renderedContent := style.Render(visibleContent)
-
-			// Add scrollbar overlay if content is scrollable
-			if totalLines > visibleLines {
-				// Generate scrollbar
-				scrollbarHeight := height - 4
-				scrollbar := m.renderScrollbar(scrollbarHeight, totalLines, startLine)
-
-				// Split rendered content into lines
-				contentLines := strings.Split(renderedContent, "\n")
-				scrollbarLines := strings.Split(scrollbar, "\n")
-
-				// Insert scrollbar into content at the right position
-				scrollbarIdx := 0
-				for i := 2; i < len(contentLines) && scrollbarIdx < len(scrollbarLines); i++ {
-					if i >= len(contentLines)-2 {
-						break
-					}
-					line := contentLines[i]
-					if len(line) > 0 {
-						contentLines[i] = line[:len(line)-1] + scrollbarLines[scrollbarIdx] + line[len(line)-1:]
-						scrollbarIdx++
-					}
-				}
-
-				renderedContent = strings.Join(contentLines, "\n")
-			}
-
-			return renderedContent
+			return style.Render(finalContent)
 		}
 		content = "Service wizard not initialized"
 	default:
@@ -668,80 +662,75 @@ func (m tuiModel) renderContent(height int) string {
 
 	visibleContent := strings.Join(lines[m.scrollOffset:endLine], "\n")
 
-	// Add scroll info
+	// Prepare final content with optional vertical scrollbar
+	var finalContent string
+
 	if totalLines > visibleLines {
-		// Calculate scrollbar position for mini indicator
-		scrollPercentage := float64(m.scrollOffset) / float64(maxScroll)
-		if maxScroll == 0 {
-			scrollPercentage = 0
-		}
+		// Create vertical scrollbar
+		scrollbar := m.renderVerticalScrollbar(visibleLines, totalLines, m.scrollOffset)
 
-		// Create simple scroll indicator with bar
-		scrollbarIndicator := m.renderMiniScrollbar(scrollPercentage)
+		// Add scroll info at bottom of content
+		scrollInfo := fmt.Sprintf("\n\n  [%d-%d of %d lines | ↑/↓ arrows]",
+			m.scrollOffset+1, endLine, totalLines)
+		contentWithInfo := visibleContent + scrollInfo
 
-		scrollInfo := fmt.Sprintf("\n\n  [%d-%d of %d] %s",
-			m.scrollOffset+1, endLine, totalLines, scrollbarIndicator)
-		visibleContent += scrollInfo
+		// Calculate widths
+		scrollbarWidth := 2                              // " │" or " █"
+		contentWidth := m.width - 2 - scrollbarWidth - 2 // minus borders and scrollbar and padding
+
+		// Style content and scrollbar as separate columns
+		contentStyle := lipgloss.NewStyle().Width(contentWidth)
+		scrollbarStyle := lipgloss.NewStyle().Width(scrollbarWidth).Align(lipgloss.Right)
+
+		styledContent := contentStyle.Render(contentWithInfo)
+		styledScrollbar := scrollbarStyle.Render(scrollbar)
+
+		// Join horizontally (content + scrollbar)
+		finalContent = lipgloss.JoinHorizontal(lipgloss.Top, styledContent, styledScrollbar)
+	} else {
+		finalContent = visibleContent
 	}
 
-	// Set height and width for content (full-width minus borders)
+	// Apply border and final styling
 	style := newContentStyle.Copy().Height(height).Width(m.width - 2)
-	return style.Render(visibleContent)
+	return style.Render(finalContent)
 }
 
-// renderMiniScrollbar creates a compact horizontal scrollbar indicator
-func (m tuiModel) renderMiniScrollbar(percentage float64) string {
-	barWidth := 20
-	filled := int(float64(barWidth) * percentage)
-
-	bar := "["
-	for i := 0; i < barWidth; i++ {
-		if i <= filled {
-			bar += lipgloss.NewStyle().Foreground(lipgloss.Color("#00d4ff")).Render("█")
-		} else {
-			bar += lipgloss.NewStyle().Foreground(lipgloss.Color("#444444")).Render("░")
-		}
-	}
-	bar += "]"
-
-	return bar
-}
-
-// renderScrollbar creates a visual scrollbar indicator
-func (m tuiModel) renderScrollbar(barHeight, totalLines, scrollOffset int) string {
-	if barHeight < 3 {
-		barHeight = 3 // Minimum height
+// renderVerticalScrollbar creates a vertical scrollbar
+func (m tuiModel) renderVerticalScrollbar(visibleLines, totalLines, scrollOffset int) string {
+	if visibleLines < 3 {
+		visibleLines = 3
 	}
 
 	var bar strings.Builder
 
-	// Calculate thumb (indicator) position and size
-	ratio := float64(barHeight) / float64(totalLines)
-	thumbSize := int(float64(barHeight) * ratio)
+	// Calculate thumb size and position
+	ratio := float64(visibleLines) / float64(totalLines)
+	thumbSize := int(float64(visibleLines) * ratio)
 	if thumbSize < 1 {
 		thumbSize = 1
 	}
 
-	// Calculate thumb position based on scroll offset
-	scrollRatio := float64(scrollOffset) / float64(totalLines-barHeight)
+	scrollRatio := float64(scrollOffset) / float64(totalLines-visibleLines)
 	if scrollRatio < 0 {
 		scrollRatio = 0
 	}
 	if scrollRatio > 1 {
 		scrollRatio = 1
 	}
-	thumbPos := int(float64(barHeight-thumbSize) * scrollRatio)
+	thumbPos := int(float64(visibleLines-thumbSize) * scrollRatio)
 
-	// Build scrollbar with colors
-	for i := 0; i < barHeight; i++ {
+	// Build scrollbar
+	trackStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#874BFD"))
+	thumbStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#00d4ff")).Bold(true)
+
+	for i := 0; i < visibleLines; i++ {
 		if i >= thumbPos && i < thumbPos+thumbSize {
-			// Thumb (indicator) - cyan/blue
-			bar.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#00d4ff")).Bold(true).Render("█"))
+			bar.WriteString(thumbStyle.Render(" █"))
 		} else {
-			// Track - purple
-			bar.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#874BFD")).Render("│"))
+			bar.WriteString(trackStyle.Render(" │"))
 		}
-		if i < barHeight-1 {
+		if i < visibleLines-1 {
 			bar.WriteString("\n")
 		}
 	}
