@@ -490,6 +490,21 @@ func (m tuiModel) View() string {
 
 	contentHeight := m.height - headerHeight - commandBarHeight - statusBarHeight - suggestionsHeight
 
+	// If showing interactive confirm modal, render it centered on dark background
+	if m.view == viewInteractiveConfirm {
+		modal := m.renderInteractiveConfirmModal()
+		// Center modal on entire screen with dark background
+		return lipgloss.Place(
+			m.width, 
+			m.height, 
+			lipgloss.Center, 
+			lipgloss.Center, 
+			modal,
+			lipgloss.WithWhitespaceChars(" "),
+			lipgloss.WithWhitespaceForeground(lipgloss.Color("#1a1a1a")),
+		)
+	}
+
 	// Header
 	header := m.renderHeader()
 
@@ -520,7 +535,6 @@ func (m tuiModel) View() string {
 		)
 	}
 
-	// Join all parts vertically
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		header,
@@ -619,16 +633,6 @@ func (m tuiModel) renderContent(height int) string {
 		content = m.renderCommandOutputView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
-	case viewInteractiveConfirm:
-		// Render modal centered in content area with dark background
-		modal := m.renderInteractiveConfirmModal()
-
-		// Place modal centered in available content area (no scrolling needed)
-		centeredModal := lipgloss.Place(m.width-2, height, lipgloss.Center, lipgloss.Center, modal, lipgloss.WithWhitespaceChars(" "), lipgloss.WithWhitespaceForeground(lipgloss.Color("#1a1a1a")))
-
-		// Return immediately without scrolling logic
-		style := newContentStyle.Copy().Height(height).Width(m.width - 2)
-		return style.Render(centeredModal)
 	case viewWizard:
 		if m.wizard != nil {
 			content = m.wizard.View()
