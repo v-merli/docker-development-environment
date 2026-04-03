@@ -304,8 +304,17 @@ load_module() {
 
 # Main
 if [ $# -eq 0 ]; then
-    show_help
-    exit 0
+    # No arguments - check if TUI binary exists and launch it
+    TUI_BINARY="$SCRIPT_DIR/tui/phpharbor"
+    
+    if [ -x "$TUI_BINARY" ]; then
+        # Launch TUI mode
+        exec "$TUI_BINARY"
+    else
+        # Fallback to help if TUI not available
+        show_help
+        exit 0
+    fi
 fi
 
 COMMAND=$1
@@ -420,6 +429,19 @@ case $COMMAND in
     reset)
         load_module "reset"
         cmd_reset "$@"
+        ;;
+    tui)
+        # Explicitly launch TUI mode
+        TUI_BINARY="$SCRIPT_DIR/tui/phpharbor"
+        if [ -x "$TUI_BINARY" ]; then
+            exec "$TUI_BINARY"
+        else
+            print_error "TUI binary not found at $TUI_BINARY"
+            echo ""
+            echo "Build the TUI with:"
+            echo "  cd tui && make build"
+            exit 1
+        fi
         ;;
     version|-v|--version)
         show_version
