@@ -495,10 +495,10 @@ func (m tuiModel) View() string {
 		modal := m.renderInteractiveConfirmModal()
 		// Center modal on entire screen with dark background
 		return lipgloss.Place(
-			m.width, 
-			m.height, 
-			lipgloss.Center, 
-			lipgloss.Center, 
+			m.width,
+			m.height,
+			lipgloss.Center,
+			lipgloss.Center,
 			modal,
 			lipgloss.WithWhitespaceChars(" "),
 			lipgloss.WithWhitespaceForeground(lipgloss.Color("#1a1a1a")),
