@@ -143,25 +143,28 @@ var commands = []struct {
 
 // Main TUI model
 type tuiModel struct {
-	width                   int
-	height                  int
-	input                   textinput.Model
-	view                    viewType
-	message                 string
-	err                     error
-	statusType              statusType
-	statusMessage           string
-	exitConfirm             bool
-	scrollOffset            int
-	maxScroll               int // Maximum scroll offset for current content
-	showSuggestions         bool
-	selectedSuggestionIndex int
-	suggestions             []string
-	wizard                  tea.Model // Embedded wizard (createWizardModel)
-	wizardActive            bool
-	commandOutput           string // Output from executed bash commands
-	commandRunning          bool   // True if a command is currently running
-	currentCommand          string // The command being executed
+	width                       int
+	height                      int
+	input                       textinput.Model
+	view                        viewType
+	message                     string
+	err                         error
+	statusType                  statusType
+	statusMessage               string
+	exitConfirm                 bool
+	scrollOffset                int
+	maxScroll                   int // Maximum scroll offset for current content
+	showSuggestions             bool
+	selectedSuggestionIndex     int
+	suggestions                 []string
+	wizard                      tea.Model // Embedded wizard (createWizardModel)
+	wizardActive                bool
+	commandOutput               string // Output from executed bash commands
+	commandRunning              bool   // True if a command is currently running
+	currentCommand              string // The command being executed
+	waitingForInteractiveConfirm bool   // True when waiting for user to confirm interactive command
+	pendingInteractiveCommand   string // Command to execute after confirmation
+	pendingInteractiveArgs      []string // Args for pending interactive command
 }
 
 func newTUIModel() tuiModel {
@@ -300,6 +303,17 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "esc":
+			// If waiting for interactive command confirmation, cancel it
+			if m.waitingForInteractiveConfirm {
+				m.waitingForInteractiveConfirm = false
+				m.pendingInteractiveCommand = ""
+				m.pendingInteractiveArgs = nil
+				m.message = "❌ Interactive command cancelled"
+				m.statusType = statusWarning
+				m.statusMessage = "Command cancelled by user"
+				return m, nil
+			}
+			
 			// If already in home view, require double ESC to quit
 			if m.view == viewHome {
 				if m.exitConfirm {
@@ -322,6 +336,11 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "enter":
+			// If waiting for interactive command confirmation, launch it
+			if m.waitingForInteractiveConfirm {
+				return m.launchInteractiveCommand()
+			}
+			
 			// Cancel exit confirmation on any input
 			m.exitConfirm = false
 
@@ -431,8 +450,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Update input and track changes for suggestions (only if wizard not active)
-	if !m.wizardActive {
+	// Update input and track changes for suggestions (only if wizard not active and not waiting for interactive confirmation)
+	if !m.wizardActive && !m.waitingForInteractiveConfirm {
 		oldValue := m.input.Value()
 		m.input, cmd = m.input.Update(msg)
 		newValue := m.input.Value()
@@ -1322,17 +1341,8 @@ func executePHPHarborCommand(command string, args ...string) (string, error) {
 }
 
 // executeInteractiveCommand handles commands that need terminal control (shell, mysql)
-// Uses tea.ExecProcess to suspend TUI, run command, then resume
+// Shows a confirmation message and waits for Enter before suspending TUI
 func (m tuiModel) executeInteractiveCommand(command string, args []string) (tuiModel, tea.Cmd) {
-	// Build the command to execute
-	bashScriptPath, err := findPHPHarborScriptForExec()
-	if err != nil {
-		m.message = fmt.Sprintf("❌ Error: %v", err)
-		m.statusType = statusDanger
-		m.statusMessage = "Failed to locate phpharbor script"
-		return m, nil
-	}
-
 	// Show informative message before suspending
 	commandName := map[string]string{
 		"shell": "shell",
@@ -1347,21 +1357,47 @@ func (m tuiModel) executeInteractiveCommand(command string, args []string) (tuiM
 		projectName = args[0]
 	}
 	
-	m.message = fmt.Sprintf("🚀 Launching %s for %s...\n\n"+
+	m.message = fmt.Sprintf("🚀 Ready to launch %s for %s\n\n"+
 		"The TUI will suspend and you'll see the %s.\n"+
-		"Type 'exit' or press Ctrl+D to return to TUI.", 
+		"Type 'exit' or press Ctrl+D to return to TUI.\n\n"+
+		"Press Enter to continue or ESC to cancel...", 
 		commandName, projectName, commandName)
 	m.statusType = statusInfo
-	m.statusMessage = fmt.Sprintf("Launching interactive %s", commandName)
+	m.statusMessage = fmt.Sprintf("Ready to launch %s - press Enter", commandName)
 	m.view = viewHome
 	m.scrollOffset = 0
+	
+	// Set waiting state
+	m.waitingForInteractiveConfirm = true
+	m.pendingInteractiveCommand = command
+	m.pendingInteractiveArgs = args
+
+	return m, nil
+}
+
+// launchInteractiveCommand actually launches the interactive command after confirmation
+func (m tuiModel) launchInteractiveCommand() (tuiModel, tea.Cmd) {
+	// Build the command to execute
+	bashScriptPath, err := findPHPHarborScriptForExec()
+	if err != nil {
+		m.message = fmt.Sprintf("❌ Error: %v", err)
+		m.statusType = statusDanger
+		m.statusMessage = "Failed to locate phpharbor script"
+		m.waitingForInteractiveConfirm = false
+		return m, nil
+	}
 
 	// Create exec command
 	projectRoot := filepath.Dir(bashScriptPath)
-	cmdArgs := append([]string{bashScriptPath, command}, args...)
+	cmdArgs := append([]string{bashScriptPath, m.pendingInteractiveCommand}, m.pendingInteractiveArgs...)
 
 	cmd := exec.Command("bash", cmdArgs...)
 	cmd.Dir = projectRoot
+	
+	// Clear waiting state
+	m.waitingForInteractiveConfirm = false
+	m.pendingInteractiveCommand = ""
+	m.pendingInteractiveArgs = nil
 
 	// Return tea.ExecProcess which will:
 	// 1. Suspend TUI (clear screen)
