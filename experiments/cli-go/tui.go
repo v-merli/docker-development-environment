@@ -100,6 +100,7 @@ const (
 	viewStats         viewType = "stats"
 	viewLongOutput    viewType = "longoutput"
 	viewServiceWizard viewType = "servicewizard"
+	viewTable         viewType = "table"
 )
 
 // Status types
@@ -119,6 +120,7 @@ var commands = []struct {
 }{
 	{"list", "List all projects"},
 	{"stats", "Show system statistics"},
+	{"table", "Show data in tabular format (mock)"},
 	{"service", "Configure a custom service (wizard)"},
 	{"test", "Test long output (simulates ls)"},
 	{"create", "Create a new project"},
@@ -491,6 +493,8 @@ func (m tuiModel) calculateMaxScroll() int {
 		content = m.renderProjectsView()
 	case viewStats:
 		content = m.renderStatsView()
+	case viewTable:
+		content = m.renderTableView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
 	case viewServiceWizard:
@@ -546,6 +550,8 @@ func (m tuiModel) renderContent(height int) string {
 		content = m.renderProjectsView()
 	case viewStats:
 		content = m.renderStatsView()
+	case viewTable:
+		content = m.renderTableView()
 	case viewLongOutput:
 		content = m.renderLongOutputView()
 	case viewServiceWizard:
@@ -768,6 +774,129 @@ func (m tuiModel) renderLongOutputView() string {
 	return b.String()
 }
 
+func (m tuiModel) renderTableView() string {
+	var b strings.Builder
+
+	b.WriteString("📊 PHP Versions Available\n")
+	b.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+
+	// Define table styles
+	headerCellStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Background(lipgloss.Color("#874BFD")).
+		Padding(0, 2).
+		Align(lipgloss.Center)
+
+	cellStyle := lipgloss.NewStyle().
+		Padding(0, 2).
+		Align(lipgloss.Left)
+
+	cellCenterStyle := lipgloss.NewStyle().
+		Padding(0, 2).
+		Align(lipgloss.Center)
+
+	altRowStyle := lipgloss.NewStyle().
+		Background(lipgloss.Color("#1a1a1a")).
+		Padding(0, 2)
+
+	// Define column widths
+	colVersion := 10
+	colStatus := 12
+	colJIT := 8
+	colPerf := 18
+	colUsage := 20
+
+	// Header row
+	headerRow := lipgloss.JoinHorizontal(lipgloss.Top,
+		headerCellStyle.Width(colVersion).Render("Version"),
+		headerCellStyle.Width(colStatus).Render("Status"),
+		headerCellStyle.Width(colJIT).Render("JIT"),
+		headerCellStyle.Width(colPerf).Render("Performance"),
+		headerCellStyle.Width(colUsage).Render("Common Use"),
+	)
+
+	// Data rows
+	type phpVersion struct {
+		version string
+		status  string
+		jit     string
+		perf    string
+		usage   string
+	}
+
+	versions := []phpVersion{
+		{"PHP 7.3", "Legacy", "No", "⭐⭐⭐", "Old projects"},
+		{"PHP 7.4", "EOL", "No", "⭐⭐⭐", "Legacy apps"},
+		{"PHP 8.1", "Security", "Yes", "⭐⭐⭐⭐", "Stable production"},
+		{"PHP 8.2", "Active", "Yes", "⭐⭐⭐⭐⭐", "Modern apps"},
+		{"PHP 8.3", "Active", "Yes", "⭐⭐⭐⭐⭐", "Latest stable"},
+		{"PHP 8.4", "Beta", "Yes", "⭐⭐⭐⭐⭐+", "Bleeding edge"},
+		{"PHP 8.5", "Dev", "Yes", "⭐⭐⭐⭐⭐+", "Experimental"},
+	}
+
+	var rows []string
+	rows = append(rows, headerRow)
+
+	for i, v := range versions {
+		// Alternate row styling
+		rowCellStyle := cellStyle
+		rowCenterStyle := cellCenterStyle
+		if i%2 == 1 {
+			rowCellStyle = altRowStyle.Copy().Align(lipgloss.Left)
+			rowCenterStyle = altRowStyle.Copy().Align(lipgloss.Center)
+		}
+
+		// Status color coding
+		statusStyle := rowCenterStyle.Copy()
+		switch v.status {
+		case "Active":
+			statusStyle = statusStyle.Foreground(lipgloss.Color("#00FF88"))
+		case "Beta", "Dev":
+			statusStyle = statusStyle.Foreground(lipgloss.Color("#FFAA00"))
+		case "Security":
+			statusStyle = statusStyle.Foreground(lipgloss.Color("#00AAFF"))
+		case "EOL", "Legacy":
+			statusStyle = statusStyle.Foreground(lipgloss.Color("#FF4444"))
+		}
+
+		// JIT color
+		jitStyle := rowCenterStyle.Copy()
+		if v.jit == "Yes" {
+			jitStyle = jitStyle.Foreground(lipgloss.Color("#00FF88"))
+		} else {
+			jitStyle = jitStyle.Foreground(lipgloss.Color("#666666"))
+		}
+
+		row := lipgloss.JoinHorizontal(lipgloss.Top,
+			rowCellStyle.Width(colVersion).Render(v.version),
+			statusStyle.Width(colStatus).Render(v.status),
+			jitStyle.Width(colJIT).Render(v.jit),
+			rowCenterStyle.Width(colPerf).Render(v.perf),
+			rowCellStyle.Width(colUsage).Render(v.usage),
+		)
+		rows = append(rows, row)
+	}
+
+	// Join all rows vertically
+	table := lipgloss.JoinVertical(lipgloss.Left, rows...)
+
+	// Add table with border
+	tableStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#874BFD")).
+		Padding(1, 2)
+
+	b.WriteString(tableStyle.Render(table))
+
+	b.WriteString("\n\n")
+	b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#888888")).Render("💡 Tip: Use /service to configure custom services with these PHP versions"))
+	b.WriteString("\n")
+	b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#00d4ff")).Render("Press ESC or type /home to return"))
+
+	return b.String()
+}
+
 func (m tuiModel) renderCommandBar() string {
 	// When wizard is active, show a disabled command bar
 	if m.wizardActive {
@@ -957,6 +1086,12 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		m.message = "✓ Showing statistics"
 		m.statusType = statusInfo
 		m.statusMessage = "System statistics displayed"
+		m.scrollOffset = 0
+	case "table", "data":
+		m.view = viewTable
+		m.message = "✓ Showing tabular data"
+		m.statusType = statusSuccess
+		m.statusMessage = "PHP versions table displayed"
 		m.scrollOffset = 0
 	case "service", "wizard":
 		// Launch the service configuration wizard
