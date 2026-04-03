@@ -1399,8 +1399,8 @@ func (m tuiModel) executeCommand(cmd string) (tuiModel, tea.Cmd) {
 		"artisan", "composer", "npm", "queue",
 		// Service management (Phase 3)
 		"service", "shared",
-		// SSL & System commands (Phase 4)
-		"ssl", "setup", "update", "reset", "stats",
+		// SSL & System commands (Phase 4) - note: "setup" removed, it's a wizard
+		"ssl", "update", "reset", "stats",
 		// Other
 		"projects", "convert",
 	}
