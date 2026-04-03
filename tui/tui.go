@@ -1173,12 +1173,20 @@ func (m tuiModel) executeCommand(cmd string) tuiModel {
 		command = aliasTarget
 	}
 
+	// Handle interactive commands that need a new terminal tab
+	interactiveCommands := []string{"shell", "mysql"}
+	for _, interactiveCmd := range interactiveCommands {
+		if command == interactiveCmd {
+			return m.executeInteractiveCommand(command, args)
+		}
+	}
+
 	// Check if it's a PHPHarbor CLI command (delegate to binary)
 	cliCommands := []string{
 		// Project management (Phase 1)
 		"list", "start", "stop", "restart", "remove", "logs", "info",
-		// Development tools (Phase 2)
-		"shell", "artisan", "composer", "npm", "mysql", "queue",
+		// Development tools (Phase 2 - non-interactive)
+		"artisan", "composer", "npm", "queue",
 		// System commands
 		"update", "reset", "setup", "projects",
 	}
@@ -1296,6 +1304,37 @@ func executePHPHarborCommand(command string, args ...string) (string, error) {
 
 	output, err := cmd.CombinedOutput()
 	return string(output), err
+}
+
+// executeInteractiveCommand handles commands that need a new terminal tab (shell, mysql)
+func (m tuiModel) executeInteractiveCommand(command string, args []string) tuiModel {
+	// Try to open in new terminal tab
+	success, err := openCommandInNewTab(command, args...)
+
+	if success {
+		// Successfully opened in new tab
+		m.message = fmt.Sprintf("✓ Opened /%s in new terminal tab", command)
+		m.statusType = statusSuccess
+		m.statusMessage = fmt.Sprintf("Command launched in new tab: %s %s", command, strings.Join(args, " "))
+		m.view = viewHome
+		m.scrollOffset = 0
+	} else {
+		// Failed to open - show fallback instructions
+		fallbackMsg := buildFallbackMessage(command, args)
+		m.commandOutput = fallbackMsg
+		m.view = viewCommandOutput
+		m.statusType = statusWarning
+		m.statusMessage = "Could not auto-open terminal - manual action required"
+		m.scrollOffset = 0
+		m.maxScroll = m.calculateMaxScroll()
+		
+		// Log the error for debugging
+		if err != nil {
+			m.commandOutput += fmt.Sprintf("\n\nDebug info: %v", err)
+		}
+	}
+
+	return m
 }
 
 // executePHPHarborCLI wraps PHPHarbor CLI command execution for TUI

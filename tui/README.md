@@ -48,12 +48,15 @@ Inside the TUI, use these commands (prefix with `/`):
 - `/remove <name>` (or `/rm`) - Remove a project
 
 **Development Tools:**
-- `/shell <name>` (or `/bash`) - Open shell in PHP container
+- `/shell <name>` (or `/bash`) - Open shell in PHP container ⭐ _Opens in new terminal tab_
 - `/artisan <name> <cmd>` - Run Laravel Artisan command
 - `/composer <name> <cmd>` - Run Composer command
 - `/npm <name> <cmd>` - Run npm command
-- `/mysql <name>` - Open MySQL CLI for project
+- `/mysql <name>` - Open MySQL CLI for project ⭐ _Opens in new terminal tab_
 - `/queue <name> <action>` - Manage queue worker (restart|logs|status)
+
+> **Note:** Commands marked with ⭐ are interactive and will automatically open in a new terminal tab
+> when possible. Supports: iTerm2, Terminal.app (macOS), GNOME Terminal, Konsole (Linux), Windows Terminal.
 
 **Wizards:**
 - `/wizard` or `/create` - Launch project creation wizard
