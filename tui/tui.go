@@ -120,31 +120,25 @@ var commands = []struct {
 	name string
 	desc string
 }{
-	// Project management
-	{"list", "List all projects"},
-	{"start", "Start a project"},
-	{"stop", "Stop a project"},
-	{"restart", "Restart a project"},
-	{"remove", "Remove a project"},
-	{"logs", "Show project logs"},
-	{"info", "Project information"},
-	// Development tools
-	{"shell", "Open shell in PHP container"},
 	{"artisan", "Run Laravel Artisan command"},
 	{"composer", "Run Composer command"},
-	{"npm", "Run npm command"},
-	{"mysql", "Open MySQL CLI"},
-	{"queue", "Manage queue worker"},
-	// Wizards
 	{"create", "Create new project (wizard)"},
-	{"wizard", "Create new project (wizard)"},
-	{"service", "Configure service (wizard)"},
-	// System
-	{"stats", "Show system statistics"},
-	{"table", "Show data in tabular format"},
-	{"test", "Test long output scrolling"},
 	{"help", "Show this help"},
+	{"info", "Project information"},
+	{"list", "List all projects"},
+	{"logs", "Show project logs"},
+	{"mysql", "Open MySQL CLI"},
+	{"npm", "Run npm command"},
+	{"queue", "Manage queue worker"},
 	{"quit", "Exit TUI"},
+	{"remove", "Remove a project"},
+	{"restart", "Restart a project"},
+	{"service", "Configure service (wizard)"},
+	{"shell", "Open shell in PHP container"},
+	{"start", "Start a project"},
+	{"stats", "Show system statistics"},
+	{"stop", "Stop a project"},
+	{"wizard", "Create new project (wizard)"},
 }
 
 // Main TUI model
