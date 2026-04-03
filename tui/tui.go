@@ -290,6 +290,45 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.scrollOffset = 0
 						return m, nil
 					}
+				} else if wm, ok := wizardModel.(setupWizardModel); ok {
+					// Handle setup wizard completion
+					if wm.WasCompleted() {
+						// Execute setup with pre-flight checks
+						m.wizardActive = false
+						m.wizard = nil
+						m.commandRunning = true
+						m.currentCommand = "phpharbor setup init"
+						m.view = viewCommandOutput
+						m.statusType = statusInfo
+						m.statusMessage = "Running setup..."
+						m.scrollOffset = 0
+
+						// Execute setup (includes pre-flight checks and atomic execution)
+						output, err := wm.ExecuteSetup()
+
+						if err != nil {
+							m.commandOutput = output + "\n\n❌ Setup failed: " + err.Error()
+							m.statusType = statusDanger
+							m.statusMessage = "Setup failed"
+						} else {
+							m.commandOutput = output
+							m.statusType = statusSuccess
+							m.statusMessage = "Setup completed successfully!"
+						}
+
+						m.commandRunning = false
+						m.maxScroll = m.calculateMaxScroll()
+						return m, nil
+					} else if wm.WasCancelled() {
+						m.wizardActive = false
+						m.view = viewHome
+						m.message = "⚠ Wizard cancelled"
+						m.statusType = statusWarning
+						m.statusMessage = "Setup wizard cancelled"
+						m.wizard = nil
+						m.scrollOffset = 0
+						return m, nil
+					}
 				}
 				return m, wizardCmd
 			}
@@ -1386,7 +1425,7 @@ func (m tuiModel) executeCommand(cmd string) (tuiModel, tea.Cmd) {
 		m.statusMessage = "PHP versions table displayed"
 		m.scrollOffset = 0
 	case "wizard", "create":
-		// Launch the simple 3-step create wizard
+		// Launch the create project wizard
 		wizard := newCreateWizard()
 		wizard.width = m.width
 		wizard.height = m.height
@@ -1396,6 +1435,18 @@ func (m tuiModel) executeCommand(cmd string) (tuiModel, tea.Cmd) {
 		m.message = ""
 		m.statusType = statusInfo
 		m.statusMessage = "Project creation wizard"
+		m.scrollOffset = 0
+	case "setup":
+		// Launch the system setup wizard
+		wizard := newSetupWizard()
+		wizard.width = m.width
+		wizard.height = m.height
+		m.wizard = wizard
+		m.wizardActive = true
+		m.view = viewWizard
+		m.message = ""
+		m.statusType = statusInfo
+		m.statusMessage = "System setup wizard"
 		m.scrollOffset = 0
 	case "test", "longoutput":
 		m.view = viewLongOutput

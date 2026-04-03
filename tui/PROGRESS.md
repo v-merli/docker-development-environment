@@ -1,8 +1,8 @@
 # TUI Production - Progress Tracker
 
 **Branch:** `feature/go-tui-production`  
-**Status:** 23+ commits ahead of develop  
-**Last Updated:** 2026-04-03 (Advanced Create Wizard Implemented)
+**Status:** 24+ commits ahead of develop  
+**Last Updated:** 2026-04-03 (Setup Wizard + Advanced Create Wizard)
 
 ## ✅ Completato
 
@@ -36,24 +36,32 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 - [x] `reset` - Docker environment reset (soft/hard/status)
 
 ### Advanced Create Wizard (Enhanced)
-- [x] **Interactive project creation wizard** con 8 step configurabili:
-  1. Project Name (validazione lowercase/numbers/hyphens)
-  2. Project Type (laravel/wordpress/php/html)
-  3. PHP Version (7.3-8.5, skip per html)
-  4. Node.js Version (18/20/21, solo Laravel)
-  5. Database (none/shared/mysql/mariadb con versioni)
-  6. Database Version (skip se shared/none)
-  7. Redis Cache (yes/no)
-  8. SSL Certificate (yes/no)
+- [x] **Interactive project creation wizard** con 8 step configurabili
 - [x] **Visual progress bar** con indicatori per step (✓ completato, ▶ corrente, ○ futuro)
 - [x] **Previous answers display** - mostra ultime 2 risposte durante la navigazione
 - [x] **Automatic review mode** - entra in review dopo l'ultimo step
-- [x] Navigazione avanzata (Tab/Shift+Tab tra step, Ctrl+R per review)
-- [x] Validazione real-time con feedback visivo ✓/✗
-- [x] Mostra opzioni disponibili per ogni campo
+- [x] Navigazione avanzata (Tab/Shift+Tab, Ctrl+R review)
+- [x] Validazione real-time con feedback visivo
 - [x] Conversione automatica risposte → argomenti bash command
 - [x] Esecuzione comando create e output nella TUI
-- [x] Enhanced styling con header, colori coerenti, layout migliorato
+
+### System Setup Wizard (NEW!)
+- [x] **Interactive setup init wizard** con 4 step configurabili:
+  1. Projects Directory (custom paths support)
+  2. DNS Configuration (dnsmasq for *.test domains)
+  3. Reverse Proxy (nginx)
+  4. MailPit Email Catcher (conditional on proxy)
+- [x] **All-or-Nothing Execution** - atomic setup, no partial states
+- [x] **Pre-flight Checks** prima di modifiche:
+  - Docker running check
+  - Docker Compose check
+  - Sudo authentication (only if DNS enabled)
+- [x] **Just-in-Time Sudo** - password requested solo dopo review
+- [x] **Secure sudo handling** - no password in memory, system prompt
+- [x] Step condizionali (MailPit skip se proxy=no)
+- [x] Review mode con warning pre-flight
+- [x] Clear error messages e abort su qualsiasi fallimento
+- [x] Visual progress bar e previous answers display
 
 ### Integrazione Bash/TUI
 - [x] No args → TUI mode (`./phpharbor`)
@@ -79,12 +87,12 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 
 ## 📊 Metriche
 
-- **Commits:** 23+ (da develop)
-- **Files changed:** 4 main files (tui.go, create_wizard.go, wizard_shared.go, main.go)
-- **Lines of Go code:** ~2,050
-- **Binary size:** ~4.8 MB
+- **Commits:** 24+ (da develop)
+- **Files changed:** 5 main files (tui.go, create_wizard.go, setup_wizard.go, wizard_shared.go, main.go)
+- **Lines of Go code:** ~2,500
+- **Binary size:** ~5.0 MB
 - **Commands implemented:** 19/19 ✅ (100% CORE COMMANDS)
-- **Wizard steps:** 8 (advanced create wizard with full validation)
+- **Wizards:** 2 (create + setup init, 12 total steps)
 
 ## 🔧 Setup dall'Altro PC
 
