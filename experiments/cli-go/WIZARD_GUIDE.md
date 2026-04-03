@@ -72,12 +72,15 @@ oppure
 
 #### 📜 Scrolling del Contenuto (sempre disponibile)
 - **↑/↓ (Frecce)**: Scorri su/giù di 1 riga
-- **Page Up/Page Down**: Scorri su/giù di 10 righe
-- **j/k**: Scorri su/giù di 1 riga (stile Vim)
-- **g/G** o **Home/End**: Vai all'inizio/fine del contenuto
+- **Page Up/Page Down**: Scorri su/giù di 10 righe (su Mac: Fn+↑/Fn+↓)
 - **Indicatore visivo**: Mostra "↕ Scroll: X-Y of Z lines" quando il contenuto è più lungo
 
-Lo scrolling è **sempre disponibile** durante l'uso del wizard, non solo in Review Mode.
+Lo scrolling è **sempre disponibile** durante l'uso del wizard, specialmente utile in Review Mode dove vengono mostrate tutte le 8 risposte.
+
+> **Nota**: 
+> - I tasti j/k (Vim-style) sono stati rimossi per evitare conflitti con l'inserimento di testo nei campi di input.
+> - Home/End sono disponibili per l'input field (muovono il cursore a inizio/fine riga), non per lo scroll.
+> - Su Mac, se il terminale lo supporta, puoi anche usare lo scroll del trackpad/mouse.
 
 #### 📊 Indicatori di Progresso
 - Barra di progresso visuale che mostra:
@@ -186,7 +189,7 @@ Per le domande con opzioni predefinite, vengono mostrate:
 
 💡 **Scroll always available**: Le frecce ↑/↓ sono sempre disponibili per scrollare, non devi aspettare la review mode
 
-💡 **Vim-style navigation**: Se preferisci, usa j/k invece di frecce per lo scrolling
+💡 **Nessun conflitto**: I tasti j/k non sono usati per evitare problemi durante la digitazione
 
 ## Integrazione nel Workflow
 

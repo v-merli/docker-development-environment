@@ -141,9 +141,11 @@ Il wizard implementa un sistema di scrolling **sempre disponibile** con separazi
 ### Scrolling Verticale (sempre attivo)
 - **↑/↓**: Scorri di 1 riga
 - **Page Up/Down**: Scorri di 10 righe
-- **j/k**: Scorri di 1 riga (stile Vim)
-- **g/G** o **Home/End**: Vai all'inizio/fine
 - **↕ Indicatore**: Mostra "Scroll: X-Y of Z lines" quando necessario
+
+> **Nota**: 
+> - I tasti j/k (Vim-style) sono stati rimossi per evitare conflitti con l'inserimento di testo.
+> - Nel wizard, Home/End sono disponibili per l'input field, non per lo scroll.
 
 ### Perché Questo Design?
 

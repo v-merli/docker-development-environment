@@ -181,50 +181,42 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.maxScroll = m.calculateMaxScroll()
 		}
 
-		// Intercept scrolling keys for wizard view
+		// Handle scrolling keys BEFORE wizard (arrows are for scrolling, not text input cursor)
+		// Wizard uses Tab/Shift+Tab for navigation between steps
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
-			// Allow scrolling with arrows, Page Up/Down, j/k, etc.
-			// Since wizard uses Tab/Shift+Tab for navigation, arrows are free for scrolling
 			switch keyMsg.String() {
-			case "up", "k":
+			case "up":
 				// Scroll up one line
 				if m.scrollOffset > 0 {
 					m.scrollOffset--
 				}
 				return m, nil
-			case "down", "j":
+			case "down":
 				// Scroll down one line
-				m.scrollOffset++
-				if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
-					m.scrollOffset = m.maxScroll
+				if m.scrollOffset < m.maxScroll {
+					m.scrollOffset++
 				}
 				return m, nil
-			case "pgup", "K":
+			case "pgup":
 				// Page up (scroll up by 10 lines)
 				m.scrollOffset -= 10
 				if m.scrollOffset < 0 {
 					m.scrollOffset = 0
 				}
 				return m, nil
-			case "pgdown", "J":
+			case "pgdown":
 				// Page down (scroll down by 10 lines)
 				m.scrollOffset += 10
-				if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
+				if m.scrollOffset > m.maxScroll {
 					m.scrollOffset = m.maxScroll
 				}
 				return m, nil
-			case "home", "g":
-				// Go to top
-				m.scrollOffset = 0
-				return m, nil
-			case "end", "G":
-				// Go to bottom
-				m.scrollOffset = m.maxScroll
-				return m, nil
+				// Note: Home/End are NOT intercepted here so they can be used
+				// in the text input field to move cursor to start/end of line
 			}
 		}
 
-		// Update wizard
+		// Update wizard (will receive Tab/Shift+Tab, Enter, Esc, etc. but not arrows)
 		wizardModel, wizardCmd := m.wizard.Update(msg)
 		if wm, ok := wizardModel.(advancedWizardModel); ok {
 			m.wizard = &wm
@@ -323,7 +315,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
-		case "up", "k":
+		case "up":
 			// If suggestions visible, navigate them instead of scrolling
 			if m.showSuggestions && len(m.suggestions) > 0 {
 				m.selectedSuggestionIndex--
@@ -342,7 +334,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.exitConfirm = false
 			return m, nil
 
-		case "down", "j":
+		case "down":
 			// If suggestions visible, navigate them instead of scrolling
 			if m.showSuggestions && len(m.suggestions) > 0 {
 				m.selectedSuggestionIndex = (m.selectedSuggestionIndex + 1) % len(m.suggestions)
@@ -351,11 +343,9 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			// Normal scroll down (will be clamped in render)
-			m.scrollOffset++
-			// Limit to reasonable maximum to avoid overflow
-			if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
-				m.scrollOffset = m.maxScroll
+			// Normal scroll down
+			if m.scrollOffset < m.maxScroll {
+				m.scrollOffset++
 			}
 			m.exitConfirm = false
 			return m, nil
@@ -372,8 +362,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "pgdown":
 			// Page down (scroll down by 10 lines)
 			m.scrollOffset += 10
-			// Limit to reasonable maximum to avoid overflow
-			if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
+			// Clamp to maxScroll
+			if m.scrollOffset > m.maxScroll {
 				m.scrollOffset = m.maxScroll
 			}
 			m.exitConfirm = false
@@ -387,7 +377,9 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "end":
 			// Go to bottom
-			m.scrollOffset = m.maxScroll
+			if m.maxScroll > 0 {
+				m.scrollOffset = m.maxScroll
+			}
 			m.exitConfirm = false
 			return m, nil
 
@@ -502,8 +494,12 @@ func (m tuiModel) calculateMaxScroll() int {
 	case viewLongOutput:
 		content = m.renderLongOutputView()
 	case viewServiceWizard:
-		// Wizard doesn't use scrolling in TUI mode
-		return 0
+		// Render wizard to calculate its actual height (especially important in review mode)
+		if m.wizard != nil {
+			content = m.wizard.RenderForTUI()
+		} else {
+			content = ""
+		}
 	default:
 		content = "Unknown view"
 	}
@@ -588,7 +584,7 @@ func (m tuiModel) renderContent(height int) string {
 
 			// Add scroll indicator if content is scrollable
 			if totalLines > visibleLines {
-				scrollInfo := fmt.Sprintf("\n\n%s Scroll: %d-%d of %d lines (↑/↓ arrows or PgUp/PgDn)",
+				scrollInfo := fmt.Sprintf("\n\n%s Scroll: %d-%d of %d lines (↑/↓ or PgUp/PgDn)",
 					newHintStyle.Render("↕"),
 					startLine+1,
 					endLine,
@@ -643,7 +639,7 @@ func (m tuiModel) renderContent(height int) string {
 	// Add scroll indicators
 	var scrollInfo string
 	if totalLines > visibleLines {
-		scrollInfo = fmt.Sprintf("\n\n  [%d-%d of %d lines | ↑/↓ or j/k to scroll | PgUp/PgDn | Home/End]",
+		scrollInfo = fmt.Sprintf("\n\n  [%d-%d of %d lines | ↑/↓ arrows | PgUp/PgDn | Home/End]",
 			m.scrollOffset+1, endLine, totalLines)
 		visibleContent += scrollInfo
 	}

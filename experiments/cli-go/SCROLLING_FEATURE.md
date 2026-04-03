@@ -109,19 +109,15 @@ Gli help text del wizard ora includono riferimenti allo scrolling:
 | **Ctrl+R** | Entra in Review Mode | Vedi tutte le risposte |
 | **Esc** | Annulla wizard | Torna alla home |
 
-### Scrolling Verticale (Sempre Attivo)
+### Scrolling Verticale (Sempre Attivo nel Wizard)
 | Tasto | Azione | Note |
 |-------|--------|------|
 | **↑ (Up Arrow)** | Scorri su 1 riga | Sempre disponibile |
 | **↓ (Down Arrow)** | Scorri giù 1 riga | Sempre disponibile |
 | **Page Up** | Scorri su 10 righe | Scrolling veloce |
 | **Page Down** | Scorri giù 10 righe | Scrolling veloce |
-| **j** | Scorri giù 1 riga | Stile Vim |
-| **k** | Scorri su 1 riga | Stile Vim |
-| **J** (Shift+j) | Come Page Down | Alternativa |
-| **K** (Shift+k) | Come Page Up | Alternativa |
-| **Home** o **g** | Vai all'inizio | Quick navigation |
-| **End** o **G** | Vai alla fine | Quick navigation |
+
+> **Nota importante**: Nel wizard, Home/End NON sono usati per lo scroll ma sono disponibili per l'input field (muovono il cursore a inizio/fine riga). Nelle altre viste del TUI, Home/End funzionano per lo scroll.
 
 ## File Modificati
 
@@ -143,10 +139,11 @@ Gli help text del wizard ora includono riferimenti allo scrolling:
 1. **✅ Controlli separati e chiari** - Tab per navigazione, frecce per scrolling
 2. **✅ Scrolling sempre disponibile** - Non serve aspettare la review mode
 3. **✅ Standard UI conventions** - Tab è lo standard per navigare tra campi
-4. **✅ Nessun conflitto** - Ogni tasto ha un solo significato, sempre
+4. **✅ Nessun conflitto con input** - j/k rimossi per permettere digitazione libera
 5. **✅ Comportamento prevedibile** - Le frecce fanno sempre la stessa cosa
 6. **✅ Esperienza fluida** - Scroll naturale in qualsiasi momento
 7. **✅ Feedback visivo** - Indicatore mostra quando c'è contenuto da scrollare
+8. **✅ Clamping migliorato** - Scroll offset non supera mai maxScroll
 
 ## Testing
 
@@ -189,13 +186,46 @@ Esc              # Torna alla home
 ## Edge Cases Gestiti
 
 ✅ **Contenuto più corto dello schermo** - Nessun indicatore, scrolling funziona ma non serve  
-✅ **Scroll oltre il limite** - Clamping a maxScroll  
+✅ **Scroll oltre il limite** - Clamping migliorato a maxScroll  
 ✅ **Scroll sotto zero** - Clamping a 0  
 ✅ **Resize finestra** - Ricalcolo automatico maxScroll  
 ✅ **Cambio stato wizard** - Reset scroll appropriato  
 ✅ **Contenuto dinamico** - Calcolo real-time delle righe  
 ✅ **Step navigation** - Tab/Shift+Tab non interferiscono con scroll  
-✅ **Input field** - Frecce catturate dal TUI, non dall'input field
+✅ **Input field** - Frecce catturate dal TUI, non dall'input field  
+✅ **j/k rimossi** - Non interferiscono più con la digitazione  
+✅ **Scroll bloccato in fondo** - Fixed: clamping usa check `< maxScroll` invece di check dopo incremento
+
+## Bug Risolti
+
+### 1. j/k interferivano con input text (RISOLTO ✅)
+**Problema**: Quando l'utente scriveva nella command bar o nei campi del wizard, premendo 'j' o 'k' il testo non veniva digitato ma veniva eseguito lo scroll.
+
+**Causa**: Il TUI intercettava i tasti j/k PRIMA che raggiungessero l'input field.
+
+**Soluzione**: Rimossi completamente j/k dallo scrolling. Ora solo frecce ↑/↓ e Page Up/Down.
+
+### 2. Scroll bloccato in fondo (RISOLTO ✅)
+**Problema**: Dopo aver scrollato fino in fondo con ↓, premere ↑ richiedeva molte pressioni prima che lo scroll tornasse su.
+
+**Causa**: Il check `if m.scrollOffset > m.maxScroll` permetteva che scrollOffset superasse maxScroll di 1 o più unità prima di essere clampato.
+
+**Soluzione**: Cambiato da:
+```go
+m.scrollOffset++
+if m.scrollOffset > m.maxScroll && m.maxScroll > 0 {
+    m.scrollOffset = m.maxScroll
+}
+```
+
+A:
+```go
+if m.scrollOffset < m.maxScroll {
+    m.scrollOffset++
+}
+```
+
+Ora scrollOffset non può mai superare maxScroll.
 
 ## Metriche
 

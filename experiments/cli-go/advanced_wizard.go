@@ -764,7 +764,7 @@ func (m advancedWizardModel) renderReviewForTUI() string {
 
 	// Help text with scroll info
 	help := wizardHelpStyle.Render(
-		"Enter: Confirm & Create | Esc: Go Back & Edit | ↑/↓ or PgUp/PgDn: Scroll",
+		"Enter: Confirm & Create | Esc: Go Back & Edit | ↑/↓: Scroll",
 	)
 
 	content := lipgloss.JoinVertical(
