@@ -2,7 +2,48 @@
 
 ## Panoramica
 
-Il wizard avanzato per la configurazione dei servizi è ora completamente integrato nel TUI di PHPHarbor. Offre un'interfaccia interattiva con navigazione completa tra le domande e la possibilità di modificare le risposte date.
+Il wizard avanzato per la configurazione dei servizi è **completamente integrato graficamente** nel TUI di PHPHarbor. Mantiene il layout standard dell'applicazione (header, content area, command bar, status bar) mentre offre un'interfaccia interattiva con navigazione completa tra le domande.
+
+## Integrazione Grafica
+
+### Layout Consistente
+
+Quando lanci il wizard, l'interfaccia mantiene:
+
+```
+╔════════════════════════════════════════════════╗
+║  PHPHarbor Header (sempre visibile)           ║  ← Logo e versione
+╠════════════════════════════════════════════════╣
+║                                                ║
+║  🔧 SERVICE CONFIGURATION WIZARD               ║
+║  ✓ 1  ▶ 2  ○ 3  ○ 4 ...                       ║  ← Wizard content
+║                                                ║
+║  Step 2 of 8                                   ║
+║  Previous answers: ...                         ║
+║  [Current question and input field]            ║
+║                                                ║
+╠════════════════════════════════════════════════╣
+║ ⊗ Command input disabled during wizard        ║  ← Command bar (disabilitata)
+╠════════════════════════════════════════════════╣
+║ 🔧 Service Configuration Wizard Active        ║  ← Status bar (wizard status)
+╚════════════════════════════════════════════════╝
+```
+
+### Differenze con la Versione Precedente
+
+#### ❌ Prima (Standalone)
+- Il wizard sostituiva **tutta** l'interfaccia
+- Nessun header/logo visibile
+- Nessuna command bar
+- Nessuna status bar
+- Layout completamente diverso dal resto del TUI
+
+#### ✅ Ora (Integrato)
+- **Header sempre visibile** con logo PHPHarbor
+- **Command bar presente** (ma disabilitata visivamente)
+- **Status bar attiva** con messaggi del wizard
+- **Layout consistente** con il resto dell'applicazione
+- **Transizione fluida** tra viste
 
 ## Come Accedere al Wizard
 
@@ -162,3 +203,70 @@ Possibili miglioramenti futuri:
 ---
 
 **Nota**: Questo wizard è parte dell'esperimento CLI-Go per PHPHarbor e dimostra come creare interfacce interattive sofisticate con navigazione completa e gestione dello stato.
+
+## Implementazione Tecnica
+
+### Architettura dell'Integrazione
+
+Il wizard è integrato nel TUI attraverso un **sistema a doppio rendering**:
+
+#### 1. Modalità Standalone (`View()`)
+- Usata quando il wizard viene lanciato come comando separato
+- Renderizza con border esterno e header colorato
+- Layout completo e indipendente
+
+#### 2. Modalità Integrata (`RenderForTUI()`)
+- Usata quando il wizard è parte del TUI
+- **Nessun border esterno** - si adatta all'area del contenuto
+- **Header compatto** - testo semplice invece di box colorato
+- **Dimensionamento dinamico** - si adatta all'altezza disponibile
+
+### File Modificati
+
+#### `advanced_wizard.go`
+```go
+// Nuova funzione per rendering integrato
+func (m advancedWizardModel) RenderForTUI() string {
+    // Renderizza senza border esterno
+    // Header compatto
+    // Si integra nell'area del contenuto
+}
+```
+
+#### `tui.go`
+```go
+// Vista non sostituita più completamente
+func (m tuiModel) View() string {
+    // Header sempre presente
+    // Content area con wizard integrato
+    // Command bar sempre visibile (ma disabilitata)
+    // Status bar sempre visibile
+}
+
+// Rendering del contenuto
+func (m tuiModel) renderContent(height int) string {
+    case viewServiceWizard:
+        if m.wizard != nil {
+            return m.wizard.RenderForTUI() // ← Usa versione integrata
+        }
+}
+```
+
+### Gestione dello Stato
+
+- **`wizardActive`**: Flag che indica se il wizard è in esecuzione
+- **Command bar disabilitata**: Input non processato durante wizard
+- **Status bar dinamica**: Mostra "Wizard Active" invece dello stato normale
+- **Delegazione eventi**: Tutti gli input vengono passati al wizard
+
+### Benefici dell'Approccio
+
+✅ **Consistenza UX**: Stessa interfaccia per tutte le viste
+✅ **Orientamento utente**: Logo sempre visibile = contesto chiaro
+✅ **Status feedback**: Status bar fornisce info costanti
+✅ **Esperienza professionale**: Layout pulito e coerente
+✅ **Manutenibilità**: Separazione tra rendering standalone e integrato
+
+---
+
+**Versione**: Integrazione grafica completata il 3 aprile 2026

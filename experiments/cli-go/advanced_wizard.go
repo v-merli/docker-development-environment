@@ -613,3 +613,237 @@ func (m advancedWizardModel) WasCompleted() bool {
 func (m advancedWizardModel) WasCancelled() bool {
 	return m.cancelled
 }
+
+// RenderForTUI renders the wizard content without external borders
+// to fit within the TUI's standard layout (with header and status bar)
+func (m advancedWizardModel) RenderForTUI() string {
+	if m.completed {
+		return m.renderFinalSummaryForTUI()
+	}
+
+	if m.cancelled {
+		return wizardErrorStyle.Render("✗ Configuration cancelled")
+	}
+
+	if m.reviewMode {
+		return m.renderReviewForTUI()
+	}
+
+	return m.renderStepForTUI()
+}
+
+func (m advancedWizardModel) renderStepForTUI() string {
+	currentStep := m.steps[m.currentStep]
+
+	// Compact header (no background box)
+	header := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#874BFD")).
+		Bold(true).
+		Render("🔧 SERVICE CONFIGURATION WIZARD")
+
+	// Progress bar with step indicators
+	var progressSteps []string
+	for i := range m.steps {
+		stepNum := fmt.Sprintf("%d", i+1)
+
+		if i < m.currentStep {
+			progressSteps = append(progressSteps,
+				advWizardStepCompletedStyle.Render("✓ "+stepNum))
+		} else if i == m.currentStep {
+			progressSteps = append(progressSteps,
+				advWizardStepCurrentStyle.Render("▶ "+stepNum))
+		} else {
+			progressSteps = append(progressSteps,
+				advWizardLabelStyle.Render("○ "+stepNum))
+		}
+	}
+	progressBar := strings.Join(progressSteps, " ")
+
+	// Current step label
+	stepLabel := advWizardStepIndicatorStyle.Render(
+		fmt.Sprintf("Step %d of %d", m.currentStep+1, len(m.steps)),
+	)
+
+	// Previously answered questions (show last 2)
+	var previousAnswers string
+	if m.currentStep > 0 {
+		previousAnswers = advWizardLabelStyle.Render("Previous answers:") + "\n"
+
+		startIdx := m.currentStep - 2
+		if startIdx < 0 {
+			startIdx = 0
+		}
+
+		for i := startIdx; i < m.currentStep; i++ {
+			if answer, exists := m.answers[m.steps[i].id]; exists {
+				previousAnswers += fmt.Sprintf("  %s: %s\n",
+					advWizardLabelStyle.Render(m.steps[i].title),
+					advWizardAnswerStyle.Render(answer))
+			}
+		}
+		previousAnswers += "\n"
+	}
+
+	// Current question
+	title := wizardTitleStyle.Render(currentStep.title)
+	desc := wizardDescStyle.Render(currentStep.description)
+
+	// Input field with options
+	var inputView string
+	if len(currentStep.options) > 0 {
+		optionsView := advWizardLabelStyle.Render("Options: ")
+		optionsList := strings.Join(currentStep.options, ", ")
+		inputView = optionsView + optionsList + "\n\n" + currentStep.input.View()
+	} else {
+		inputView = currentStep.input.View()
+	}
+
+	// Validation feedback
+	var feedbackView string
+	value := strings.TrimSpace(currentStep.input.Value())
+	if m.validationErr != "" {
+		feedbackView = "\n" + wizardErrorStyle.Render("✗ "+m.validationErr)
+	} else if value != "" {
+		if currentStep.validate != nil && currentStep.validate(value) == nil {
+			feedbackView = "\n" + wizardSuccessStyle.Render("✓ Valid")
+		}
+	}
+
+	// Help text with enhanced navigation
+	help := wizardHelpStyle.Render(
+		"↑/↓: Navigate | Enter: Next/Confirm | Ctrl+R: Review All | Esc: Cancel",
+	)
+
+	// Combine all sections (no external border)
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		header,
+		"",
+		progressBar,
+		"",
+		stepLabel,
+		"",
+		previousAnswers,
+		title,
+		desc,
+		"",
+		inputView,
+		feedbackView,
+		"",
+		"",
+		help,
+	)
+
+	return content
+}
+
+func (m advancedWizardModel) renderReviewForTUI() string {
+	// Header
+	header := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#874BFD")).
+		Bold(true).
+		Render("📋 REVIEW YOUR CONFIGURATION")
+
+	// All answers
+	var answersView string
+	answersView += advWizardLabelStyle.Render("Please review your configuration:") + "\n\n"
+
+	for i, step := range m.steps {
+		answer := m.answers[step.id]
+		if answer == "" {
+			answer = advWizardLabelStyle.Render("(not set)")
+		} else {
+			answer = advWizardAnswerStyle.Render(answer)
+		}
+
+		answersView += fmt.Sprintf("%s. %s\n   %s\n\n",
+			advWizardStepIndicatorStyle.Render(fmt.Sprintf("%d", i+1)),
+			wizardTitleStyle.Render(step.title),
+			answer)
+	}
+
+	// Help text
+	help := wizardHelpStyle.Render(
+		"Enter: Confirm & Create | Esc: Go Back & Edit | Ctrl+C: Cancel",
+	)
+
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		header,
+		"",
+		answersView,
+		help,
+	)
+
+	return content
+}
+
+func (m advancedWizardModel) renderFinalSummaryForTUI() string {
+	// Success message
+	successMsg := wizardSuccessStyle.Render("✓ Service Configuration Complete!") + "\n\n"
+
+	// Generate docker-compose snippet based on answers
+	serviceType := m.answers["service_type"]
+	serviceName := m.answers["service_name"]
+	version := m.answers["version"]
+	port := m.answers["port"]
+	persistent := m.answers["persistent"]
+	memoryLimit := m.answers["memory_limit"]
+	autoStart := m.answers["auto_start"]
+	notes := m.answers["notes"]
+
+	// Build configuration summary
+	summary := "Configuration Summary:\n"
+	summary += "─────────────────────────────────────────────\n"
+	summary += fmt.Sprintf("  Service Type:    %s\n", advWizardAnswerStyle.Render(serviceType))
+	summary += fmt.Sprintf("  Service Name:    %s\n", advWizardAnswerStyle.Render(serviceName))
+	summary += fmt.Sprintf("  Version:         %s\n", advWizardAnswerStyle.Render(version))
+
+	if port != "" {
+		summary += fmt.Sprintf("  External Port:   %s\n", advWizardAnswerStyle.Render(port))
+	}
+	summary += fmt.Sprintf("  Persistent Data: %s\n", advWizardAnswerStyle.Render(persistent))
+
+	if memoryLimit != "" {
+		summary += fmt.Sprintf("  Memory Limit:    %s MB\n", advWizardAnswerStyle.Render(memoryLimit))
+	}
+	summary += fmt.Sprintf("  Auto Start:      %s\n", advWizardAnswerStyle.Render(autoStart))
+
+	if notes != "" {
+		summary += fmt.Sprintf("  Notes:           %s\n", advWizardAnswerStyle.Render(notes))
+	}
+
+	summary += "\n\n"
+
+	// Mock docker-compose configuration
+	dockerCompose := "Generated docker-compose.yml snippet:\n\n"
+	dockerCompose += advWizardLabelStyle.Render("services:\n")
+	dockerCompose += fmt.Sprintf("  %s:\n", serviceName)
+	dockerCompose += fmt.Sprintf("    image: %s:%s\n", serviceType, version)
+	dockerCompose += "    container_name: " + serviceName + "\n"
+
+	if port != "" {
+		dockerCompose += "    ports:\n"
+		dockerCompose += fmt.Sprintf("      - \"%s:%s\"\n", port, getDefaultPort(serviceType))
+	}
+
+	if persistent == "yes" {
+		dockerCompose += "    volumes:\n"
+		dockerCompose += fmt.Sprintf("      - ./%s-data:/data\n", serviceName)
+	}
+
+	if memoryLimit != "" {
+		dockerCompose += "    mem_limit: " + memoryLimit + "m\n"
+	}
+
+	if autoStart == "no" {
+		dockerCompose += "    restart: \"no\"\n"
+	} else {
+		dockerCompose += "    restart: unless-stopped\n"
+	}
+
+	// Next steps
+	nextSteps := "\n" + wizardHelpStyle.Render("Press ESC to return to home")
+
+	return successMsg + summary + dockerCompose + nextSteps
+}

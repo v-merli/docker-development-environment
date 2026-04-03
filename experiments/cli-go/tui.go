@@ -352,16 +352,18 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Update input
-	oldValue := m.input.Value()
-	m.input, cmd = m.input.Update(msg)
-	newValue := m.input.Value()
+	// Update input (only if wizard is not active)
+	if !m.wizardActive {
+		oldValue := m.input.Value()
+		m.input, cmd = m.input.Update(msg)
+		newValue := m.input.Value()
 
-	// Update suggestions if input changed
-	if oldValue != newValue {
-		m.suggestions = m.getSuggestions()
-		m.showSuggestions = len(m.suggestions) > 0
-		m.selectedSuggestionIndex = 0
+		// Update suggestions if input changed
+		if oldValue != newValue {
+			m.suggestions = m.getSuggestions()
+			m.showSuggestions = len(m.suggestions) > 0
+			m.selectedSuggestionIndex = 0
+		}
 	}
 
 	return m, cmd
@@ -372,19 +374,15 @@ func (m tuiModel) View() string {
 		return "Loading..."
 	}
 
-	// If wizard is active, show only the wizard
-	if m.wizardActive && m.wizard != nil {
-		return m.wizard.View()
-	}
-
 	// Calculate heights
 	headerHeight := 12
 	commandBarHeight := 1
 	statusBarHeight := 1
 
 	// Calculate suggestions area height (0 if hidden)
+	// Note: when wizard is active, we don't show suggestions
 	suggestionsHeight := 0
-	if m.showSuggestions && len(m.suggestions) > 0 {
+	if !m.wizardActive && m.showSuggestions && len(m.suggestions) > 0 {
 		// Base height: 1 (top padding) + suggestions + 1 (bottom padding) + 1 (help text)
 		suggestionsHeight = 1 + len(m.suggestions) + 2
 	}
@@ -400,8 +398,11 @@ func (m tuiModel) View() string {
 	// Command bar
 	commandBar := m.renderCommandBar()
 
-	// Suggestions area (if visible)
-	suggestionsArea := m.renderSuggestionsArea()
+	// Suggestions area (if visible and not in wizard mode)
+	var suggestionsArea string
+	if !m.wizardActive {
+		suggestionsArea = m.renderSuggestionsArea()
+	}
 
 	// Status bar
 	statusBar := m.renderStatusBar()
@@ -503,10 +504,42 @@ func (m tuiModel) renderContent(height int) string {
 	case viewLongOutput:
 		content = m.renderLongOutputView()
 	case viewServiceWizard:
-		// This case should not be reached if wizardActive is true
-		// but handle it just in case
+		// Render wizard integrated in TUI layout
 		if m.wizard != nil {
-			return m.wizard.View()
+			// Don't add the message prefix for wizard view
+			wizardContent := m.wizard.RenderForTUI()
+
+			// Handle scrolling for wizard content
+			lines := strings.Split(wizardContent, "\n")
+			totalLines := len(lines)
+			visibleLines := height - 4
+			if visibleLines < 1 {
+				visibleLines = 1
+			}
+
+			// Apply scrolling if needed
+			startLine := m.scrollOffset
+			endLine := startLine + visibleLines
+
+			if endLine > totalLines {
+				endLine = totalLines
+			}
+			if startLine >= totalLines {
+				startLine = totalLines - 1
+				if startLine < 0 {
+					startLine = 0
+				}
+			}
+
+			var visibleContent string
+			if startLine < totalLines {
+				visibleLines := lines[startLine:endLine]
+				visibleContent = strings.Join(visibleLines, "\n")
+			}
+
+			// Set height for content
+			style := newContentStyle.Copy().Height(height)
+			return style.Render(visibleContent)
 		}
 		content = "Service wizard not initialized"
 	default:
@@ -681,6 +714,15 @@ func (m tuiModel) renderLongOutputView() string {
 }
 
 func (m tuiModel) renderCommandBar() string {
+	// When wizard is active, show a disabled command bar
+	if m.wizardActive {
+		disabledStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#444444")).
+			Italic(true)
+		content := disabledStyle.Render(" ⊗  Command input disabled during wizard")
+		return newCommandBarContainerStyle.Width(m.width).Render(content)
+	}
+
 	// Command input with prompt
 	prompt := newCommandPromptStyle.Render(" ➜ ")
 	content := prompt + m.input.View()
@@ -731,6 +773,14 @@ func (m tuiModel) renderSuggestionsArea() string {
 }
 
 func (m tuiModel) renderStatusBar() string {
+	// If wizard is active, show wizard-specific status
+	if m.wizardActive {
+		style := statusBarInfoStyle
+		icon := "🔧"
+		message := fmt.Sprintf("%s  Service Configuration Wizard Active - Use arrow keys to navigate", icon)
+		return style.Width(m.width).Render(message)
+	}
+
 	// Check if user is actively typing
 	currentInput := strings.TrimSpace(m.input.Value())
 	isTyping := currentInput != ""
