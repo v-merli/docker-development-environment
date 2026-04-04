@@ -162,6 +162,7 @@ type tuiModel struct {
 	maxScroll                    int // Maximum scroll offset for current content
 	showSuggestions              bool
 	selectedSuggestionIndex      int
+	suggestionsScrollOffset      int // Scroll offset for suggestions area
 	suggestions                  []string
 	wizard                       tea.Model // Embedded wizard (createWizardModel)
 	wizardActive                 bool
@@ -452,6 +453,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.showSuggestions = false
 			m.suggestions = nil
 			m.selectedSuggestionIndex = 0
+			m.suggestionsScrollOffset = 0
 			return m, execCmd
 
 		case "tab":
@@ -460,6 +462,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selectedSuggestionIndex = (m.selectedSuggestionIndex + 1) % len(m.suggestions)
 				// Update input with selected suggestion
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Update scroll offset if needed
+				m.adjustSuggestionsScroll()
 				return m, nil
 			}
 			return m, nil
@@ -473,6 +477,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				// Update input with selected suggestion
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Update scroll offset if needed
+				m.adjustSuggestionsScroll()
 				return m, nil
 			}
 
@@ -489,6 +495,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selectedSuggestionIndex = (m.selectedSuggestionIndex + 1) % len(m.suggestions)
 				// Update input with selected suggestion
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Update scroll offset if needed
+				m.adjustSuggestionsScroll()
 				return m, nil
 			}
 
@@ -553,6 +561,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.suggestions = m.getSuggestions()
 			m.showSuggestions = len(m.suggestions) > 0
 			m.selectedSuggestionIndex = 0
+			m.suggestionsScrollOffset = 0
 		}
 	}
 
@@ -569,12 +578,12 @@ func (m tuiModel) View() string {
 	commandBarHeight := 1
 	statusBarHeight := 1
 
-	// Calculate suggestions area height (0 if hidden)
+	// Calculate suggestions area height (fixed at 10 visible lines + decorations)
 	// Note: when wizard is active, we don't show suggestions
 	suggestionsHeight := 0
 	if m.showSuggestions && len(m.suggestions) > 0 {
-		// Base height: 1 (top padding) + suggestions + 1 (bottom padding) + 1 (help text)
-		suggestionsHeight = 1 + len(m.suggestions) + 2
+		// Fixed height: 1 (top padding) + 10 (max visible suggestions) + 1 (help text) + 1 (bottom padding)
+		suggestionsHeight = 13
 	}
 
 	contentHeight := m.height - headerHeight - commandBarHeight - statusBarHeight - suggestionsHeight
@@ -1234,6 +1243,8 @@ func (m tuiModel) renderSuggestionsArea() string {
 		return ""
 	}
 
+	const maxVisibleSuggestions = 10
+
 	var b strings.Builder
 	b.WriteString("\n")
 
@@ -1243,8 +1254,21 @@ func (m tuiModel) renderSuggestionsArea() string {
 		cmdDescriptions["/"+cmd.name] = cmd.desc
 	}
 
-	// Render each suggestion
-	for i, suggestion := range m.suggestions {
+	// Calculate visible range based on scroll offset
+	startIdx := m.suggestionsScrollOffset
+	endIdx := startIdx + maxVisibleSuggestions
+	if endIdx > len(m.suggestions) {
+		endIdx = len(m.suggestions)
+	}
+
+	// Show scroll indicator at top if scrolled down
+	if startIdx > 0 {
+		b.WriteString(suggestionDescStyle.Render(fmt.Sprintf("  ▲ %d more above...\n", startIdx)))
+	}
+
+	// Render visible suggestions
+	for i := startIdx; i < endIdx; i++ {
+		suggestion := m.suggestions[i]
 		var line string
 		desc := cmdDescriptions[suggestion]
 
@@ -1265,7 +1289,19 @@ func (m tuiModel) renderSuggestionsArea() string {
 		b.WriteString(line + "\n")
 	}
 
-	b.WriteString("\n")
+	// Pad with empty lines if less than maxVisibleSuggestions
+	visibleCount := endIdx - startIdx
+	for i := visibleCount; i < maxVisibleSuggestions; i++ {
+		b.WriteString("\n")
+	}
+
+	// Show scroll indicator at bottom if more items below
+	if endIdx < len(m.suggestions) {
+		b.WriteString(suggestionDescStyle.Render(fmt.Sprintf("  ▼ %d more below...\n", len(m.suggestions)-endIdx)))
+	} else {
+		b.WriteString("\n")
+	}
+
 	b.WriteString(suggestionDescStyle.Render("  ↑/↓ or Tab to navigate | Enter to select | Type to filter"))
 
 	return suggestionsContainerStyle.Render(b.String())
@@ -1280,72 +1316,63 @@ func (m tuiModel) renderStatusBar() string {
 		return style.Width(m.width).Render(message)
 	}
 
-	// Check if user is actively typing
-	currentInput := strings.TrimSpace(m.input.Value())
-	isTyping := currentInput != ""
-
 	// Select style based on status type
 	var style lipgloss.Style
 	var icon string
 	var message string
 
-	// If user is typing, always show hints with info style
-	if isTyping {
+	switch m.statusType {
+	case statusSuccess:
+		style = statusBarSuccessStyle
+		icon = "✓"
+	case statusWarning:
+		style = statusBarWarningStyle
+		icon = "⚠"
+	case statusDanger:
+		style = statusBarDangerStyle
+		icon = "✗"
+	default: // statusInfo
 		style = statusBarInfoStyle
 		icon = "ℹ"
-		hint := m.getHint()
-		message = fmt.Sprintf("%s  %s", icon, hint)
-	} else {
-		// Not typing - show status message
-		switch m.statusType {
-		case statusSuccess:
-			style = statusBarSuccessStyle
-			icon = "✓"
-		case statusWarning:
-			style = statusBarWarningStyle
-			icon = "⚠"
-		case statusDanger:
-			style = statusBarDangerStyle
-			icon = "✗"
-		default: // statusInfo
-			style = statusBarInfoStyle
-			icon = "ℹ"
-		}
+	}
 
-		// Show message or default hint
-		if m.statusMessage == "Ready" || m.statusMessage == "" {
-			hint := m.getHint()
-			message = fmt.Sprintf("%s  Ready - %s", icon, hint)
-		} else {
-			message = fmt.Sprintf("%s  %s", icon, m.statusMessage)
-		}
+	// Show status message
+	if m.statusMessage == "Ready" || m.statusMessage == "" {
+		message = fmt.Sprintf("%s  Ready", icon)
+	} else {
+		message = fmt.Sprintf("%s  %s", icon, m.statusMessage)
 	}
 
 	// Make it full width
 	return style.Width(m.width).Render(message)
 }
 
-func (m tuiModel) getHint() string {
-	input := strings.TrimSpace(m.input.Value())
+// adjustSuggestionsScroll adjusts the scroll offset to ensure selected suggestion is visible
+func (m *tuiModel) adjustSuggestionsScroll() {
+	const maxVisibleSuggestions = 10
 
-	if input == "" {
-		return "Type '/help' to see all commands | ESC to quit"
+	// Ensure selected item is within visible range
+	if m.selectedSuggestionIndex < m.suggestionsScrollOffset {
+		// Selected item is above visible area, scroll up
+		m.suggestionsScrollOffset = m.selectedSuggestionIndex
+	} else if m.selectedSuggestionIndex >= m.suggestionsScrollOffset+maxVisibleSuggestions {
+		// Selected item is below visible area, scroll down
+		m.suggestionsScrollOffset = m.selectedSuggestionIndex - maxVisibleSuggestions + 1
 	}
 
-	// Check if input starts with "/"
-	if strings.HasPrefix(input, "/") {
-		// Get suggestions
-		suggestions := m.getSuggestions()
-
-		if len(suggestions) > 0 {
-			return fmt.Sprintf("Suggestions: %s", strings.Join(suggestions, ", "))
-		}
-
-		return "Press Enter to execute | ESC to quit"
+	// Ensure scroll offset doesn't go negative
+	if m.suggestionsScrollOffset < 0 {
+		m.suggestionsScrollOffset = 0
 	}
 
-	// If no "/" prefix, suggest adding it
-	return "Commands must start with '/' (e.g., /help, /list)"
+	// Ensure we don't scroll past the end
+	maxScroll := len(m.suggestions) - maxVisibleSuggestions
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	if m.suggestionsScrollOffset > maxScroll {
+		m.suggestionsScrollOffset = maxScroll
+	}
 }
 
 // getSuggestions returns matching command suggestions based on current input
