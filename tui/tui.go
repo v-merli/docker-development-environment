@@ -1261,11 +1261,6 @@ func (m tuiModel) renderSuggestionsArea() string {
 		endIdx = len(m.suggestions)
 	}
 
-	// Show scroll indicator at top if scrolled down
-	if startIdx > 0 {
-		b.WriteString(suggestionDescStyle.Render(fmt.Sprintf("  ▲ %d more above...\n", startIdx)))
-	}
-
 	// Render visible suggestions
 	for i := startIdx; i < endIdx; i++ {
 		suggestion := m.suggestions[i]
@@ -1295,14 +1290,32 @@ func (m tuiModel) renderSuggestionsArea() string {
 		b.WriteString("\n")
 	}
 
-	// Show scroll indicator at bottom if more items below
-	if endIdx < len(m.suggestions) {
-		b.WriteString(suggestionDescStyle.Render(fmt.Sprintf("  ▼ %d more below...\n", len(m.suggestions)-endIdx)))
-	} else {
-		b.WriteString("\n")
-	}
-
+	b.WriteString("\n")
 	b.WriteString(suggestionDescStyle.Render("  ↑/↓ or Tab to navigate | Enter to select | Type to filter"))
+
+	// Get content lines for scrollbar calculation
+	contentLines := maxVisibleSuggestions + 2 // suggestions + blank line + help text
+	totalSuggestions := len(m.suggestions)
+
+	// Add scrollbar if there are more suggestions than visible
+	if totalSuggestions > maxVisibleSuggestions {
+		scrollbar := m.renderVerticalScrollbar(contentLines, totalSuggestions+2, m.suggestionsScrollOffset)
+		
+		// Calculate widths
+		scrollbarWidth := 2 // " │" or " █"
+		contentWidth := m.width - scrollbarWidth - 4 // minus scrollbar and padding
+		
+		// Style content and scrollbar
+		contentStyle := lipgloss.NewStyle().Width(contentWidth)
+		scrollbarStyle := lipgloss.NewStyle().Width(scrollbarWidth).Align(lipgloss.Right)
+		
+		styledContent := contentStyle.Render(b.String())
+		styledScrollbar := scrollbarStyle.Render(scrollbar)
+		
+		// Join horizontally
+		finalContent := lipgloss.JoinHorizontal(lipgloss.Top, styledContent, styledScrollbar)
+		return suggestionsContainerStyle.Render(finalContent)
+	}
 
 	return suggestionsContainerStyle.Render(b.String())
 }
