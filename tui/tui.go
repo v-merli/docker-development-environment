@@ -440,6 +440,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// If suggestions are shown and one is selected, use it
 			if m.showSuggestions && len(m.suggestions) > 0 {
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Move cursor to the end
+				m.input.SetCursor(len(m.input.Value()))
 				m.showSuggestions = false
 				m.suggestions = nil
 				m.selectedSuggestionIndex = 0
@@ -462,6 +464,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selectedSuggestionIndex = (m.selectedSuggestionIndex + 1) % len(m.suggestions)
 				// Update input with selected suggestion
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Move cursor to the end
+				m.input.SetCursor(len(m.input.Value()))
 				// Update scroll offset if needed
 				m.adjustSuggestionsScroll()
 				return m, nil
@@ -477,6 +481,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				// Update input with selected suggestion
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Move cursor to the end
+				m.input.SetCursor(len(m.input.Value()))
 				// Update scroll offset if needed
 				m.adjustSuggestionsScroll()
 				return m, nil
@@ -495,6 +501,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selectedSuggestionIndex = (m.selectedSuggestionIndex + 1) % len(m.suggestions)
 				// Update input with selected suggestion
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Move cursor to the end
+				m.input.SetCursor(len(m.input.Value()))
 				// Update scroll offset if needed
 				m.adjustSuggestionsScroll()
 				return m, nil
@@ -1300,18 +1308,18 @@ func (m tuiModel) renderSuggestionsArea() string {
 	// Add scrollbar if there are more suggestions than visible
 	if totalSuggestions > maxVisibleSuggestions {
 		scrollbar := m.renderVerticalScrollbar(contentLines, totalSuggestions+2, m.suggestionsScrollOffset)
-		
+
 		// Calculate widths
-		scrollbarWidth := 2 // " │" or " █"
+		scrollbarWidth := 2                          // " │" or " █"
 		contentWidth := m.width - scrollbarWidth - 4 // minus scrollbar and padding
-		
+
 		// Style content and scrollbar
 		contentStyle := lipgloss.NewStyle().Width(contentWidth)
 		scrollbarStyle := lipgloss.NewStyle().Width(scrollbarWidth).Align(lipgloss.Right)
-		
+
 		styledContent := contentStyle.Render(b.String())
 		styledScrollbar := scrollbarStyle.Render(scrollbar)
-		
+
 		// Join horizontally
 		finalContent := lipgloss.JoinHorizontal(lipgloss.Top, styledContent, styledScrollbar)
 		return suggestionsContainerStyle.Render(finalContent)
