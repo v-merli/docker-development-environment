@@ -89,40 +89,42 @@ _⭐ = Comando interattivo con suspend-resume pattern_
 ## ⚠️ Known Issues / TODO
 
 ### Setup Init Script Enhancement
-**Status:** Posticipato  
-**Issue:** Lo script bash `cli/setup.sh` (funzione `setup_init()`) attualmente ripropone le domande anche se il wizard Go ha già raccolto la configurazione tramite variabili d'ambiente.
+**Status:** ✅ COMPLETATO (2026-04-07)  
+**Soluzione:** Modificato `cli/setup.sh` per accettare parametri CLI invece di variabili d'ambiente.
 
-**Variabili d'ambiente passate dal wizard:**
+**Cambiamenti implementati:**
+1. ✅ Aggiunto parsing di parametri CLI a `setup_init()`:
+   - `--projects-choice <1|2|3>` - Scelta directory progetti
+   - `--custom-path <path>` - Path personalizzato per opzione 3
+   - `--dns <y|n>` - Configurazione dnsmasq
+   - `--proxy <y|n>` - Avvio reverse proxy
+   - `--mailpit <y|n>` - Installazione MailPit
+
+2. ✅ Mantenuta retrocompatibilità:
+   - Se parametri non forniti → modalità interattiva
+   - Se parametri forniti → modalità non-interattiva
+   - Mix possibile (parametri parziali + interactive)
+
+3. ✅ Aggiornato TUI (`setup_wizard.go`):
+   - Modificata funzione `BuildSetupCommand()` per passare parametri CLI
+   - Rimosso uso di variabili d'ambiente
+   - Approccio più esplicito e debuggabile
+
+4. ✅ Documentazione:
+   - Creato `docs/setup-init-params.md` con esempi
+   - Aggiornato help del comando setup
+   - Esempi di integrazione TUI/CLI
+
+**Esempio chiamata dal TUI:**
 ```bash
-PHPHARBOR_PROJECTS_DIR=<path>     # Directory progetti
-PHPHARBOR_SETUP_DNS=1             # Se abilitare DNS (assente = no)
-PHPHARBOR_SETUP_PROXY=1           # Se abilitare proxy (assente = no)
-PHPHARBOR_SETUP_MAILPIT=1         # Se abilitare MailPit (assente = no)
+./phpharbor setup init --projects-choice 1 --dns y --proxy y --mailpit y
 ```
 
-**Soluzione richiesta:**
-Modificare `cli/setup.sh` → `setup_init()` per:
-1. Controllare se le variabili d'ambiente sono settate
-2. Se presenti → usare quelle (modalità non-interattiva)
-3. Se assenti → fare domande interattive (backward compatibility)
-
-**Esempio logica:**
-```bash
-# Invece di ask sempre:
-read -p "Configure dnsmasq for *.test? [y/N]" -n 1 -r
-
-# Fare:
-if [ -n "$PHPHARBOR_SETUP_DNS" ]; then
-    # Usa valore da wizard
-    setup_dns
-else
-    # Chiedi all'utente
-    read -p "Configure dnsmasq for *.test? [y/N]" -n 1 -r
-    [[ $REPLY =~ ^[Yy]$ ]] && setup_dns
-fi
-```
-
-**Priorità:** Media (wizard funziona già, ma ripete domande)
+**Vantaggi:**
+- ✅ Nessuna duplicazione di domande
+- ✅ Parametri visibili e testabili
+- ✅ Compatibile sia con TUI che uso manuale CLI
+- ✅ Più chiaro e debuggabile
 
 ## 🚧 Prossimi Step
 
