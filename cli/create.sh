@@ -477,6 +477,12 @@ cmd_create() {
             
             # Replace PROJECT_NAME_PLACEHOLDER in docker-compose.yml
             sed -i '' "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" "$PROJECT_PATH/docker-compose.yml"
+            
+            # Generate nginx.conf from template so root path points to the correct project
+            print_info "Configuring Nginx for HTML project..."
+            sed -e "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" \
+                "$SCRIPT_DIR/shared/nginx/html.conf" > "$PROJECT_PATH/nginx.conf"
+            NGINX_CONF="./nginx.conf"
             ;;
         *)
             # Laravel, WordPress, PHP use the unified template
@@ -510,8 +516,14 @@ cmd_create() {
             # Replace PROJECT_NAME_PLACEHOLDER in docker-compose.yml
             sed -i '' "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" "$PROJECT_PATH/docker-compose.yml"
             
-            # Generate nginx.conf for shared PHP projects
-            if [[ "$USE_SHARED_PHP" == true ]]; then
+            # Generate nginx.conf for dedicated PHP projects (template needs placeholder replacement)
+            if [[ "$USE_SHARED_PHP" != true ]]; then
+                print_info "Configuring Nginx for dedicated PHP..."
+                sed -e "s/PROJECT_NAME_PLACEHOLDER/$PROJECT_SLUG/g" \
+                    "$SCRIPT_DIR/shared/nginx/$NGINX_CONF" > "$PROJECT_PATH/nginx.conf"
+                NGINX_CONF="./nginx.conf"
+            else
+                # Generate nginx.conf for shared PHP projects
                 print_info "Configuring Nginx for shared PHP..."
                 local nginx_template=""
                 case $PROJECT_TYPE in
@@ -967,11 +979,11 @@ generate_ssl_cert() {
         return
     fi
     
-    # Check if CA is already installed
+    # Check if CA is installed and trusted
     local ca_root="$(mkcert -CAROOT)"
-    if [ ! -f "$ca_root/rootCA.pem" ]; then
+    if [ ! -f "$ca_root/rootCA.pem" ] || ! check_mkcert_ca_trust; then
         first_time=true
-        print_info "First CA installation (will ask for password)..."
+        print_info "Installing/trusting local mkcert CA (will ask for password)..."
         mkcert -install
     fi
     
@@ -994,6 +1006,36 @@ generate_ssl_cert() {
             print_warning "IMPORTANT: Close and restart all browsers to recognize SSL certificates"
         fi
     fi
+}
+
+check_mkcert_ca_trust() {
+    local os=$(detect_os)
+    local ca_root="$(mkcert -CAROOT 2>/dev/null || true)"
+
+    if [ -z "$ca_root" ] || [ ! -f "$ca_root/rootCA.pem" ]; then
+        return 1
+    fi
+
+    if [ "$os" = "macos" ]; then
+        if security find-certificate -c "mkcert" /Library/Keychains/System.keychain >/dev/null 2>&1; then
+            return 0
+        fi
+        return 1
+    fi
+
+    if [ "$os" = "linux" ] || [ "$os" = "wsl" ]; then
+        if command -v certutil >/dev/null 2>&1; then
+            if certutil -d sql:"$HOME/.pki/nssdb" -L 2>/dev/null | grep -q "mkcert"; then
+                return 0
+            fi
+        fi
+
+        if [ -f "/usr/local/share/ca-certificates/mkcert-rootCA.crt" ] || [ -f "/usr/share/ca-certificates/mkcert-rootCA.crt" ] || [ -f "/etc/ssl/certs/mkcert-rootCA.pem" ]; then
+            return 0
+        fi
+    fi
+
+    return 1
 }
 
 install_framework() {

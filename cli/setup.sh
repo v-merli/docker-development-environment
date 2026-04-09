@@ -607,11 +607,17 @@ EOF
     
     # Generate SSL certificate
     print_info "Generating SSL certificate for mailpit.test..."
-    "$SCRIPT_DIR/phpharbor" ssl generate mailpit.test 2>/dev/null || {
-        print_warning "SSL certificate generation skipped (mkcert may not be configured)"
-    }
-    
-    # Start container
+    if ! command -v mkcert &> /dev/null; then
+        print_warning "⚠ mkcert not found - SSL certificate will be managed by acme-companion"
+        echo "    Note: First access may take longer for certificate generation"
+        echo "    For instant local SSL, install mkcert and run:"
+        echo "    ./phpharbor ssl generate mailpit.test"
+    else
+        "$SCRIPT_DIR/phpharbor" ssl generate mailpit.test 2>/dev/null || {
+            print_warning "SSL certificate generation failed"
+        }
+    fi
+    echo ""
     print_info "Starting MailPit..."
     cd "$mailpit_path"
     $DOCKER_COMPOSE up -d
@@ -629,6 +635,152 @@ EOF
     else
         print_warning "MailPit may not have started correctly"
     fi
+}
+
+check_prerequisites_for_setup() {
+    local enable_proxy=$1
+    local enable_mailpit=$2
+    
+    print_info "Checking prerequisites..."
+    echo ""
+    
+    # Check Docker
+    if ! docker info >/dev/null 2>&1; then
+        print_error "Docker is not running or not installed"
+        echo "Please start Docker Desktop and try again"
+        exit 1
+    fi
+    print_success "✓ Docker"
+    
+    # Check Docker Compose
+    if ! docker compose version >/dev/null 2>&1; then
+        print_error "Docker Compose is not available"
+        exit 1
+    fi
+    print_success "✓ Docker Compose"
+    
+    # Check mkcert if proxy and mailpit are enabled
+    if [[ $enable_proxy =~ ^[Yy]$ ]] && [[ $enable_mailpit =~ ^[Yy]$ ]]; then
+        if ! command -v mkcert >/dev/null 2>&1; then
+            echo ""
+            print_warning "WARNING: mkcert is required for MailPit SSL certificates"
+            echo ""
+            echo "mkcert is not installed. Options:"
+            echo ""
+            echo "1) Install mkcert now (recommended)"
+            echo "2) Continue without MailPit"
+            echo "3) Skip mkcert check and continue (not recommended)"
+            echo ""
+            
+            read -p "Choice [1]: " mkcert_choice
+            mkcert_choice=${mkcert_choice:-1}
+            
+            case $mkcert_choice in
+                1)
+                    print_info "Installing mkcert..."
+                    local os=$(detect_os)
+                    if [ "$os" = "macos" ]; then
+                        if ! command -v brew >/dev/null 2>&1; then
+                            print_error "Homebrew not found. Install it from https://brew.sh"
+                            echo "Then run: brew install mkcert"
+                            exit 1
+                        fi
+                        brew install mkcert || { print_error "Failed to install mkcert"; exit 1; }
+                    else
+                        print_error "Please install mkcert manually from: https://github.com/FiloSottile/mkcert#installation"
+                        exit 1
+                    fi
+                    print_success "✓ mkcert"
+                    ;;
+                2)
+                    print_info "Disabling MailPit installation"
+                    return 1
+                    ;;
+                3)
+                    print_warning "⚠ Skipping mkcert check - MailPit may not have valid SSL certificates"
+                    echo ""
+                    ;;
+                *)
+                    print_error "Invalid choice"
+                    exit 1
+                    ;;
+            esac
+        else
+            print_success "✓ mkcert"
+            if ! check_mkcert_ca_trust; then
+                echo ""
+                print_warning "WARNING: mkcert CA is not installed or trusted"
+                echo ""
+                echo "The browser will not trust .test certificates until the mkcert root CA is installed." 
+                echo ""
+                echo "Options:"
+                echo ""
+                echo "1) Install/trust mkcert CA now (recommended)"
+                echo "2) Continue without MailPit"
+                echo "3) Skip mkcert trust check and continue (not recommended)"
+                echo ""
+
+                read -p "Choice [1]: " mkcert_choice
+                mkcert_choice=${mkcert_choice:-1}
+                
+                case $mkcert_choice in
+                    1)
+                        print_info "Installing/trusting mkcert CA..."
+                        "$SCRIPT_DIR/phpharbor" ssl install || {
+                            print_error "Failed to install/trust mkcert CA"
+                            exit 1
+                        }
+                        print_success "✓ mkcert CA installed and trusted"
+                        ;;
+                    2)
+                        print_info "Disabling MailPit installation"
+                        return 1
+                        ;;
+                    3)
+                        print_warning "⚠ Skipping mkcert CA trust check - HTTPS may still be insecure"
+                        echo ""
+                        ;;
+                    *)
+                        print_error "Invalid choice"
+                        exit 1
+                        ;;
+                esac
+            fi
+        fi
+    fi
+    
+    echo ""
+    return 0
+}
+
+check_mkcert_ca_trust() {
+    local os=$(detect_os)
+    local ca_root="$(mkcert -CAROOT 2>/dev/null || true)"
+
+    if [ -z "$ca_root" ] || [ ! -f "$ca_root/rootCA.pem" ]; then
+        return 1
+    fi
+
+    if [ "$os" = "macos" ]; then
+        if security find-certificate -c "mkcert" /Library/Keychains/System.keychain >/dev/null 2>&1; then
+            return 0
+        fi
+        return 1
+    fi
+
+    if [ "$os" = "linux" ] || [ "$os" = "wsl" ]; then
+        if command -v certutil >/dev/null 2>&1; then
+            if certutil -d sql:"$HOME/.pki/nssdb" -L 2>/dev/null | grep -q "mkcert"; then
+                return 0
+            fi
+        fi
+
+        if [ -f "/usr/local/share/ca-certificates/mkcert-rootCA.crt" ] || [ -f "/usr/share/ca-certificates/mkcert-rootCA.crt" ] || [ -f "/etc/ssl/certs/mkcert-rootCA.pem" ]; then
+            return 0
+        fi
+    fi
+
+    return 1
 }
 
 setup_init() {
@@ -662,6 +814,26 @@ setup_init() {
                 ;;
         esac
     done
+    
+    # Determine proxy and mailpit choices early if not provided as arguments
+    # This is needed for prerequisite checking
+    if [ -z "$proxy_choice" ]; then
+        read -p "Start reverse proxy? [y/N] " -n 1 -r
+        echo
+        proxy_choice="$REPLY"
+    fi
+    
+    if [[ $proxy_choice =~ ^[Yy]$ ]] && [ -z "$mailpit_choice" ]; then
+        read -p "Install MailPit email testing tool? [Y/n] " -n 1 -r
+        echo
+        mailpit_choice="$REPLY"
+    fi
+    
+    # Check prerequisites based on user choices
+    if ! check_prerequisites_for_setup "$proxy_choice" "$mailpit_choice"; then
+        print_warning "Disabling MailPit due to missing prerequisites"
+        mailpit_choice="n"
+    fi
     
     print_title "PHPHarbor Initialization"
     echo ""
@@ -761,28 +933,6 @@ EOF
     
     echo ""
     
-    # ==================================================
-    # Check Docker
-    # ==================================================
-    
-    # Check Docker
-    print_info "Checking Docker..."
-    if ! docker info >/dev/null 2>&1; then
-        print_error "Docker not running"
-        echo "Start it from Docker Desktop and try again"
-        exit 1
-    fi
-    print_success "Docker OK"
-    
-    # Check Docker Compose
-    if ! docker compose version >/dev/null 2>&1; then
-        print_error "Docker Compose not available"
-        exit 1
-    fi
-    print_success "Docker Compose OK"
-    
-    echo ""
-    
     # Configure DNS
     if [ -z "$dns_choice" ]; then
         read -p "Configure dnsmasq for *.test? [y/N] " -n 1 -r
@@ -796,42 +946,15 @@ EOF
     fi
     
     # Start proxy
-    if [ -z "$proxy_choice" ]; then
-        read -p "Start reverse proxy? [y/N] " -n 1 -r
-        echo
-        proxy_choice="$REPLY"
-    fi
-    
     if [[ $proxy_choice =~ ^[Yy]$ ]]; then
         setup_proxy
         echo ""
         
-        # Setup MailPit project automatically
-        if [ -z "$mailpit_choice" ]; then
-            read -p "Install MailPit email testing tool? [Y/n] " -n 1 -r
-            echo
-            mailpit_choice="$REPLY"
-        fi
-        
+        # Setup MailPit project if enabled
         if [[ ! $mailpit_choice =~ ^[Nn]$ ]]; then
             setup_mailpit_project
             echo ""
         fi
-    fi
-    
-    # Install mkcert if not present
-    if ! command -v mkcert >/dev/null 2>&1; then
-        echo ""
-        print_info "For local SSL certificates, install mkcert:"
-        local os=$(detect_os)
-        if [ "$os" = "macos" ]; then
-            echo "  brew install mkcert"
-        else
-            echo "  # See: https://github.com/FiloSottile/mkcert#installation"
-        fi
-        echo "  mkcert -install"
-    else
-        print_success "mkcert installed"
     fi
     
     echo ""
