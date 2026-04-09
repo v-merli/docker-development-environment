@@ -1,10 +1,5 @@
 [-] Eseguire test totale
-[X] Ridisegnare sistema convert - aggiunto add-service/remove-service per gestione granulare servizi opzionali
-[X] Ridisegnare completamente stats: includere sia RAM/CPU che controllare progetto per progetto
-[X] Controllare phpharbor stats disk --cleanup l'operazione di cleanup l'avevamo già aggiunta in phpharbor cleanup. Mi sembra che si sia creata una ridondanza e più comandi fanno la stessa operazione
-[X] Test switch tipo progetto (php/wordpress/laravel) e controllo container aggiuntivi
-[X] Test shared/dedicated per queue/scheduler
-[X] Spostare i volumes database nella cartella di phpharbor e poi controllare che al remove la cartella viene effettivametne pulita (sia per shared che per dedicated)
-[X] Tradurre documentazione e script stats, scritto interamente in italiano
-[X] Valutare effettivo consumo di risorse (RAM, DISCO, CPU)
-[X] Aggiungere MariaDB come scelta possibile per il database (sia shared che dedicated)
+[-] Correzione creazione database MariaDB su progetto dedicated
+[-] Migliore gestione del setup init, compreso un primo lancio di ssl init, verifica generale software necessario. Considerare multipiattaforma
+[-] Nascondere momentaneamente TUI
+[-] Chiusura compatibilità TUI
