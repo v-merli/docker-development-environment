@@ -422,13 +422,46 @@ func (m setupWizardModel) BuildSetupCommand() *exec.Cmd {
 
 	projectRoot := filepath.Dir(bashScriptPath)
 
-	// Build command with configuration from wizard
-	// We'll call setup init with appropriate flags
+	// Build command with configuration from wizard using CLI parameters
 	args := []string{bashScriptPath, "setup", "init"}
 
-	// Add non-interactive flag if we want to skip prompts
-	// (since wizard already collected the config)
-	// args = append(args, "--non-interactive")
+	// Add projects directory path
+	if dir, ok := m.answers["projects_dir"]; ok {
+		// Expand ~ if needed
+		expanded := os.ExpandEnv(dir)
+		if strings.HasPrefix(expanded, "~") {
+			home, _ := os.UserHomeDir()
+			expanded = strings.Replace(expanded, "~", home, 1)
+		}
+		args = append(args, "--path", expanded)
+	}
+
+	// Add DNS configuration
+	if dns, ok := m.answers["dns_enable"]; ok {
+		if dns == "yes" {
+			args = append(args, "--dns", "y")
+		} else {
+			args = append(args, "--dns", "n")
+		}
+	}
+
+	// Add proxy configuration
+	if proxy, ok := m.answers["proxy_enable"]; ok {
+		if proxy == "yes" {
+			args = append(args, "--proxy", "y")
+		} else {
+			args = append(args, "--proxy", "n")
+		}
+	}
+
+	// Add MailPit configuration
+	if mailpit, ok := m.answers["mailpit_enable"]; ok {
+		if mailpit == "yes" {
+			args = append(args, "--mailpit", "y")
+		} else {
+			args = append(args, "--mailpit", "n")
+		}
+	}
 
 	cmd := exec.Command("bash", args...)
 	cmd.Dir = projectRoot
@@ -439,30 +472,8 @@ func (m setupWizardModel) BuildSetupCommand() *exec.Cmd {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	// Set environment variables based on wizard answers
-	env := os.Environ()
-
-	// Projects directory
-	if dir, ok := m.answers["projects_dir"]; ok {
-		env = append(env, fmt.Sprintf("PHPHARBOR_PROJECTS_DIR=%s", dir))
-	}
-
-	// DNS enable/disable flag
-	if dns, ok := m.answers["dns_enable"]; ok && dns == "yes" {
-		env = append(env, "PHPHARBOR_SETUP_DNS=1")
-	}
-
-	// Proxy enable/disable
-	if proxy, ok := m.answers["proxy_enable"]; ok && proxy == "yes" {
-		env = append(env, "PHPHARBOR_SETUP_PROXY=1")
-	}
-
-	// MailPit enable/disable
-	if mailpit, ok := m.answers["mailpit_enable"]; ok && mailpit == "yes" {
-		env = append(env, "PHPHARBOR_SETUP_MAILPIT=1")
-	}
-
-	cmd.Env = env
+	// Use system environment
+	cmd.Env = os.Environ()
 
 	return cmd
 }

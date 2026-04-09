@@ -121,29 +121,29 @@ var commands = []struct {
 	name string
 	desc string
 }{
-	{"artisan", "Run Laravel Artisan command"},
-	{"composer", "Run Composer command"},
+	{"artisan", "<project> <command> - Run Laravel Artisan command"},
+	{"composer", "<project> <command> - Run Composer command"},
 	{"create", "Create new project (wizard)"},
 	{"help", "Show this help"},
-	{"info", "Project information"},
+	{"info", "<project> - Project information"},
 	{"list", "List all projects"},
-	{"logs", "Show project logs"},
-	{"mysql", "Open MySQL CLI"},
-	{"npm", "Run npm command"},
-	{"queue", "Manage queue worker"},
+	{"logs", "<project> - Show project logs"},
+	{"mysql", "<project> - Open MySQL CLI"},
+	{"npm", "<project> <command> - Run npm command"},
+	{"queue", "<project> [start|stop|restart|status] - Manage queue worker"},
 	{"quit", "Exit TUI"},
-	{"remove", "Remove a project"},
-	{"reset", "Reset Docker environment (soft/hard)"},
-	{"restart", "Restart a project"},
-	{"service", "Manage project services (add/remove/list)"},
-	{"setup", "System setup (dns/proxy/init)"},
-	{"shared", "Manage shared services (start/stop/status)"},
-	{"shell", "Open shell in PHP container"},
-	{"ssl", "SSL certificate management"},
-	{"start", "Start a project"},
-	{"stats", "Show system statistics"},
-	{"stop", "Stop a project"},
-	{"update", "Check/install updates"},
+	{"remove", "<project> - Remove a project"},
+	{"reset", "[soft|hard|status] - Reset Docker environment"},
+	{"restart", "[project] - Restart project(s)"},
+	{"service", "<project> [add|remove|list|templates] - Manage project services"},
+	{"setup", "[dns|proxy|init|config|ports] - System setup"},
+	{"shared", "[start|stop|status|logs] - Manage shared services"},
+	{"shell", "<project> - Open shell in PHP container"},
+	{"ssl", "[setup|generate|verify|cleanup] - SSL certificate management"},
+	{"start", "[project] - Start project(s)"},
+	{"stats", "[disk|resources|projects] - Show system statistics"},
+	{"stop", "[project] - Stop project(s)"},
+	{"update", "[check|install|changelog] - Check/install updates"},
 	{"wizard", "Create new project (wizard)"},
 }
 
@@ -440,6 +440,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// If suggestions are shown and one is selected, use it
 			if m.showSuggestions && len(m.suggestions) > 0 {
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Move cursor to the end
+				m.input.SetCursor(len(m.input.Value()))
 				m.showSuggestions = false
 				m.suggestions = nil
 				m.selectedSuggestionIndex = 0
@@ -462,6 +464,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selectedSuggestionIndex = (m.selectedSuggestionIndex + 1) % len(m.suggestions)
 				// Update input with selected suggestion
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Move cursor to the end
+				m.input.SetCursor(len(m.input.Value()))
 				// Update scroll offset if needed
 				m.adjustSuggestionsScroll()
 				return m, nil
@@ -477,6 +481,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				// Update input with selected suggestion
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Move cursor to the end
+				m.input.SetCursor(len(m.input.Value()))
 				// Update scroll offset if needed
 				m.adjustSuggestionsScroll()
 				return m, nil
@@ -495,6 +501,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selectedSuggestionIndex = (m.selectedSuggestionIndex + 1) % len(m.suggestions)
 				// Update input with selected suggestion
 				m.input.SetValue(m.suggestions[m.selectedSuggestionIndex])
+				// Move cursor to the end
+				m.input.SetCursor(len(m.input.Value()))
 				// Update scroll offset if needed
 				m.adjustSuggestionsScroll()
 				return m, nil

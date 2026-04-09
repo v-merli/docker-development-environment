@@ -13,6 +13,15 @@ cmd_setup() {
         echo "  dns     Install and configure dnsmasq for *.test"
         echo "  proxy   Start nginx reverse proxy"
         echo "  init    Complete interactive setup"
+        echo ""
+        echo "Init command options:"
+        echo "  --path <path>      Projects directory path"
+        echo "  --dns <y|n>        Configure dnsmasq (y/n)"
+        echo "  --proxy <y|n>      Start reverse proxy (y/n)"
+        echo "  --mailpit <y|n>    Install MailPit (y/n)"
+        echo ""
+        echo "Example:"
+        echo "  ./phpharbor setup init --path ./projects --dns y --proxy y --mailpit y"
         exit 0
     fi
     
@@ -623,6 +632,37 @@ EOF
 }
 
 setup_init() {
+    # Parse arguments
+    local projects_path=""
+    local dns_choice=""
+    local proxy_choice=""
+    local mailpit_choice=""
+    
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --path)
+                projects_path="$2"
+                shift 2
+                ;;
+            --dns)
+                dns_choice="$2"
+                shift 2
+                ;;
+            --proxy)
+                proxy_choice="$2"
+                shift 2
+                ;;
+            --mailpit)
+                mailpit_choice="$2"
+                shift 2
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                return 1
+                ;;
+        esac
+    done
+    
     print_title "PHPHarbor Initialization"
     echo ""
     
@@ -635,39 +675,46 @@ setup_init() {
     local default_dir="$SCRIPT_DIR/projects"
     local current_dir="${PROJECTS_DIR:-$default_dir}"
     
-    echo "Where do you want to save your Docker projects?"
-    echo ""
-    echo "1) $default_dir (default)"
-    echo "2) $HOME/Development/docker-projects"
-    echo "3) Custom path"
-    echo ""
-    
-    # If config exists, show current one
-    if [ -f "$CONFIG_FILE" ]; then
-        echo -e "${YELLOW}Current configuration: $current_dir${NC}"
+    # If path provided as argument, use it
+    if [ -n "$projects_path" ]; then
+        # Expand ~ and variables
+        PROJECTS_DIR=$(eval echo "$projects_path")
+    else
+        # Ask interactively
+        echo "Where do you want to save your Docker projects?"
         echo ""
+        echo "1) $default_dir (default)"
+        echo "2) $HOME/Development/docker-projects"
+        echo "3) Custom path"
+        echo ""
+        
+        # If config exists, show current one
+        if [ -f "$CONFIG_FILE" ]; then
+            echo -e "${YELLOW}Current configuration: $current_dir${NC}"
+            echo ""
+        fi
+        
+        read -p "Choice [1]: " choice
+        choice=${choice:-1}
+        
+        case $choice in
+            1)
+                PROJECTS_DIR="$default_dir"
+                ;;
+            2)
+                PROJECTS_DIR="$HOME/Development/docker-projects"
+                ;;
+            3)
+                read -p "Enter the complete path: " custom_path
+                # Expand ~ and variables
+                PROJECTS_DIR=$(eval echo "$custom_path")
+                ;;
+            *)
+                print_warning "Invalid choice, using default"
+                PROJECTS_DIR="$default_dir"
+                ;;
+        esac
     fi
-    
-    read -p "Choice [1]: " choice
-    choice=${choice:-1}
-    
-    case $choice in
-        1)
-            PROJECTS_DIR="$default_dir"
-            ;;
-        2)
-            PROJECTS_DIR="$HOME/Development/docker-projects"
-            ;;
-        3)
-            read -p "Enter the complete path: " custom_path
-            # Expand ~ and variables
-            PROJECTS_DIR=$(eval echo "$custom_path")
-            ;;
-        *)
-            print_warning "Invalid choice, using default"
-            PROJECTS_DIR="$default_dir"
-            ;;
-    esac
     
     # Create directory if it doesn't exist
     if [ ! -d "$PROJECTS_DIR" ]; then
@@ -737,24 +784,36 @@ EOF
     echo ""
     
     # Configure DNS
-    read -p "Configure dnsmasq for *.test? [y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [ -z "$dns_choice" ]; then
+        read -p "Configure dnsmasq for *.test? [y/N] " -n 1 -r
+        echo
+        dns_choice="$REPLY"
+    fi
+    
+    if [[ $dns_choice =~ ^[Yy]$ ]]; then
         setup_dns
         echo ""
     fi
     
     # Start proxy
-    read -p "Start reverse proxy? [y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [ -z "$proxy_choice" ]; then
+        read -p "Start reverse proxy? [y/N] " -n 1 -r
+        echo
+        proxy_choice="$REPLY"
+    fi
+    
+    if [[ $proxy_choice =~ ^[Yy]$ ]]; then
         setup_proxy
         echo ""
         
         # Setup MailPit project automatically
-        read -p "Install MailPit email testing tool? [Y/n] " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        if [ -z "$mailpit_choice" ]; then
+            read -p "Install MailPit email testing tool? [Y/n] " -n 1 -r
+            echo
+            mailpit_choice="$REPLY"
+        fi
+        
+        if [[ ! $mailpit_choice =~ ^[Nn]$ ]]; then
             setup_mailpit_project
             echo ""
         fi
